@@ -8,6 +8,16 @@ Registro acumulativo de decisiones, cambios y contexto relevante por sesión.
 
 ### Últimos cambios
 
+- **FIX: Input de búsqueda lento**:
+  - Añadido estado local `inputText` en `SearchScreen` para actualizar UI inmediatamente
+  - El debounce de 400ms solo aplica a la llamada a API, no al renderizado del input
+  - Soluciona el problema de que las letras se borraban al escribir rápido
+
+- **FIX: Empty state del Home mejorado**:
+  - Añadido botón "Vincular Steam" cuando no hay datos de juegos
+  - El botón navega a la pantalla de ajustes para vincular Steam
+  - Mejora la UX para usuarios que aún no han vinculado su cuenta
+
 - **ProtonDB con datos reales ACTIVADO**:
   - Cambiado binding en `container.ts`: `MockProtonDbService` → `ProtonDbServiceImpl`
   - La API de ProtonDB no requiere API key, funciona directamente

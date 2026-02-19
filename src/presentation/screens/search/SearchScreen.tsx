@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useRef } from 'react';
-import { View, FlatList, TextInput, StyleSheet, Platform, Text, ScrollView } from 'react-native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { View, FlatList, TextInput, StyleSheet, Platform, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { observer } from 'mobx-react-lite';
@@ -40,15 +40,26 @@ export const SearchScreen: React.FC = observer(() => {
     const navigation = useNavigation<Nav>();
     const userId = authVm.currentUser?.getId() ?? '';
     const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const [inputText, setInputText] = useState('');
 
     useEffect(() => {
         if (userId) vm.loadHomeData(userId);
     }, [userId]);
 
     const handleSearch = useCallback((text: string) => {
+        setInputText(text);
+        
         if (debounceRef.current) clearTimeout(debounceRef.current);
+        
+        if (!text.trim()) {
+            vm.clearSearch();
+            return;
+        }
+        
         debounceRef.current = setTimeout(() => {
-            if (Platform.OS !== 'web' && text.length > 2) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            if (Platform.OS !== 'web' && text.length > 2) {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            }
             vm.search(text, userId);
         }, 400);
     }, [userId, vm]);
@@ -124,6 +135,13 @@ export const SearchScreen: React.FC = observer(() => {
                         message="Vincula Steam para ver tus estadísticas de juego" 
                         icon="link" 
                     />
+                    <TouchableOpacity 
+                        style={styles.linkButton}
+                        onPress={() => navigation.getParent()?.navigate('SettingsTab' as never)}
+                    >
+                        <Feather name="link" size={18} color={colors.textPrimary} />
+                        <Text style={styles.linkButtonText}>Vincular Steam</Text>
+                    </TouchableOpacity>
                 </View>
             )}
         </ScrollView>
@@ -163,7 +181,7 @@ export const SearchScreen: React.FC = observer(() => {
                         placeholder="Buscar en el catálogo global"
                         placeholderTextColor={colors.textTertiary}
                         onChangeText={handleSearch}
-                        value={vm.searchQuery}
+                        value={inputText}
                         autoCorrect={false}
                         selectionColor={colors.primary}
                         keyboardAppearance="dark"
@@ -176,7 +194,7 @@ export const SearchScreen: React.FC = observer(() => {
                 <ListSkeleton />
             ) : vm.errorMessage ? (
                 <ErrorMessage message={vm.errorMessage} onRetry={() => vm.loadHomeData(userId)} />
-            ) : vm.searchQuery.length > 0 ? (
+            ) : inputText.trim().length > 0 ? (
                 renderSearchResults()
             ) : (
                 renderHomeContent()
@@ -242,5 +260,20 @@ const styles = StyleSheet.create({
     emptyHome: {
         marginTop: 60,
         paddingHorizontal: spacing.lg,
+        alignItems: 'center',
+    },
+    linkButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: colors.primary,
+        paddingHorizontal: spacing.lg,
+        paddingVertical: spacing.md,
+        borderRadius: radius.lg,
+        marginTop: spacing.lg,
+        gap: spacing.sm,
+    },
+    linkButtonText: {
+        ...typography.button,
+        color: colors.textPrimary,
     },
 });
