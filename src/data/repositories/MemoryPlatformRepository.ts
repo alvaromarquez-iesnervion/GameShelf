@@ -4,20 +4,29 @@ import { IPlatformRepository } from '../../domain/interfaces/repositories/IPlatf
 import { LinkedPlatform } from '../../domain/entities/LinkedPlatform';
 import { Platform } from '../../domain/enums/Platform';
 
+const TEST_STEAM_ID = '76561198130408689';
+const TEST_USER_ID = 'mock-uid-dev-001';
+
 /**
  * Implementación en memoria de IPlatformRepository.
  *
+ * Para testing: Steam ya vinculado con el SteamID de testing.
+ *
  * Se usa mientras Firebase no está configurado, pero Steam API sí está activa.
  * Los datos se pierden al cerrar la app.
- *
- * TODO: reemplazar por PlatformRepositoryImpl (Firestore) cuando Firebase esté listo.
- *       Ver src/data/repositories/PlatformRepositoryImpl.ts — implementación completa.
  */
 @injectable()
 export class MemoryPlatformRepository implements IPlatformRepository {
 
-    // Mapa: userId → plataformas vinculadas
-    private readonly platformsByUser = new Map<string, LinkedPlatform[]>();
+    private readonly platformsByUser: Map<string, LinkedPlatform[]>;
+
+    constructor() {
+        this.platformsByUser = new Map([
+            [TEST_USER_ID, [
+                new LinkedPlatform(Platform.STEAM, TEST_STEAM_ID, new Date()),
+            ]],
+        ]);
+    }
 
     async linkSteamPlatform(userId: string, steamId: string): Promise<LinkedPlatform> {
         const linked = new LinkedPlatform(Platform.STEAM, steamId, new Date());
@@ -42,8 +51,6 @@ export class MemoryPlatformRepository implements IPlatformRepository {
     async getLinkedPlatforms(userId: string): Promise<LinkedPlatform[]> {
         return [...(this.platformsByUser.get(userId) ?? [])];
     }
-
-    // ─── helpers ─────────────────────────────────────────────────────────────
 
     private upsert(userId: string, platform: LinkedPlatform): void {
         const current = this.platformsByUser.get(userId) ?? [];

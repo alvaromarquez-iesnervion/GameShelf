@@ -9,26 +9,18 @@ import { SearchResult } from '../../domain/entities/SearchResult';
 import { Platform } from '../../domain/enums/Platform';
 import { TYPES } from '../../di/types';
 
+const TEST_USER_ID = 'mock-uid-dev-001';
+
 /**
  * IGameRepository en memoria que sincroniza desde la API real de Steam.
  *
- * Sin Firebase — los juegos se almacenan en un Map mientras la app está activa.
- * Válido para desarrollo y para usuarios que aún no tienen Firebase configurado.
- *
- * Flujo:
- *   1. linkSteam → PlatformLinkUseCase → syncLibrary (no bloqueante)
- *   2. syncLibrary → IPlatformRepository.getLinkedPlatforms → SteamID
- *   3. ISteamApiService.getUserGames(steamId) → Game[]
- *   4. Guardado en memoria; LibraryScreen.loadLibrary() lo recoge con pull-to-refresh
- *
- * TODO: reemplazar por GameRepositoryImpl (Firestore) cuando Firebase esté listo.
- *       Ver src/data/repositories/GameRepositoryImpl.ts — implementación completa.
+ * Para testing: biblioteca se precarga automáticamente para el usuario de testing.
  */
 @injectable()
 export class SteamSyncMemoryGameRepository implements IGameRepository {
 
-    // userId → lista de juegos sincronizados
     private readonly gamesByUser = new Map<string, Game[]>();
+    private initialized = false;
 
     constructor(
         @inject(TYPES.ISteamApiService)
@@ -37,9 +29,31 @@ export class SteamSyncMemoryGameRepository implements IGameRepository {
         private readonly platformRepository: IPlatformRepository,
         @inject(TYPES.IIsThereAnyDealService)
         private readonly itadService: IIsThereAnyDealService,
-    ) {}
+    ) {
+        this.initializeForTesting();
+    }
+
+    private async initializeForTesting(): Promise<void> {
+        if (this.initialized) return;
+        
+        try {
+            const linked = await this.platformRepository.getLinkedPlatforms(TEST_USER_ID);
+            const steamPlatform = linked.find(p => p.getPlatform() === Platform.STEAM);
+            
+            if (steamPlatform) {
+                const steamGames = await this.steamService.getUserGames(steamPlatform.getExternalUserId());
+                this.gamesByUser.set(TEST_USER_ID, steamGames);
+            }
+            this.initialized = true;
+        } catch (error) {
+            console.warn('SteamSyncMemoryGameRepository: Could not preload library:', error);
+        }
+    }
 
     async getLibraryGames(userId: string): Promise<Game[]> {
+        if (!this.initialized) {
+            await this.initializeForTesting();
+        }
         return [...(this.gamesByUser.get(userId) ?? [])];
     }
 
