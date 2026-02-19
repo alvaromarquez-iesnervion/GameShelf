@@ -34,11 +34,9 @@ export class GameDetailUseCase implements IGameDetailUseCase {
         private readonly itadService: IIsThereAnyDealService,
     ) {}
 
-    async getGameDetail(gameId: string, userId: string): Promise<GameDetailDTO> {
-        // 1. Juego base: crítico. Si falla, se propaga.
-        const game = await this.gameRepository.getGameById(gameId);
+    async getGameDetail(gameId: string, userId: string, providedSteamAppId?: number): Promise<GameDetailDTO> {
+        const game = await this.gameRepository.getOrCreateGameById(gameId, providedSteamAppId);
 
-        // 2. Consultas paralelas a servicios externos (ninguna es crítica)
         const steamAppId = game.getSteamAppId();
         const [protonResult, hltbResult, dealsResult, wishlistResult] =
             await Promise.allSettled([

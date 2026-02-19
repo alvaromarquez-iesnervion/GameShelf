@@ -1,26 +1,32 @@
 import 'reflect-metadata';
 import { injectable } from 'inversify';
 import axios from 'axios';
-import { IIsThereAnyDealService } from '../../domain/interfaces/services/IIsThereAnyDealService';
+import { IIsThereAnyDealService, ItadGameInfo } from '../../domain/interfaces/services/IIsThereAnyDealService';
 import { Deal } from '../../domain/entities/Deal';
 import { SearchResult } from '../../domain/entities/SearchResult';
 import { ITAD_API_BASE_URL, ITAD_API_KEY } from '../config/ApiConstants';
 
-// Tipos de la API v2 de ITAD
 interface ItadPriceEntry {
     shop: { id: string; name: string };
     price: { amount: number; amountInt: number; currency: string };
     regular: { amount: number; amountInt: number; currency: string };
-    cut: number;         // % de descuento (0–100)
+    cut: number;
     url: string;
 }
 
 interface ItadSearchResult {
-    id: string;          // UUID interno de ITAD
+    id: string;
     slug: string;
     title: string;
     type: string;
     assets: { banner300?: string; banner400?: string; banner600?: string };
+}
+
+interface ItadGameInfoResponse {
+    id: string;
+    title: string;
+    appid?: number;
+    assets?: { banner300?: string; banner400?: string; banner600?: string };
 }
 
 /**
@@ -112,21 +118,53 @@ export class IsThereAnyDealServiceImpl implements IIsThereAnyDealService {
         try {
             const response = await axios.get(
                 `${ITAD_API_BASE_URL}/games/search/v1`,
-                { params: { ...this.authParams, title: query } },
+                { params: { ...this.authParams, title: query, limit: 20 } },
             );
             const results: ItadSearchResult[] = response.data ?? [];
-            return results.map(r => new SearchResult(
+            
+            const searchResults = results.map(r => new SearchResult(
                 r.id,
                 r.title,
                 r.assets?.banner300 ?? r.assets?.banner400 ?? '',
-                false, // isInWishlist se cruza en SearchUseCase
+                false,
+                null,
             ));
+
+            const infoPromises = searchResults.map(async (r) => {
+                try {
+                    const info = await this.getGameInfo(r.getId());
+                    if (info?.steamAppId) {
+                        r.setSteamAppId(info.steamAppId);
+                    }
+                } catch {}
+            });
+            await Promise.allSettled(infoPromises);
+            
+            return searchResults;
         } catch {
             return [];
         }
     }
 
-    // Mapper interno: ItadPriceEntry → Deal de dominio
+    async getGameInfo(itadGameId: string): Promise<ItadGameInfo | null> {
+        try {
+            const response = await axios.get(
+                `${ITAD_API_BASE_URL}/games/info/v2`,
+                { params: { ...this.authParams, id: itadGameId } },
+            );
+            const data: ItadGameInfoResponse = response.data;
+            
+            return {
+                id: data.id,
+                title: data.title,
+                steamAppId: data.appid ?? null,
+                coverUrl: data.assets?.banner300 ?? data.assets?.banner400 ?? '',
+            };
+        } catch {
+            return null;
+        }
+    }
+
     private mapItadPriceToDeal(entry: ItadPriceEntry, index: number): Deal {
         return new Deal(
             `${entry.shop.id}_${index}`,

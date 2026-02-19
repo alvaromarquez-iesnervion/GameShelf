@@ -1,11 +1,10 @@
 import 'reflect-metadata';
 import { injectable } from 'inversify';
-import { IIsThereAnyDealService } from '../../domain/interfaces/services/IIsThereAnyDealService';
+import { IIsThereAnyDealService, ItadGameInfo } from '../../domain/interfaces/services/IIsThereAnyDealService';
 import { Deal } from '../../domain/entities/Deal';
 import { SearchResult } from '../../domain/entities/SearchResult';
 import {
     MOCK_DEALS_BY_ITAD_ID,
-    MOCK_DEALS_BY_STEAM_APP_ID,
     MOCK_SEARCH_RESULTS,
     simulateDelay,
 } from './MockDataProvider';
@@ -81,5 +80,21 @@ export class MockIsThereAnyDealService implements IIsThereAnyDealService {
         return MOCK_SEARCH_RESULTS.filter(r =>
             r.getTitle().toLowerCase().includes(lower),
         );
+    }
+
+    async getGameInfo(itadGameId: string): Promise<ItadGameInfo | null> {
+        await simulateDelay(300);
+        const result = MOCK_SEARCH_RESULTS.find(r => r.getId() === itadGameId);
+        if (!result) return null;
+        
+        const steamAppId = Object.entries(STEAM_APP_TO_ITAD_ID)
+            .find(([, itadId]) => itadId === itadGameId)?.[0];
+        
+        return {
+            id: itadGameId,
+            title: result.getTitle(),
+            steamAppId: steamAppId ? parseInt(steamAppId, 10) : null,
+            coverUrl: result.getCoverUrl(),
+        };
     }
 }

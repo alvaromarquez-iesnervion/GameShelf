@@ -7,6 +7,8 @@ export interface IGameRepository {
     getLibraryGames(userId: string): Promise<Game[]>;
     /** Obtiene un juego concreto de Firestore para GameDetailUseCase. */
     getGameById(gameId: string): Promise<Game>;
+    /** Obtiene un juego por ID, o lo crea desde ITAD si no está en la biblioteca. */
+    getOrCreateGameById(gameId: string, steamAppId?: number | null): Promise<Game>;
     /** Llama a la API de la plataforma indicada y sincroniza Firestore. Lento. */
     syncLibrary(userId: string, platform: Platform): Promise<Game[]>;
     /** Búsqueda general vía ITAD /games/search/v1 (catálogo más amplio). */

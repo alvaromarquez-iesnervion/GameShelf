@@ -36,6 +36,32 @@ export class MockGameRepository implements IGameRepository {
         return game;
     }
 
+    async getOrCreateGameById(gameId: string, steamAppId?: number | null): Promise<Game> {
+        await simulateDelay(300);
+        const game = MOCK_ALL_GAMES.find(g => g.getId() === gameId);
+        if (game) return game;
+        
+        const gameBySteamId = MOCK_ALL_GAMES.find(g => g.getSteamAppId()?.toString() === steamAppId?.toString());
+        if (gameBySteamId) return gameBySteamId;
+        
+        const searchResult = MOCK_SEARCH_RESULTS.find(r => r.getId() === gameId);
+        if (searchResult) {
+            return new Game(
+                steamAppId?.toString() ?? gameId,
+                searchResult.getTitle(),
+                '',
+                searchResult.getCoverUrl(),
+                Platform.STEAM,
+                steamAppId ?? null,
+                gameId,
+                0,
+                null,
+            );
+        }
+        
+        throw new Error(`Juego con ID "${gameId}" no encontrado.`);
+    }
+
     async syncLibrary(_userId: string, platform: Platform): Promise<Game[]> {
         // Simula una operación lenta de sincronización con la API
         await simulateDelay(1500);

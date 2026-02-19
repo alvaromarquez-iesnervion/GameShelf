@@ -192,7 +192,10 @@ export const SearchScreen: React.FC = observer(() => {
                     coverUrl={item.getCoverUrl()}
                     title={item.getTitle()}
                     isInWishlist={wishlistVm.isGameInWishlist(item.getId())}
-                    onPress={() => navigation.navigate('GameDetail', { gameId: item.getId() })}
+                    onPress={() => navigation.navigate('GameDetail', { 
+                        gameId: item.getId(), 
+                        steamAppId: item.getSteamAppId() ?? undefined 
+                    })}
                     onToggleWishlist={() => toggleWishlist(item)}
                 />
             )}

@@ -35,14 +35,14 @@ export class GameDetailViewModel {
         return this._errorMessage;
     }
 
-    async loadGameDetail(gameId: string, userId: string): Promise<void> {
+    async loadGameDetail(gameId: string, userId: string, steamAppId?: number): Promise<void> {
         runInAction(() => {
             this._isLoading = true;
             this._errorMessage = null;
         });
 
         try {
-            const detail = await this.gameDetailUseCase.getGameDetail(gameId, userId);
+            const detail = await this.gameDetailUseCase.getGameDetail(gameId, userId, steamAppId);
             runInAction(() => {
                 this._gameDetail = detail;
             });

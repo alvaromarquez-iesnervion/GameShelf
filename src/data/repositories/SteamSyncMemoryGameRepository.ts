@@ -48,7 +48,31 @@ export class SteamSyncMemoryGameRepository implements IGameRepository {
             const found = games.find(g => g.getId() === gameId);
             if (found) return found;
         }
-        throw new Error(`Juego con ID "${gameId}" no encontrado. Sincroniza la biblioteca primero.`);
+        throw new Error(`Juego con ID "${gameId}" no encontrado.`);
+    }
+
+    async getOrCreateGameById(gameId: string, steamAppId?: number | null): Promise<Game> {
+        try {
+            return await this.getGameById(gameId);
+        } catch {
+            // No está en la biblioteca, crear desde ITAD
+            const info = await this.itadService.getGameInfo(gameId);
+            if (!info) {
+                throw new Error(`No se pudo obtener información del juego "${gameId}".`);
+            }
+            
+            return new Game(
+                steamAppId?.toString() ?? gameId,
+                info.title,
+                '',
+                info.coverUrl,
+                Platform.STEAM,
+                info.steamAppId ?? steamAppId ?? null,
+                gameId,
+                0,
+                null,
+            );
+        }
     }
 
     async syncLibrary(userId: string, platform: Platform): Promise<Game[]> {

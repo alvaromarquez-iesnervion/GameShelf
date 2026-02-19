@@ -36,14 +36,34 @@ export class GameRepositoryImpl implements IGameRepository {
     }
 
     async getGameById(gameId: string): Promise<Game> {
-        // gameId tiene el formato "{userId}_{appId}" o es el docId directo en Firestore.
-        // La implementación asume que se llama después de saber el userId desde el VM.
-        // El VM pasa el ID tal cual está en la colección library del usuario.
         const snap = await getDoc(doc(this.firestore, 'games', gameId));
         if (!snap.exists()) {
             throw new Error(`Juego ${gameId} no encontrado en Firestore`);
         }
         return FirestoreGameMapper.toDomain(snap.id, snap.data());
+    }
+
+    async getOrCreateGameById(gameId: string, steamAppId?: number | null): Promise<Game> {
+        try {
+            return await this.getGameById(gameId);
+        } catch {
+            const info = await this.itadService.getGameInfo(gameId);
+            if (!info) {
+                throw new Error(`No se pudo obtener información del juego "${gameId}".`);
+            }
+            
+            return new Game(
+                steamAppId?.toString() ?? gameId,
+                info.title,
+                '',
+                info.coverUrl,
+                Platform.STEAM,
+                info.steamAppId ?? steamAppId ?? null,
+                gameId,
+                0,
+                null,
+            );
+        }
     }
 
     async syncLibrary(userId: string, platform: Platform): Promise<Game[]> {

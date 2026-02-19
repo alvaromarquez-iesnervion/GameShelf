@@ -4,9 +4,17 @@ Registro acumulativo de decisiones, cambios y contexto relevante por sesión.
 
 ---
 
-## Estado actual del proyecto (Sesión 8 — Home completo + ITAD fix + Populares)
+## Estado actual del proyecto (Sesión 8 — Home completo + ITAD fix + Populares + Navegación fix)
 
 ### Últimos cambios
+
+- **FIX: Navegación desde resultados de búsqueda ITAD**:
+  - Los resultados de ITAD usan UUIDs propios, no Steam App IDs
+  - Añadido `IIsThereAnyDealService.getGameInfo()` para obtener steamAppId desde ITAD
+  - `SearchResult` ahora incluye `steamAppId` opcional
+  - `searchGames()` enriquece resultados con Steam App ID llamando a `/games/info/v2`
+  - Nuevo método `getOrCreateGameById()` en `IGameRepository` para crear Game desde ITAD si no está en biblioteca
+  - `GameDetailUseCase` puede ahora mostrar detalles de juegos que no están en la biblioteca del usuario
 
 - **NUEVA: Sección "Populares ahora"**:
   - Juegos más jugados globalmente en Steam (no requiere vincular cuenta)

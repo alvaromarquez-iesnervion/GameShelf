@@ -30,16 +30,16 @@ type Route = RouteProp<LibraryStackParamList, 'GameDetail'>;
 
 export const GameDetailScreen: React.FC = observer(() => {
     const route = useRoute<Route>();
-    const { gameId } = route.params;
+    const { gameId, steamAppId } = route.params;
     const authVm = useInjection<AuthViewModel>(TYPES.AuthViewModel);
     const vm = useInjection<GameDetailViewModel>(TYPES.GameDetailViewModel);
     const wishlistVm = useInjection<WishlistViewModel>(TYPES.WishlistViewModel);
     const userId = authVm.currentUser?.getId() ?? '';
 
     useEffect(() => {
-        if (userId) vm.loadGameDetail(gameId, userId);
+        if (userId) vm.loadGameDetail(gameId, userId, steamAppId);
         return () => vm.clear();
-    }, [gameId, userId]);
+    }, [gameId, userId, steamAppId]);
 
     if (vm.isLoading) return <DetailSkeleton />;
     if (vm.errorMessage) return <ErrorMessage message={vm.errorMessage} onRetry={() => vm.loadGameDetail(gameId, userId)} />;
