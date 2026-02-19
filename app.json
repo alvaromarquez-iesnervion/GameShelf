@@ -7,11 +7,7 @@
     "icon": "./assets/images/icon.png",
     "scheme": "gameshelf",
     "userInterfaceStyle": "automatic",
-<<<<<<< HEAD
     "newArchEnabled": false,
-=======
-    "newArchEnabled": true,
->>>>>>> d31ce646312d38eef3c9c27fdb08e33ad660dfbd
     "ios": {
       "supportsTablet": true
     },
@@ -26,18 +22,10 @@
       "predictiveBackGestureEnabled": false
     },
     "web": {
-<<<<<<< HEAD
       "output": "single",
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
-=======
-      "output": "static",
-      "favicon": "./assets/images/favicon.png"
-    },
-    "plugins": [
-      "expo-router",
->>>>>>> d31ce646312d38eef3c9c27fdb08e33ad660dfbd
       [
         "expo-splash-screen",
         {
@@ -49,17 +37,8 @@
             "backgroundColor": "#000000"
           }
         }
-<<<<<<< HEAD
       ],
       "expo-font"
     ]
-=======
-      ]
-    ],
-    "experiments": {
-      "typedRoutes": true,
-      "reactCompiler": true
-    }
->>>>>>> d31ce646312d38eef3c9c27fdb08e33ad660dfbd
   }
 }

@@ -9,6 +9,8 @@ export class Game {
     private platform: Platform;
     private steamAppId: number | null;
     private itadGameId: string | null;
+    private playtime: number;
+    private lastPlayed: Date | null;
 
     constructor(
         id: string,
@@ -18,6 +20,8 @@ export class Game {
         platform: Platform,
         steamAppId: number | null,
         itadGameId: string | null,
+        playtime: number = 0,
+        lastPlayed: Date | null = null,
     ) {
         this.id = id;
         this.title = title;
@@ -26,6 +30,8 @@ export class Game {
         this.platform = platform;
         this.steamAppId = steamAppId;
         this.itadGameId = itadGameId;
+        this.playtime = playtime;
+        this.lastPlayed = lastPlayed;
     }
 
     getId(): string { return this.id; }
@@ -35,7 +41,10 @@ export class Game {
     getPlatform(): Platform { return this.platform; }
     getSteamAppId(): number | null { return this.steamAppId; }
     getItadGameId(): string | null { return this.itadGameId; }
+    getPlaytime(): number { return this.playtime; }
+    getLastPlayed(): Date | null { return this.lastPlayed; }
 
-    // Se actualiza la primera vez que se consulta ITAD para cachear el UUID
     setItadGameId(id: string): void { this.itadGameId = id; }
+    setPlaytime(minutes: number): void { this.playtime = minutes; }
+    setLastPlayed(date: Date | null): void { this.lastPlayed = date; }
 }

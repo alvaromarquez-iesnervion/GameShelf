@@ -32,17 +32,19 @@ GameShelf/
 ## Capas Implementadas
 
 ### ✅ Domain (Completa)
-- **Entidades**: User, Game, LinkedPlatform, WishlistItem, Deal, GameDetail, ProtonDbRating, HltbResult, SearchResult, NotificationPreferences
+- **Entidades**: User, Game (con playtime/lastPlayed), LinkedPlatform, WishlistItem, Deal, GameDetail, ProtonDbRating, HltbResult, SearchResult, NotificationPreferences
 - **DTOs**: GameDetailDTO, UserProfileDTO
 - **Enums**: Platform (STEAM, EPIC_GAMES)
-- **Interfaces**: 5 repositorios, 5 servicios externos
+- **Interfaces**: 5 repositorios, 5 servicios externos, 7 use cases
 
 ### ✅ Data (Completa)
 - **Configuración**: FirebaseConfig, ApiConstants
 - **Mappers**: FirestoreGameMapper, FirestoreWishlistMapper
 - **Repositorios**: Auth, Game, Wishlist, Platform, Notification
-- **Servicios**: Steam API, Epic Games API, ProtonDB, HLTB, IsThereAnyDeal
-- **Mocks**: 12 implementaciones mock con datos de prueba
+- **Servicios**: Steam API (requiere `EXPO_PUBLIC_STEAM_API_KEY`), Epic Games API, ProtonDB (real, activo — sin API key), HLTB (real, activo — sin API key), IsThereAnyDeal
+- **Configuración**: FirebaseConfig, ApiConstants
+- **Mappers**: FirestoreGameMapper, FirestoreWishlistMapper
+- **Mocks**: 12 implementaciones mock con datos de prueba + MockDataProvider con datos semilla
 
 ### ✅ Dependency Injection (Completa)
 - Contenedor Inversify con bindings para todos los repos, servicios, use cases y ViewModels
@@ -50,13 +52,13 @@ GameShelf/
 - Mocks activos por defecto (`EXPO_PUBLIC_USE_MOCKS !== 'false'`)
 
 ### ✅ Presentation (Completa)
-- **7 ViewModels**: Auth, Library, Wishlist, GameDetail, Search, PlatformLink, Settings
-- **10 Screens**: Login, Register, Library, GameDetail, Wishlist, Search, Settings, PlatformLink, NotificationSettings, Profile
+- **8 ViewModels**: Auth, Library, Wishlist, Home, GameDetail, Search, PlatformLink, Settings
+- **10 Screens**: Login, Register, Library, GameDetail, Wishlist, Search (Home), Settings, PlatformLink, NotificationSettings, Profile
 - **Navegación**: React Navigation (NO Expo Router)
   - RootNavigator con Auth/Main tabs
   - Stacks: Auth, Library, Search, Wishlist, Settings
   - Bottom tab navigator con 3 tabs principales
-- **Componentes UI**: Cards, Badges, Skeletons, ErrorMessage, EmptyState, LoadingSpinner
+- **Componentes UI**: Cards, Badges, Skeletons, ErrorMessage, EmptyState, LoadingSpinner, HomeGameCard
 - **Tema**: Modo oscuro con paleta profesional (morado/indigo)
 
 ### ✅ Configuración (Completa)
@@ -89,9 +91,11 @@ GameShelf/
 - [x] Indicador de mejor oferta disponible
 - [x] Refresh pull-to-refresh
 
-### Búsqueda
+### Home / Descubrir
+- [x] Sección "Continúa jugando" (juegos jugados últimas 2 semanas)
+- [x] Sección "Tus más jugados" (top 5 por playtime)
 - [x] Búsqueda en catálogo ITAD
-- [x] Defer search (300ms)
+- [x] Defer search (400ms)
 - [x] Resultados con covers
 - [x] Agregar a wishlist desde resultados
 
@@ -149,13 +153,18 @@ npx expo start
 ```
 
 ### Por defecto (Mocks)
-La aplicación usa datos mock por defecto (`EXPO_PUBLIC_USE_MOCKS` no es `'false'`). Esto permite desarrollar y probar sin configurar Firebase.
+La aplicación usa todos los repositorios y servicios externos (excepto la API de Steam que requiere clave) en modo mock por defecto (`EXPO_PUBLIC_USE_MOCKS` no es `'false'`). Esto permite desarrollar y probar sin configurar Firebase.
 
 ### Usar datos reales
-Para usar implementaciones reales de Firebase:
-1. Configura Firebase en `.env` con tus claves
-2. Cambia `container.ts` para usar implementaciones reales en lugar de mocks
+**Firebase (Auth + Firestore):**
+1. Configura Firebase en `.env` con tus claves (AUTH_CREDENTIALS_BASE64)
+2. En `container.ts`, cambia los bindings de repositorios a implementaciones reales (AuthRepositoryImpl, GameRepositoryImpl, etc.) sustituyendo los mocks
 3. Establece `EXPO_PUBLIC_USE_MOCKS=false` en `.env`
+
+**Steam API (real):**
+1. Añade `EXPO_PUBLIC_STEAM_API_KEY` en `.env`
+2. El contenedor DI configurará SteamApiServiceImpl en modo real (no mock) automáticamente
+3. Las otras APIs (Epic, ProtonDB, HLTB, ITAD) siguen funcionando en modo mock
 
 ---
 

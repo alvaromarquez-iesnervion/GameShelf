@@ -6,10 +6,19 @@ import { Game } from '../../domain/entities/Game';
 import { Platform } from '../../domain/enums/Platform';
 import { STEAM_API_BASE_URL, STEAM_OPENID_URL, STEAM_CDN_BASE, STEAM_API_KEY } from '../config/ApiConstants';
 
-// Tipo de los juegos que devuelve IPlayerService/GetOwnedGames
 interface SteamOwnedGame {
     appid: number;
     name: string;
+    playtime_forever: number;
+    playtime_2weeks?: number;
+    img_icon_url: string;
+    rtime_last_played?: number;
+}
+
+interface SteamRecentGame {
+    appid: number;
+    name: string;
+    playtime_2weeks: number;
     playtime_forever: number;
     img_icon_url: string;
 }
@@ -88,6 +97,22 @@ export class SteamApiServiceImpl implements ISteamApiService {
         return games.map(g => this.mapSteamGameToDomain(g));
     }
 
+    async getRecentlyPlayedGames(steamId: string): Promise<Game[]> {
+        const response = await axios.get(
+            `${STEAM_API_BASE_URL}/IPlayerService/GetRecentlyPlayedGames/v1/`,
+            {
+                params: {
+                    key: STEAM_API_KEY,
+                    steamid: steamId,
+                    count: 0,
+                    format: 'json',
+                },
+            },
+        );
+        const games: SteamRecentGame[] = response.data?.response?.games ?? [];
+        return games.map(g => this.mapRecentGameToDomain(g));
+    }
+
     async checkProfileVisibility(steamId: string): Promise<boolean> {
         const response = await axios.get(
             `${STEAM_API_BASE_URL}/ISteamUser/GetPlayerSummaries/v2/`,
@@ -133,14 +158,36 @@ export class SteamApiServiceImpl implements ISteamApiService {
     // Mapper interno: SteamOwnedGame → Game de dominio
     private mapSteamGameToDomain(steamGame: SteamOwnedGame): Game {
         const appId = steamGame.appid;
+        const lastPlayed = steamGame.rtime_last_played
+            ? new Date(steamGame.rtime_last_played * 1000)
+            : null;
         return new Game(
             appId.toString(),
             steamGame.name,
-            '', // GetOwnedGames no devuelve descripción
+            '',
             `${STEAM_CDN_BASE}/${appId}/header.jpg`,
             Platform.STEAM,
             appId,
-            null, // itadGameId se rellena la primera vez que se consulta ITAD
+            null,
+            steamGame.playtime_forever,
+            lastPlayed,
+        );
+    }
+
+    // Mapper interno: SteamRecentGame → Game de dominio (juegos jugados recientemente)
+    private mapRecentGameToDomain(steamGame: SteamRecentGame): Game {
+        const appId = steamGame.appid;
+        const lastPlayed = new Date();
+        return new Game(
+            appId.toString(),
+            steamGame.name,
+            '',
+            `${STEAM_CDN_BASE}/${appId}/header.jpg`,
+            Platform.STEAM,
+            appId,
+            null,
+            steamGame.playtime_forever,
+            lastPlayed,
         );
     }
 }

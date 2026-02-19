@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { View, FlatList, TextInput, TouchableOpacity, Text, StyleSheet, RefreshControl, Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { observer } from 'mobx-react-lite';
 import { useNavigation } from '@react-navigation/native';
@@ -21,6 +22,7 @@ import { spacing, radius } from '../../theme/spacing';
 type Nav = NativeStackNavigationProp<LibraryStackParamList, 'Library'>;
 
 export const LibraryScreen: React.FC = observer(() => {
+    const insets = useSafeAreaInsets();
     const authVm = useInjection<AuthViewModel>(TYPES.AuthViewModel);
     const vm = useInjection<LibraryViewModel>(TYPES.LibraryViewModel);
     const navigation = useNavigation<Nav>();
@@ -66,7 +68,7 @@ export const LibraryScreen: React.FC = observer(() => {
                 columnWrapperStyle={styles.row}
                 contentContainerStyle={styles.list}
                 ListHeaderComponent={
-                    <View style={styles.header}>
+                    <View style={[styles.header, { paddingTop: insets.top + 44 }]}>
                         <Text style={styles.largeTitle}>Mi Biblioteca</Text>
                         <View style={styles.searchContainer}>
                             <Feather name="search" size={16} color={colors.textTertiary} />
@@ -128,7 +130,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     header: {
-        paddingTop: spacing.xxl,
         paddingHorizontal: spacing.lg,
         paddingBottom: spacing.md,
     },

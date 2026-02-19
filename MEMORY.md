@@ -4,9 +4,55 @@ Registro acumulativo de decisiones, cambios y contexto relevante por sesión.
 
 ---
 
-## Estado actual del proyecto (Sesión 7 — CRASH FIX + Steam API Real)
+## Estado actual del proyecto (Sesión 8 — ProtonDB Real + Home Screen + ITAD Real)
 
 ### Últimos cambios
+
+- **ProtonDB con datos reales ACTIVADO**:
+  - Cambiado binding en `container.ts`: `MockProtonDbService` → `ProtonDbServiceImpl`
+  - La API de ProtonDB no requiere API key, funciona directamente
+  - Solo funciona con juegos de Steam (no Epic)
+
+- **IsThereAnyDeal con datos reales ACTIVADO**:
+  - Añadido `EXPO_PUBLIC_ITAD_API_KEY` en `.env`
+  - Cambiado binding en `container.ts`: `MockIsThereAnyDealService` → `IsThereAnyDealServiceImpl`
+  - `SteamSyncMemoryGameRepository.searchGames()` ahora delega a `IIsThereAnyDealService`
+  - Búsqueda global en catálogo de ~50 tiendas (Steam, Epic, GOG, Humble, etc.)
+
+- **NUEVA funcionalidad Home/Discover**:
+  - `SearchScreen` transformada en pantalla Home con:
+    - Sección "Continúa jugando" (juegos jugados en últimas 2 semanas)
+    - Sección "Tus más jugados" (top 5 por playtime)
+    - Búsqueda global en catálogo ITAD (mantiene funcionalidad anterior)
+  - Nueva entidad `Game` con campos `playtime` (minutos) y `lastPlayed` (Date)
+  - Nuevo `ISteamApiService.getRecentlyPlayedGames()` implementado en `SteamApiServiceImpl`
+  - Nuevo `IHomeUseCase` + `HomeUseCase` para lógica del Home
+  - Nuevo `HomeViewModel` (singleton) para estado del Home
+  - Nuevo componente `HomeGameCard` para secciones horizontales
+
+- **Archivos nuevos**:
+  - `src/domain/interfaces/usecases/home/IHomeUseCase.ts`
+  - `src/domain/usecases/home/HomeUseCase.ts`
+  - `src/presentation/viewmodels/HomeViewModel.ts`
+  - `src/presentation/components/games/HomeGameCard.tsx`
+
+- **Archivos modificados**:
+  - `src/domain/entities/Game.ts` — añadidos `playtime`, `lastPlayed`, getters/setters
+  - `src/domain/interfaces/services/ISteamApiService.ts` — añadido `getRecentlyPlayedGames()`
+  - `src/data/services/SteamApiServiceImpl.ts` — implementado `getRecentlyPlayedGames()`, actualizado mapper
+  - `src/data/mocks/MockSteamApiService.ts` — añadido `getRecentlyPlayedGames()` mock
+  - `src/data/mocks/MockDataProvider.ts` — añadidos `playtime`, `lastPlayed` a juegos, nuevo `MOCK_RECENTLY_PLAYED`
+  - `src/data/repositories/SteamSyncMemoryGameRepository.ts` — inyectado `IIsThereAnyDealService`, `searchGames()` delega a ITAD
+  - `src/di/types.ts` — añadidos `IHomeUseCase`, `HomeViewModel`
+  - `src/di/container.ts` — añadidos bindings, cambiado ProtonDB e ITAD a real
+  - `src/presentation/screens/search/SearchScreen.tsx` — rediseñada como Home
+  - `.env` — añadido `EXPO_PUBLIC_ITAD_API_KEY`
+
+- **TypeScript**: `npx tsc --noEmit` — ✅ 0 errores (solo error en `src/app/` que es scaffold antiguo ignorado)
+
+---
+
+## Estado anterior (Sesión 7 — CRASH FIX + Steam API Real)
 
 - **CRASH `Cannot assign to read-only property 'NONE'` RESUELTO**: 
   - Causa raíz: Incompatibilidad entre `@babel/plugin-transform-class-properties` y Hermes en React Native 0.81

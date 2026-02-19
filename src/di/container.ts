@@ -23,6 +23,7 @@ import { IGameDetailUseCase } from '../domain/interfaces/usecases/games/IGameDet
 import { ISearchUseCase } from '../domain/interfaces/usecases/games/ISearchUseCase';
 import { IPlatformLinkUseCase } from '../domain/interfaces/usecases/platforms/IPlatformLinkUseCase';
 import { ISettingsUseCase } from '../domain/interfaces/usecases/settings/ISettingsUseCase';
+import { IHomeUseCase } from '../domain/interfaces/usecases/home/IHomeUseCase';
 
 // ─── Mocks (fallback cuando no hay API keys configuradas) ────────────────────
 import { MockAuthRepository } from '../data/mocks/MockAuthRepository';
@@ -33,11 +34,14 @@ import { MockNotificationRepository } from '../data/mocks/MockNotificationReposi
 import { MockSteamApiService } from '../data/mocks/MockSteamApiService';
 import { MockEpicGamesApiService } from '../data/mocks/MockEpicGamesApiService';
 import { MockProtonDbService } from '../data/mocks/MockProtonDbService';
-import { MockHowLongToBeatService } from '../data/mocks/MockHowLongToBeatService';
+
 import { MockIsThereAnyDealService } from '../data/mocks/MockIsThereAnyDealService';
 
 // ─── Implementaciones reales (Steam — sin Firebase) ───────────────────────────
 import { SteamApiServiceImpl } from '../data/services/SteamApiServiceImpl';
+import { ProtonDbServiceImpl } from '../data/services/ProtonDbServiceImpl';
+import { HowLongToBeatServiceImpl } from '../data/services/HowLongToBeatServiceImpl';
+import { IsThereAnyDealServiceImpl } from '../data/services/IsThereAnyDealServiceImpl';
 import { MemoryPlatformRepository } from '../data/repositories/MemoryPlatformRepository';
 import { SteamSyncMemoryGameRepository } from '../data/repositories/SteamSyncMemoryGameRepository';
 
@@ -48,6 +52,7 @@ import { GameDetailUseCase } from '../domain/usecases/games/GameDetailUseCase';
 import { SearchUseCase } from '../domain/usecases/games/SearchUseCase';
 import { PlatformLinkUseCase } from '../domain/usecases/platforms/PlatformLinkUseCase';
 import { SettingsUseCase } from '../domain/usecases/settings/SettingsUseCase';
+import { HomeUseCase } from '../domain/usecases/home/HomeUseCase';
 
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -102,12 +107,11 @@ if (useRealSteam) {
     container.bind<IGameRepository>(TYPES.IGameRepository).to(MockGameRepository);
 }
 
-// ─── Servicios externos — mocks por ahora ─────────────────────────────────────
-// TODO: implementar ProtonDbServiceImpl, HowLongToBeatServiceImpl, IsThereAnyDealServiceImpl
+// ─── Servicios externos ───────────────────────────────────────────────────────
 container.bind<IEpicGamesApiService>(TYPES.IEpicGamesApiService).to(MockEpicGamesApiService);
-container.bind<IProtonDbService>(TYPES.IProtonDbService).to(MockProtonDbService);
-container.bind<IHowLongToBeatService>(TYPES.IHowLongToBeatService).to(MockHowLongToBeatService);
-container.bind<IIsThereAnyDealService>(TYPES.IIsThereAnyDealService).to(MockIsThereAnyDealService);
+container.bind<IProtonDbService>(TYPES.IProtonDbService).to(ProtonDbServiceImpl);
+container.bind<IHowLongToBeatService>(TYPES.IHowLongToBeatService).to(HowLongToBeatServiceImpl);
+container.bind<IIsThereAnyDealService>(TYPES.IIsThereAnyDealService).to(IsThereAnyDealServiceImpl);
 
 // ─── Casos de uso (singleton) ─────────────────────────────────────────────────
 container.bind<ILibraryUseCase>(TYPES.ILibraryUseCase).to(LibraryUseCase);
@@ -116,6 +120,7 @@ container.bind<IGameDetailUseCase>(TYPES.IGameDetailUseCase).to(GameDetailUseCas
 container.bind<ISearchUseCase>(TYPES.ISearchUseCase).to(SearchUseCase);
 container.bind<IPlatformLinkUseCase>(TYPES.IPlatformLinkUseCase).to(PlatformLinkUseCase);
 container.bind<ISettingsUseCase>(TYPES.ISettingsUseCase).to(SettingsUseCase);
+container.bind<IHomeUseCase>(TYPES.IHomeUseCase).to(HomeUseCase);
 
 // ─── ViewModels ───────────────────────────────────────────────────────────────
 
@@ -123,10 +128,12 @@ container.bind<ISettingsUseCase>(TYPES.ISettingsUseCase).to(SettingsUseCase);
 import { AuthViewModel } from '../presentation/viewmodels/AuthViewModel';
 import { LibraryViewModel } from '../presentation/viewmodels/LibraryViewModel';
 import { WishlistViewModel } from '../presentation/viewmodels/WishlistViewModel';
+import { HomeViewModel } from '../presentation/viewmodels/HomeViewModel';
 
 container.bind<AuthViewModel>(TYPES.AuthViewModel).to(AuthViewModel).inSingletonScope();
 container.bind<LibraryViewModel>(TYPES.LibraryViewModel).to(LibraryViewModel).inSingletonScope();
 container.bind<WishlistViewModel>(TYPES.WishlistViewModel).to(WishlistViewModel).inSingletonScope();
+container.bind<HomeViewModel>(TYPES.HomeViewModel).to(HomeViewModel).inSingletonScope();
 
 // Transient ViewModels (instancia nueva por pantalla)
 import { GameDetailViewModel } from '../presentation/viewmodels/GameDetailViewModel';

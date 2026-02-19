@@ -29,7 +29,7 @@ domain/
 | Entidad | Descripción | Campos clave |
 |---|---|---|
 | `User` | Usuario autenticado | `id` (UID Firebase), `email`, `displayName` |
-| `Game` | Juego en la biblioteca | `id`, `title`, `coverUrl`, `platform`, `steamAppId` (null si Epic), `itadGameId` (caché UUID de ITAD) |
+| `Game` | Juego en la biblioteca | `id`, `title`, `coverUrl`, `platform`, `steamAppId` (null si Epic), `itadGameId`, `playtime` (minutos), `lastPlayed` (Date \| null) |
 | `Platform` (enum) | Plataforma de origen | `STEAM`, `EPIC_GAMES` |
 | `LinkedPlatform` | Cuenta externa vinculada | `platform`, `externalUserId` (SteamID o "imported"), `linkedAt` |
 | `WishlistItem` | Juego en la wishlist | `id`, `gameId`, `title`, `coverUrl`, `addedAt`, `bestDealPercentage` (null si no hay oferta) |
@@ -73,7 +73,7 @@ Abstraen APIs externas de terceros.
 
 | Interfaz | API real | Notas |
 |---|---|---|
-| `ISteamApiService` | Steam Web API + OpenID 2.0 | `getOpenIdLoginUrl`, `extractSteamIdFromCallback`, `verifyOpenIdResponse`, `getUserGames`, `checkProfileVisibility` |
+| `ISteamApiService` | Steam Web API + OpenID 2.0 | `getOpenIdLoginUrl`, `extractSteamIdFromCallback`, `verifyOpenIdResponse`, `getUserGames`, `getRecentlyPlayedGames`, `checkProfileVisibility` |
 | `IEpicGamesApiService` | Sin API pública | `parseExportedLibrary` (JSON del export GDPR), `searchCatalog` (GraphQL no oficial) |
 | `IProtonDbService` | Endpoint JSON no oficial | `getCompatibilityRating(steamAppId)` → `ProtonDbRating \| null` |
 | `IHowLongToBeatService` | POST interno no oficial | `getGameDuration(gameTitle)` → `HltbResult \| null` |
@@ -93,6 +93,7 @@ Contratos que los ViewModels consumen. Los ViewModels dependen de estas interfac
 | `ISearchUseCase` | `searchGames(query, userId): Promise<SearchResult[]>` |
 | `IPlatformLinkUseCase` | `linkSteam`, `linkEpic`, `unlinkPlatform`, `getLinkedPlatforms`, `getSteamLoginUrl` |
 | `ISettingsUseCase` | `getProfile(userId): Promise<UserProfileDTO>`, `updateNotificationPreferences` |
+| `IHomeUseCase` | `getRecentlyPlayed(userId)`, `getMostPlayed(userId, limit?)`, `searchGames(query, userId)` |
 
 > **Nota**: No existe `IAuthUseCase`. `AuthUseCase` fue eliminado por ser pass-through puro (delegaba 1:1 en `IAuthRepository` sin lógica). `AuthViewModel` depende directamente de `IAuthRepository`.
 
@@ -110,3 +111,4 @@ Contienen la lógica de negocio real. Orquestan repositorios y servicios.
 | `SearchUseCase` | `searchGames`: busca via `IGameRepository` y cruza con `isInWishlist` para marcar el flag |
 | `PlatformLinkUseCase` | Flujos separados: `linkSteam` (OpenID 2.0 → verificar → extraer SteamID → sync), `linkEpic` (parsear JSON → almacenar → marcar flag) |
 | `SettingsUseCase` | `getProfile`: agrega `User` + `LinkedPlatform[]` + `NotificationPreferences` en un `UserProfileDTO` |
+| `HomeUseCase` | `getRecentlyPlayed`: consulta Steam API para juegos jugados en últimas 2 semanas; `getMostPlayed`: ordena biblioteca por playtime |

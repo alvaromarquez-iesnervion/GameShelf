@@ -3,6 +3,7 @@ import { injectable, inject } from 'inversify';
 import { IGameRepository } from '../../domain/interfaces/repositories/IGameRepository';
 import { IPlatformRepository } from '../../domain/interfaces/repositories/IPlatformRepository';
 import { ISteamApiService } from '../../domain/interfaces/services/ISteamApiService';
+import { IIsThereAnyDealService } from '../../domain/interfaces/services/IIsThereAnyDealService';
 import { Game } from '../../domain/entities/Game';
 import { SearchResult } from '../../domain/entities/SearchResult';
 import { Platform } from '../../domain/enums/Platform';
@@ -34,6 +35,8 @@ export class SteamSyncMemoryGameRepository implements IGameRepository {
         private readonly steamService: ISteamApiService,
         @inject(TYPES.IPlatformRepository)
         private readonly platformRepository: IPlatformRepository,
+        @inject(TYPES.IIsThereAnyDealService)
+        private readonly itadService: IIsThereAnyDealService,
     ) {}
 
     async getLibraryGames(userId: string): Promise<Game[]> {
@@ -74,17 +77,6 @@ export class SteamSyncMemoryGameRepository implements IGameRepository {
 
     async searchGames(query: string): Promise<SearchResult[]> {
         if (!query.trim()) return [];
-        const lower = query.toLowerCase();
-
-        // Construir conjunto único de todos los juegos conocidos
-        const allGames: Game[] = [];
-        for (const games of this.gamesByUser.values()) {
-            allGames.push(...games);
-        }
-        const unique = [...new Map(allGames.map(g => [g.getId(), g])).values()];
-
-        return unique
-            .filter(g => g.getTitle().toLowerCase().includes(lower))
-            .map(g => new SearchResult(g.getId(), g.getTitle(), g.getCoverUrl(), false));
+        return this.itadService.searchGames(query);
     }
 }

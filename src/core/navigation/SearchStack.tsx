@@ -16,7 +16,7 @@ export const SearchStack: React.FC = () => {
                 headerTransparent: true,
                 headerBackground: () => (
                     Platform.OS === 'ios' ? (
-                        <BlurView intensity={80} tint="dark" style={StyleSheet.absoluteFill} />
+                        <BlurView intensity={60} tint="dark" style={StyleSheet.absoluteFill} />
                     ) : null
                 ),
                 headerStyle: {

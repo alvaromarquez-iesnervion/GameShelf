@@ -12,6 +12,7 @@ Regla: esta capa conoce `domain/` (implementa sus interfaces) pero `domain/` no 
 
 ```
 data/
+├── mocks/         # Implementaciones mock con datos semilla
 ├── repositories/  # Implementaciones de IXRepository (Firebase/Firestore)
 ├── services/      # Implementaciones de IXService (APIs externas, Axios)
 ├── mappers/       # Transformaciones Firestore ↔ entidades de dominio
@@ -62,9 +63,10 @@ Implementan las interfaces de `domain/interfaces/services/`. Cada servicio encap
 
 - **Auth**: OpenID 2.0 (NO es OAuth2). No hay token que almacenar, solo el SteamID.
 - **Biblioteca**: `GET IPlayerService/GetOwnedGames/v1/?key={API_KEY}&steamid={id}&include_appinfo=1`
+- **Recientes**: `GET IPlayerService/GetRecentlyPlayedGames/v1/?key={API_KEY}&steamid={id}` → juegos jugados últimas 2 semanas
 - **Portadas**: `https://steamcdn-a.akamaihd.net/steam/apps/{appid}/header.jpg`
 - **Perfil público**: `GET ISteamUser/GetPlayerSummaries/v2/` → `communityvisibilitystate === 3`. Si el perfil es privado, `GetOwnedGames` devuelve vacío — la app debe avisar al usuario.
-- **Mapper interno** (`mapSteamGameToDomain`): método privado dentro de la clase.
+- **Mapper interno** (`mapSteamGameToDomain`): método privado dentro de la clase. Incluye `playtime_forever` y `rtime_last_played`.
 
 ### `EpicGamesApiServiceImpl`
 
@@ -82,8 +84,11 @@ Implementan las interfaces de `domain/interfaces/services/`. Cada servicio encap
 
 ### `HowLongToBeatServiceImpl`
 
-- **Endpoint**: `POST https://howlongtobeat.com/api/search`
-- **Body**: `{ searchType: "games", searchTerms: title.split(' '), searchPage: 1, size: 5, searchOptions: {...} }`
+- **Flujo con token** (la URL `/api/search` ya no existe — da 404):
+  1. `GET /api/finder/init?t={timestamp}` → `{ token: string }` — token de sesión.
+  2. `POST /api/finder` con header `x-auth-token: {token}` → `{ data: HltbGameEntry[] }`.
+  - Si el token expira (403), se renueva automáticamente y se reintenta.
+- **Body del POST**: `{ searchType: "games", searchTerms: title.split(' '), searchPage: 1, size: 5, searchOptions: {...}, useCache: true }`
 - **Respuesta**: `response.data.data[0]` → campos `comp_main`, `comp_plus`, `comp_100` en **segundos** → dividir entre 3600 para obtener horas.
 - **No usar** la librería npm `howlongtobeat` — depende de módulos Node.js (`events`, `stream`, `buffer`) incompatibles con el runtime de React Native (Hermes/JSC).
 
@@ -118,6 +123,6 @@ Los mappers de APIs externas (Steam, Epic, ITAD) son métodos privados dentro de
 | Archivo | Contenido |
 |---|---|
 | `FirebaseConfig.ts` | `initializeFirebase()`, `getFirestoreInstance()`, `getAuthInstance()`. Se llama desde `App.tsx`. |
-| `ApiConstants.ts` | URLs base y API keys (los valores sensibles vienen de `.env`). Incluye: `STEAM_API_BASE_URL`, `STEAM_CDN_BASE`, `EPIC_GRAPHQL_URL`, `PROTONDB_API_URL`, `ITAD_API_BASE_URL`, `HLTB_SEARCH_URL`. |
+| `ApiConstants.ts` | URLs base y API keys (los valores sensibles vienen de `.env`). Incluye: `STEAM_API_BASE_URL`, `STEAM_CDN_BASE`, `EPIC_GRAPHQL_URL`, `PROTONDB_API_URL`, `ITAD_API_BASE_URL`, `HLTB_INIT_URL`, `HLTB_SEARCH_URL`. |
 
 > Las API keys nunca se hardcodean. Se leen desde `.env` (ver `.env.example` en la raíz).

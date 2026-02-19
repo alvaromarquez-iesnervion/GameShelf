@@ -11,7 +11,6 @@
     }
   },
   "include": [
-<<<<<<< HEAD
     "index.ts",
     "src/**/*.ts",
     "src/**/*.tsx"
@@ -19,11 +18,5 @@
   "exclude": [
     "app-example",
     "node_modules"
-=======
-    "**/*.ts",
-    "**/*.tsx",
-    ".expo/types/**/*.ts",
-    "expo-env.d.ts"
->>>>>>> d31ce646312d38eef3c9c27fdb08e33ad660dfbd
   ]
 }

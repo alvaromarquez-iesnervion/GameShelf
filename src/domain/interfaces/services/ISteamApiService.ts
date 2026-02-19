@@ -18,8 +18,10 @@ export interface ISteamApiService {
     extractSteamIdFromCallback(callbackUrl: string): string;
     /** POST check_authentication a Steam para verificar la respuesta OpenID. */
     verifyOpenIdResponse(params: Record<string, string>): Promise<boolean>;
-    /** GET IPlayerService/GetOwnedGames/v1 → biblioteca del usuario. */
+    /** GET IPlayerService/GetOwnedGames/v1 → biblioteca del usuario con playtime. */
     getUserGames(steamId: string): Promise<Game[]>;
+    /** GET IPlayerService/GetRecentlyPlayedGames/v1 → juegos jugados en las últimas 2 semanas. */
+    getRecentlyPlayedGames(steamId: string): Promise<Game[]>;
     /** GET ISteamUser/GetPlayerSummaries/v2 → comprueba communityvisibilitystate === 3. */
     checkProfileVisibility(steamId: string): Promise<boolean>;
     /**

@@ -22,8 +22,11 @@ export const PROTONDB_API_URL = 'https://www.protondb.com/api/v1/reports/summari
 export const ITAD_API_BASE_URL = 'https://api.isthereanydeal.com';
 export const ITAD_API_KEY = process.env.EXPO_PUBLIC_ITAD_API_KEY ?? '';
 
-// HowLongToBeat (POST directo al endpoint interno — no usar librería npm howlongtobeat)
-export const HLTB_SEARCH_URL = 'https://howlongtobeat.com/api/search';
+// HowLongToBeat (flujo con token — no usar librería npm howlongtobeat)
+// 1. GET /api/finder/init?t={timestamp}  → { token: string }
+// 2. POST /api/finder con header x-auth-token: {token}
+export const HLTB_INIT_URL = 'https://howlongtobeat.com/api/finder/init';
+export const HLTB_SEARCH_URL = 'https://howlongtobeat.com/api/finder';
 
 // Headers de navegador requeridos por ProtonDB y HLTB para no ser bloqueados
 export const BROWSER_HEADERS = {

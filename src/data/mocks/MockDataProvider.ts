@@ -46,6 +46,8 @@ export const MOCK_STEAM_GAMES: Game[] = [
         Platform.STEAM,
         1245620,
         'itad-elden-ring-uuid',
+        3420,
+        new Date('2024-02-15T20:00:00Z'),
     ),
     new Game(
         '1091500',
@@ -55,6 +57,8 @@ export const MOCK_STEAM_GAMES: Game[] = [
         Platform.STEAM,
         1091500,
         'itad-cyberpunk-uuid',
+        4890,
+        new Date('2024-02-10T18:30:00Z'),
     ),
     new Game(
         '1145360',
@@ -64,6 +68,8 @@ export const MOCK_STEAM_GAMES: Game[] = [
         Platform.STEAM,
         1145360,
         'itad-hades-uuid',
+        2840,
+        new Date('2024-02-18T22:00:00Z'),
     ),
     new Game(
         '1086940',
@@ -73,6 +79,8 @@ export const MOCK_STEAM_GAMES: Game[] = [
         Platform.STEAM,
         1086940,
         'itad-bg3-uuid',
+        8920,
+        new Date('2024-02-17T15:00:00Z'),
     ),
     new Game(
         '367520',
@@ -82,6 +90,8 @@ export const MOCK_STEAM_GAMES: Game[] = [
         Platform.STEAM,
         367520,
         'itad-hollow-knight-uuid',
+        1560,
+        new Date('2024-01-20T12:00:00Z'),
     ),
     new Game(
         '413150',
@@ -91,6 +101,46 @@ export const MOCK_STEAM_GAMES: Game[] = [
         Platform.STEAM,
         413150,
         'itad-stardew-uuid',
+        5280,
+        new Date('2024-02-14T10:00:00Z'),
+    ),
+];
+
+// ─── Juegos jugados recientemente (últimas 2 semanas) ──────────────────────────
+
+export const MOCK_RECENTLY_PLAYED: Game[] = [
+    new Game(
+        '1145360',
+        'Hades',
+        'Roguelike de acción en el que juegas como el hijo inmortal del dios del Inframundo intentando escapar del reino de los muertos.',
+        steamCover(1145360),
+        Platform.STEAM,
+        1145360,
+        'itad-hades-uuid',
+        2840,
+        new Date(),
+    ),
+    new Game(
+        '1086940',
+        "Baldur's Gate 3",
+        'RPG por turnos basado en Dungeons & Dragons. Liderado por Larian Studios con una narrativa profunda y combate táctico.',
+        steamCover(1086940),
+        Platform.STEAM,
+        1086940,
+        'itad-bg3-uuid',
+        8920,
+        new Date(),
+    ),
+    new Game(
+        '1245620',
+        'Elden Ring',
+        'Un colosal RPG de acción ambientado en las Tierras Intermedias. Desarrollado por FromSoftware y George R.R. Martin.',
+        steamCover(1245620),
+        Platform.STEAM,
+        1245620,
+        'itad-elden-ring-uuid',
+        3420,
+        new Date(),
     ),
 ];
 

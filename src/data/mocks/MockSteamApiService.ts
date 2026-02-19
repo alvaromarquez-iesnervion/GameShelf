@@ -2,7 +2,7 @@ import 'reflect-metadata';
 import { injectable } from 'inversify';
 import { ISteamApiService } from '../../domain/interfaces/services/ISteamApiService';
 import { Game } from '../../domain/entities/Game';
-import { MOCK_STEAM_GAMES, simulateDelay } from './MockDataProvider';
+import { MOCK_STEAM_GAMES, MOCK_RECENTLY_PLAYED, simulateDelay } from './MockDataProvider';
 
 /**
  * Mock de ISteamApiService.
@@ -11,45 +11,47 @@ import { MOCK_STEAM_GAMES, simulateDelay } from './MockDataProvider';
  *   - getOpenIdLoginUrl: devuelve una URL de ejemplo (no funcional)
  *   - extractSteamIdFromCallback: extrae el ID del MOCK_USER
  *   - verifyOpenIdResponse: siempre válido
- *   - getUserGames: devuelve MOCK_STEAM_GAMES
+ *   - getUserGames: devuelve MOCK_STEAM_GAMES con playtime
+ *   - getRecentlyPlayedGames: devuelve MOCK_RECENTLY_PLAYED
  *   - checkProfileVisibility: siempre público
  */
 @injectable()
 export class MockSteamApiService implements ISteamApiService {
 
     getOpenIdLoginUrl(returnUrl: string): string {
-        // URL de ejemplo que simula la estructura OpenID real
         return `https://steamcommunity.com/openid/login?openid.mode=checkid_setup&openid.return_to=${encodeURIComponent(returnUrl)}&mock=true`;
     }
 
     extractSteamIdFromCallback(_callbackUrl: string): string {
-        // Devuelve el SteamID del usuario mock
         return '76561198000000001';
     }
 
     async verifyOpenIdResponse(_params: Record<string, string>): Promise<boolean> {
         await simulateDelay(300);
-        return true; // siempre válido en mock
+        return true;
     }
 
     async getUserGames(_steamId: string): Promise<Game[]> {
-        await simulateDelay(1200); // simula llamada a API lenta
+        await simulateDelay(1200);
         return [...MOCK_STEAM_GAMES];
+    }
+
+    async getRecentlyPlayedGames(_steamId: string): Promise<Game[]> {
+        await simulateDelay(800);
+        return [...MOCK_RECENTLY_PLAYED];
     }
 
     async checkProfileVisibility(_steamId: string): Promise<boolean> {
         await simulateDelay(300);
-        return true; // perfil siempre público en mock
+        return true;
     }
 
     async resolveSteamId(profileUrlOrId: string): Promise<string> {
         await simulateDelay(400);
         const input = profileUrlOrId.trim();
-        // Extraer SteamID si se pasa uno real de 17 dígitos
         if (/^\d{17}$/.test(input)) return input;
         const profilesMatch = input.match(/\/profiles\/(\d{17})/);
         if (profilesMatch) return profilesMatch[1];
-        // Para vanity names o cualquier otra cosa, devolver el SteamID mock
         return '76561198000000001';
     }
 }

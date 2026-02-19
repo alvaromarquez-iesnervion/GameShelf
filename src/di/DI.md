@@ -44,6 +44,7 @@ Casos de uso (singleton)
   ISearchUseCase          → SearchUseCase
   IPlatformLinkUseCase    → PlatformLinkUseCase
   ISettingsUseCase        → SettingsUseCase
+  IHomeUseCase            → HomeUseCase
 
 ViewModels (ver tabla singleton/transient más abajo)
 ```
@@ -87,6 +88,7 @@ export const TYPES = {
 | `AuthViewModel` | **SINGLETON** | Estado de auth global. `RootNavigator` lo observa constantemente |
 | `LibraryViewModel` | **SINGLETON** | Biblioteca compartida entre tabs. Evita recargas al navegar |
 | `WishlistViewModel` | **SINGLETON** | Se lee desde 3 pantallas (WishlistScreen, SearchScreen, GameDetailScreen) |
+| `HomeViewModel` | **SINGLETON** | Datos del Home (recientes, más jugados) compartidos globalmente |
 | `GameDetailViewModel` | **TRANSIENT** | Cada pantalla de detalle es independiente |
 | `SearchViewModel` | **TRANSIENT** | Cada búsqueda parte desde cero |
 | `PlatformLinkViewModel` | **TRANSIENT** | Solo activo en la pantalla de vinculación |
@@ -109,28 +111,33 @@ const authVm = useInjection<AuthViewModel>(TYPES.AuthViewModel);
 
 ---
 
-## Configuración requerida
+## Configuración crítica
 
-Inversify usa decoradores (`@injectable`, `@inject`) y `reflect-metadata`. Sin esta configuración, el contenedor no funciona:
+### React Navigation + Hermes
+- `react-native-gesture-handler`: versión >= 2.20.0
+- `react-native-reanimated`: versión >= 3.10.0
+- En `babel.config.js`: usar `@babel/plugin-proposal-decorators` con `legacy: true`
+- En `index.ts`: `import 'reflect-metadata'` debe ser el **primer import** (no en `App.tsx`)
 
-**`tsconfig.json`**:
-```json
-{
-  "compilerOptions": {
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true
-  }
-}
-```
+### Inversify + Módulos ES
+- `babel.config.js` plugins:
+  - `'babel-plugin-transform-typescript-metadata'`
+  - `['@babel/plugin-proposal-decorators', { legacy: true }]`
 
-**`babel.config.js`** (plugins adicionales al preset de Expo):
-```js
-['@babel/plugin-proposal-decorators', { legacy: true }],
-'babel-plugin-transform-typescript-metadata',
-['@babel/plugin-transform-class-properties', { loose: true }]
-```
+### Mocks activados por defecto
+**`EXPO_PUBLIC_USE_MOCKS !== 'false'`**:
+- Todos los repositorios y servicios (incluidos Steam excepto API real) usan implementaciones mock.
 
-**`App.tsx`** (primera línea del archivo):
-```ts
-import 'reflect-metadata';
-```
+**`EXPO_PUBLIC_USE_MOCKS === 'false'`**:
+- Repositorios: enlazados a implementaciones reales de Firebase (AuthRepositoryImpl, GameRepositoryImpl, etc.)
+
+**Steam API en modo real**:
+- Requiere `EXPO_PUBLIC_STEAM_API_KEY` en `.env`
+- El contenedor DI activa SteamApiServiceImpl en lugar del mock automáticamente.
+
+**ProtonDB y HLTB**: Siempre usan implementaciones reales (no requieren API key).
+
+### Firebase Config
+- `FirebaseConfig.ts` y `ApiConstants.ts` existen en `data/config/`
+- `initializeFirebase()` se llama desde `App.tsx` cuando usas Firebase real
+- Los repositorios pueden estar enlazados al mock o a las implementaciones reales según `.env`

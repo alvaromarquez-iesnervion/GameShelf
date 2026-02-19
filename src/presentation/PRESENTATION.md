@@ -64,6 +64,7 @@ class LibraryViewModel {
 | `AuthViewModel` | Singleton | `currentUser`, `isAuthenticated` (computed), `isLoading`, `errorMessage` | `login`, `register`, `logout`, `checkAuthState`, `deleteAccount`, `clearError` |
 | `LibraryViewModel` | Singleton | `games`, `filteredGames`, `linkedPlatforms`, `isLoading`, `isSyncing`, `searchQuery` | `loadLibrary`, `syncLibrary`, `searchInLibrary`, `clearSearch` |
 | `WishlistViewModel` | Singleton | `items`, `isLoading`, `errorMessage` | `loadWishlist`, `addToWishlist`, `removeFromWishlist` |
+| `HomeViewModel` | Singleton | `recentlyPlayed`, `mostPlayed`, `searchResults`, `searchQuery`, `isLoadingHome`, `isSearching` | `loadHomeData`, `search`, `clearSearch` |
 | `GameDetailViewModel` | Transient | `gameDetail` (GameDetailDTO), `isLoading`, `errorMessage` | `loadGameDetail`, `clear` |
 | `SearchViewModel` | Transient | `results`, `query`, `isLoading`, `errorMessage` | `search`, `clearResults` |
 | `PlatformLinkViewModel` | Transient | `linkedPlatforms`, `isLinking`, `errorMessage` | `loadLinkedPlatforms`, `linkSteam`, `linkEpic`, `unlinkPlatform`, `getSteamLoginUrl` |
@@ -103,7 +104,7 @@ const LibraryScreen = observer(() => {
 | `auth/LoginScreen` | `AuthViewModel` | UC2 Login |
 | `auth/RegisterScreen` | `AuthViewModel` | UC1 Registro |
 | `library/LibraryScreen` | `LibraryViewModel` | UC6, UC7, UC8 |
-| `search/SearchScreen` | `SearchViewModel` + `WishlistViewModel` | UC9, UC10 |
+| `search/SearchScreen` | `HomeViewModel` + `WishlistViewModel` | UC9, UC10, Home (recientes, más jugados) |
 | `wishlist/WishlistScreen` | `WishlistViewModel` | UC11, UC12 |
 | `detail/GameDetailScreen` | `GameDetailViewModel` + `WishlistViewModel` | UC14 |
 | `settings/SettingsScreen` | `SettingsViewModel` + `AuthViewModel` | — |
@@ -122,6 +123,7 @@ Componentes funcionales **puros**: reciben datos por props y no acceden a ViewMo
 | `GameCard` | `coverUrl`, `title`, `platform?`, `onPress` | Biblioteca (FlatList) |
 | `WishlistGameCard` | `coverUrl`, `title`, `discountPercentage?`, `onPress`, `onRemove` | Wishlist |
 | `SearchResultCard` | `coverUrl`, `title`, `isInWishlist`, `onPress`, `onToggleWishlist` | Búsqueda |
+| `HomeGameCard` | `coverUrl`, `title`, `subtitle?`, `size?`, `onPress` | Home (secciones horizontales) |
 | `DealCard` | `storeName`, `price`, `originalPrice`, `discountPercentage`, `onPress` | Detalle de juego |
 | `PlatformBadge` | `platform: Platform` | Icono Steam / Epic Games |
 | `ProtonDbBadge` | `rating: string \| null` | Rating ProtonDB (platinum/gold/silver/bronze/borked) |

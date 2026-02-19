@@ -28,6 +28,7 @@ export const TYPES = {
     ISearchUseCase: Symbol.for('ISearchUseCase'),
     IPlatformLinkUseCase: Symbol.for('IPlatformLinkUseCase'),
     ISettingsUseCase: Symbol.for('ISettingsUseCase'),
+    IHomeUseCase: Symbol.for('IHomeUseCase'),
 
     // ViewModels
     AuthViewModel: Symbol.for('AuthViewModel'),
@@ -37,4 +38,5 @@ export const TYPES = {
     SearchViewModel: Symbol.for('SearchViewModel'),
     PlatformLinkViewModel: Symbol.for('PlatformLinkViewModel'),
     SettingsViewModel: Symbol.for('SettingsViewModel'),
+    HomeViewModel: Symbol.for('HomeViewModel'),
 };
