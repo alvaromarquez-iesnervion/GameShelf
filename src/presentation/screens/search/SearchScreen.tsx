@@ -3,7 +3,7 @@ import { View, FlatList, TextInput, StyleSheet, Platform, Text, ScrollView, Touc
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { observer } from 'mobx-react-lite';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as Haptics from 'expo-haptics';
 import { useInjection } from '../../../di/hooks/useInjection';
@@ -42,9 +42,11 @@ export const SearchScreen: React.FC = observer(() => {
     const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const [inputText, setInputText] = useState('');
 
-    useEffect(() => {
-        if (userId) vm.loadHomeData(userId);
-    }, [userId]);
+    useFocusEffect(
+        useCallback(() => {
+            if (userId) vm.loadHomeData(userId);
+        }, [userId, vm]),
+    );
 
     const handleSearch = useCallback((text: string) => {
         setInputText(text);
@@ -86,7 +88,27 @@ export const SearchScreen: React.FC = observer(() => {
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
         >
-            {vm.recentlyPlayed.length > 0 && (
+            {vm.popularGames.length > 0 && (
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>Populares ahora</Text>
+                    <ScrollView 
+                        horizontal 
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={styles.horizontalList}
+                    >
+                        {vm.popularGames.map((game) => (
+                            <HomeGameCard
+                                key={game.getId()}
+                                coverUrl={game.getCoverUrl()}
+                                title={game.getTitle()}
+                                onPress={() => navigation.navigate('GameDetail', { gameId: game.getId() })}
+                            />
+                        ))}
+                    </ScrollView>
+                </View>
+            )}
+
+            {vm.recentlyPlayed.length > 0 ? (
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>Continúa jugando</Text>
                     <ScrollView 
@@ -105,9 +127,17 @@ export const SearchScreen: React.FC = observer(() => {
                         ))}
                     </ScrollView>
                 </View>
+            ) : (
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>Continúa jugando</Text>
+                    <View style={styles.emptySection}>
+                        <Feather name="link" size={20} color={colors.textTertiary} />
+                        <Text style={styles.emptySectionText}>Vincula Steam para ver tus juegos recientes</Text>
+                    </View>
+                </View>
             )}
 
-            {vm.mostPlayed.length > 0 && (
+            {vm.mostPlayed.length > 0 ? (
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>Tus más jugados</Text>
                     <ScrollView 
@@ -127,14 +157,18 @@ export const SearchScreen: React.FC = observer(() => {
                         ))}
                     </ScrollView>
                 </View>
+            ) : (
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>Tus más jugados</Text>
+                    <View style={styles.emptySection}>
+                        <Feather name="clock" size={20} color={colors.textTertiary} />
+                        <Text style={styles.emptySectionText}>Vincula Steam para ver tus estadísticas</Text>
+                    </View>
+                </View>
             )}
 
-            {vm.recentlyPlayed.length === 0 && vm.mostPlayed.length === 0 && !vm.isLoadingHome && (
+            {vm.recentlyPlayed.length === 0 && vm.mostPlayed.length === 0 && (
                 <View style={styles.emptyHome}>
-                    <EmptyState 
-                        message="Vincula Steam para ver tus estadísticas de juego" 
-                        icon="link" 
-                    />
                     <TouchableOpacity 
                         style={styles.linkButton}
                         onPress={() => navigation.getParent()?.navigate('SettingsTab' as never)}
@@ -256,6 +290,20 @@ const styles = StyleSheet.create({
     },
     emptyContainer: {
         marginTop: 100,
+    },
+    emptySection: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: colors.surface,
+        marginHorizontal: spacing.lg,
+        padding: spacing.md,
+        borderRadius: radius.lg,
+        gap: spacing.sm,
+    },
+    emptySectionText: {
+        ...typography.bodySecondary,
+        color: colors.textTertiary,
+        flex: 1,
     },
     emptyHome: {
         marginTop: 60,

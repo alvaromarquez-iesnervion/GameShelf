@@ -24,6 +24,14 @@ export class HomeUseCase implements IHomeUseCase {
         private readonly steamService: ISteamApiService,
     ) {}
 
+    async getPopularGames(limit: number = 10): Promise<Game[]> {
+        try {
+            return await this.steamService.getMostPlayedGames(limit);
+        } catch {
+            return [];
+        }
+    }
+
     async getRecentlyPlayed(userId: string): Promise<Game[]> {
         const platforms = await this.platformRepository.getLinkedPlatforms(userId);
         const steamPlatform = platforms.find(p => p.getPlatform() === Platform.STEAM);

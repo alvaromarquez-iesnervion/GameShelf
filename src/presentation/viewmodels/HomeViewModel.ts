@@ -8,6 +8,7 @@ import { TYPES } from '../../di/types';
 
 @injectable()
 export class HomeViewModel {
+    private _popularGames: Game[] = [];
     private _recentlyPlayed: Game[] = [];
     private _mostPlayed: Game[] = [];
     private _searchResults: SearchResult[] = [];
@@ -23,6 +24,7 @@ export class HomeViewModel {
         makeAutoObservable(this);
     }
 
+    get popularGames(): Game[] { return this._popularGames; }
     get recentlyPlayed(): Game[] { return this._recentlyPlayed; }
     get mostPlayed(): Game[] { return this._mostPlayed; }
     get searchResults(): SearchResult[] { return this._searchResults; }
@@ -38,11 +40,13 @@ export class HomeViewModel {
         });
 
         try {
-            const [recent, mostPlayed] = await Promise.all([
+            const [popular, recent, mostPlayed] = await Promise.all([
+                this.homeUseCase.getPopularGames(10),
                 this.homeUseCase.getRecentlyPlayed(userId),
                 this.homeUseCase.getMostPlayed(userId, 5),
             ]);
             runInAction(() => {
+                this._popularGames = popular;
                 this._recentlyPlayed = recent;
                 this._mostPlayed = mostPlayed;
             });
@@ -54,6 +58,17 @@ export class HomeViewModel {
             runInAction(() => {
                 this._isLoadingHome = false;
             });
+        }
+    }
+
+    async loadPopularGames(): Promise<void> {
+        try {
+            const popular = await this.homeUseCase.getPopularGames(10);
+            runInAction(() => {
+                this._popularGames = popular;
+            });
+        } catch {
+            // Silent fail for popular games
         }
     }
 

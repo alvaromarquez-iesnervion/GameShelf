@@ -23,6 +23,22 @@ interface SteamRecentGame {
     img_icon_url: string;
 }
 
+interface SteamChartsGame {
+    rank: number;
+    appid: number;
+    last_week_rank: number;
+    peak_in_game: number;
+}
+
+interface SteamAppDetails {
+    success: boolean;
+    data?: {
+        name: string;
+        header_image: string;
+        short_description: string;
+    };
+}
+
 /**
  * Steam usa OpenID 2.0, NO OAuth2. No hay token de usuario que guardar.
  * Solo necesitamos el SteamID del usuario + nuestra API Key de desarrollador.
@@ -111,6 +127,60 @@ export class SteamApiServiceImpl implements ISteamApiService {
         );
         const games: SteamRecentGame[] = response.data?.response?.games ?? [];
         return games.map(g => this.mapRecentGameToDomain(g));
+    }
+
+    async getMostPlayedGames(limit: number = 10): Promise<Game[]> {
+        const chartsResponse = await axios.get(
+            `${STEAM_API_BASE_URL}/ISteamChartsService/GetMostPlayedGames/v1/`,
+            {
+                params: {
+                    key: STEAM_API_KEY,
+                },
+            },
+        );
+        
+        const ranks: SteamChartsGame[] = chartsResponse.data?.response?.ranks ?? [];
+        const topGames = ranks.slice(0, limit);
+        
+        if (topGames.length === 0) return [];
+        
+        const gameDetailsPromises = topGames.map(async (chart) => {
+            try {
+                const detailsResponse = await axios.get(
+                    'https://store.steampowered.com/api/appdetails',
+                    { params: { appids: chart.appid } },
+                );
+                const details: SteamAppDetails = detailsResponse.data?.[chart.appid];
+                if (!details?.success || !details.data) return null;
+                
+                return new Game(
+                    chart.appid.toString(),
+                    details.data.name,
+                    details.data.short_description ?? '',
+                    details.data.header_image,
+                    Platform.STEAM,
+                    chart.appid,
+                    null,
+                    0,
+                    null,
+                );
+            } catch {
+                return new Game(
+                    chart.appid.toString(),
+                    `Game ${chart.appid}`,
+                    '',
+                    `${STEAM_CDN_BASE}/${chart.appid}/header.jpg`,
+                    Platform.STEAM,
+                    chart.appid,
+                    null,
+                    0,
+                    null,
+                );
+            }
+        });
+        
+        const games = await Promise.all(gameDetailsPromises);
+        return games.filter((g): g is Game => g !== null);
     }
 
     async checkProfileVisibility(steamId: string): Promise<boolean> {

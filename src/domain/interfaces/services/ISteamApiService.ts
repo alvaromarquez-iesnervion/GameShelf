@@ -22,6 +22,8 @@ export interface ISteamApiService {
     getUserGames(steamId: string): Promise<Game[]>;
     /** GET IPlayerService/GetRecentlyPlayedGames/v1 → juegos jugados en las últimas 2 semanas. */
     getRecentlyPlayedGames(steamId: string): Promise<Game[]>;
+    /** GET ISteamChartsService/GetMostPlayedGames/v1 → juegos más jugados globalmente (no requiere usuario). */
+    getMostPlayedGames(limit?: number): Promise<Game[]>;
     /** GET ISteamUser/GetPlayerSummaries/v2 → comprueba communityvisibilitystate === 3. */
     checkProfileVisibility(steamId: string): Promise<boolean>;
     /**

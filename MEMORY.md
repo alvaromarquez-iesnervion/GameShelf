@@ -4,11 +4,48 @@ Registro acumulativo de decisiones, cambios y contexto relevante por sesión.
 
 ---
 
-## Estado actual del proyecto (Sesión 8 — ProtonDB Real + Home Screen + ITAD Real)
+## Estado actual del proyecto (Sesión 8 — Home completo + ITAD fix + Populares)
 
 ### Últimos cambios
 
-- **FIX: Input de búsqueda lento**:
+- **NUEVA: Sección "Populares ahora"**:
+  - Juegos más jugados globalmente en Steam (no requiere vincular cuenta)
+  - `ISteamApiService.getMostPlayedGames()` implementado en `SteamApiServiceImpl`
+  - Usa `ISteamChartsService/GetMostPlayedGames/v1` + `store.steampowered.com/api/appdetails`
+  - Nueva sección siempre visible en Home
+
+- **FIX: ITAD API key corregida**:
+  - API key anterior devolvía 403 Forbidden
+  - Nueva key: `5d398f72eb9e7b3779672437f2d6f82e1d9c883f`
+  - Búsqueda en ITAD ahora funciona correctamente
+
+- **FIX: Home se recarga tras vincular Steam**:
+  - Cambiado `useEffect` a `useFocusEffect` en `SearchScreen`
+  - Los datos se actualizan cada vez que la pantalla obtiene el foco
+  - Vincular Steam → volver a Home → datos actualizados
+
+- **FIX: Empty states por sección**:
+  - Cada sección muestra su propio empty state
+  - "Continúa jugando": mensaje de vincular Steam si no hay datos
+  - "Tus más jugados": mensaje de vincular Steam si no hay datos
+  - Botón "Vincular Steam" al final si no hay ninguna plataforma vinculada
+
+- **Archivos modificados**:
+  - `.env` — actualizado `EXPO_PUBLIC_ITAD_API_KEY`
+  - `src/domain/interfaces/services/ISteamApiService.ts` — añadido `getMostPlayedGames()`
+  - `src/data/services/SteamApiServiceImpl.ts` — implementado `getMostPlayedGames()` con Steam Charts + Store API
+  - `src/data/mocks/MockSteamApiService.ts` — añadido mock de `getMostPlayedGames()`
+  - `src/data/mocks/MockDataProvider.ts` — añadido `MOCK_POPULAR_GAMES` (10 juegos)
+  - `src/domain/interfaces/usecases/home/IHomeUseCase.ts` — añadido `getPopularGames()`
+  - `src/domain/usecases/home/HomeUseCase.ts` — implementado `getPopularGames()`
+  - `src/presentation/viewmodels/HomeViewModel.ts` — añadido `popularGames` + `loadPopularGames()`
+  - `src/presentation/screens/search/SearchScreen.tsx` — sección "Populares ahora", `useFocusEffect`, empty states por sección
+
+- **TypeScript**: `npx tsc --noEmit` — ✅ 0 errores (solo error en `src/app/` que es scaffold antiguo ignorado)
+
+---
+
+## Cambios anteriores (Sesión 8 — ProtonDB Real + Home Screen + ITAD Real)
   - Añadido estado local `inputText` en `SearchScreen` para actualizar UI inmediatamente
   - El debounce de 400ms solo aplica a la llamada a API, no al renderizado del input
   - Soluciona el problema de que las letras se borraban al escribir rápido

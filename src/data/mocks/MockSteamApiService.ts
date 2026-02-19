@@ -2,7 +2,7 @@ import 'reflect-metadata';
 import { injectable } from 'inversify';
 import { ISteamApiService } from '../../domain/interfaces/services/ISteamApiService';
 import { Game } from '../../domain/entities/Game';
-import { MOCK_STEAM_GAMES, MOCK_RECENTLY_PLAYED, simulateDelay } from './MockDataProvider';
+import { MOCK_STEAM_GAMES, MOCK_RECENTLY_PLAYED, MOCK_POPULAR_GAMES, simulateDelay } from './MockDataProvider';
 
 /**
  * Mock de ISteamApiService.
@@ -13,6 +13,7 @@ import { MOCK_STEAM_GAMES, MOCK_RECENTLY_PLAYED, simulateDelay } from './MockDat
  *   - verifyOpenIdResponse: siempre válido
  *   - getUserGames: devuelve MOCK_STEAM_GAMES con playtime
  *   - getRecentlyPlayedGames: devuelve MOCK_RECENTLY_PLAYED
+ *   - getMostPlayedGames: devuelve MOCK_POPULAR_GAMES
  *   - checkProfileVisibility: siempre público
  */
 @injectable()
@@ -39,6 +40,11 @@ export class MockSteamApiService implements ISteamApiService {
     async getRecentlyPlayedGames(_steamId: string): Promise<Game[]> {
         await simulateDelay(800);
         return [...MOCK_RECENTLY_PLAYED];
+    }
+
+    async getMostPlayedGames(limit: number = 10): Promise<Game[]> {
+        await simulateDelay(600);
+        return MOCK_POPULAR_GAMES.slice(0, limit);
     }
 
     async checkProfileVisibility(_steamId: string): Promise<boolean> {
