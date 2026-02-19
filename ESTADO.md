@@ -1,13 +1,90 @@
 # GameShelf - Estado del Proyecto
 
 ## Última actualización
-19 de Febrero de 2026
+20 de Febrero de 2026
 
 ## Resumen General
 
 GameShelf es una aplicación móvil para gestionar bibliotecas de videojuegos unificando Steam, Epic Games Store, y otras plataformas. La aplicación incluye seguimiento de wishlist, compatibilidad ProtonDB, duración estimada (HLTB), y rastreo de ofertas (ITAD).
 
 **Estado actual**: ✅ MVP Completo - Todas las capas arquitectónicas implementadas
+
+---
+
+## ⚠️ Configuración temporal para testing
+
+**IMPORTANTE**: Los siguientes cambios son temporales para facilitar el testing y deben ser revertidos antes de producción.
+
+### Cambios realizados
+
+| Archivo | Cambio | Razón |
+|---------|--------|-------|
+| `src/data/mocks/MockAuthRepository.ts` | `currentUser` inicializado con `MOCK_USER` en lugar de `null` | Sesión ya iniciada al arrancar |
+| `src/data/mocks/MockAuthRepository.ts` | `logout()` y `deleteAccount()` mantienen sesión activa | Evitar tener que volver a loguear |
+| `src/data/repositories/MemoryPlatformRepository.ts` | Mapa inicializado con Steam vinculado (SteamID: `76561198130408689`) | Steam ya vinculado al arrancar |
+| `src/data/repositories/SteamSyncMemoryGameRepository.ts` | Constructor llama a `initializeForTesting()` | Biblioteca se precarga automáticamente |
+
+### Usuario de testing
+
+- **User ID**: `mock-uid-dev-001`
+- **Email**: `dev@gameshelf.app`
+- **Steam ID**: `76561198130408689`
+
+### Cómo revertir
+
+#### 1. `MockAuthRepository.ts`
+```ts
+// Cambiar:
+private currentUser: User = MOCK_USER;
+
+// A:
+private currentUser: User | null = null;
+
+// En logout() y deleteAccount(), cambiar:
+this.currentUser = MOCK_USER;
+
+// A:
+this.currentUser = null;
+```
+
+#### 2. `MemoryPlatformRepository.ts`
+```ts
+// Cambiar constructor:
+constructor() {
+    this.platformsByUser = new Map([
+        [TEST_USER_ID, [
+            new LinkedPlatform(Platform.STEAM, TEST_STEAM_ID, new Date()),
+        ]],
+    ]);
+}
+
+// A:
+constructor() {
+    this.platformsByUser = new Map();
+}
+```
+
+#### 3. `SteamSyncMemoryGameRepository.ts`
+```ts
+// Eliminar:
+constructor(...) {
+    ...
+    this.initializeForTesting();
+}
+
+private async initializeForTesting(): Promise<void> { ... }
+
+// Y añadir bandera initialized:
+private initialized = false;
+
+// Cambiar getLibraryGames para eliminar la llamada a initializeForTesting()
+```
+
+### Cuándo revertir
+
+- Antes de hacer deploy a producción
+- Cuando se implemente Firebase Auth real
+- Cuando se quiera probar el flujo completo de registro/login/vinculación
 
 ---
 
