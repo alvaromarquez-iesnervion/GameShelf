@@ -42,7 +42,7 @@ users/{userId}/
 ├── wishlist/{itemId}       → gameId, title, coverUrl, addedAt, bestDealPercentage
 ├── platforms/
 │   ├── steam               → externalUserId (SteamID 64-bit), linkedAt
-│   └── epic_games          → externalUserId ("imported"), linkedAt
+│   └── epic_games          → externalUserId (accountId real si auth code, "imported" si GDPR), linkedAt
 └── settings/
     └── notifications       → dealsEnabled
 ```
@@ -51,7 +51,7 @@ users/{userId}/
 
 - `AuthRepositoryImpl.deleteAccount()`: borra subcolecciones + doc Firestore + cuenta Firebase Auth.
 - `GameRepositoryImpl.syncLibrary(userId, platform)`: llama a la API correspondiente, mapea los juegos y hace batch write a Firestore.
-- `PlatformRepositoryImpl`: Steam almacena el SteamID (público, no secreto). Epic solo almacena un flag `"imported"`.
+- `PlatformRepositoryImpl`: Steam almacena el SteamID (público, no secreto). Epic almacena el `accountId` real de Epic si se usa el flujo de auth code, o el flag `"imported"` si se usa importación GDPR. `linkEpicPlatform(userId, epicAccountId?)` — el segundo argumento es opcional.
 
 ---
 
@@ -70,14 +70,29 @@ Implementan las interfaces de `domain/interfaces/services/`. Cada servicio encap
 
 ### `EpicGamesApiServiceImpl`
 
-- **No hay API de biblioteca pública**. Flujo: el usuario exporta sus datos (GDPR en epicgames.com/account/privacy), sube el ZIP/JSON a la app, y `parseExportedLibrary()` extrae los juegos.
-- **Enriquecimiento de juegos**: 
-  - Cada juego parseado se busca en ITAD por título para obtener `itadGameId` (para ofertas futuras)
-  - Se intenta obtener la portada desde ITAD también
-  - Si las búsquedas fallan, el juego se crea igual pero sin estos datos (robusto ante fallos de API)
-  - Usa `Promise.allSettled` para que el fallo de una API no rompa las demás
-- **Búsqueda de catálogo**: GraphQL no oficial en `graphql.epicgames.com/graphql`. Solo para búsqueda, no para biblioteca.
-- **Inyecciones**: Depende de `IIsThereAnyDealService` para enriquecimiento
+Epic no tiene API pública de biblioteca. Se implementan dos flujos:
+
+**Flujo preferido — Authorization Code (API interna no oficial):**
+- `exchangeAuthCode(code)`: intercambia el code por un `EpicAuthToken` via POST a `account-public-service-prod.ol.epicgames.com/account/api/oauth/token`. Usa Basic Auth con credenciales del `launcherAppClient2` (cliente oficial del Epic Launcher). El code se obtiene abriendo `EPIC_AUTH_REDIRECT_URL` en el navegador.
+- `fetchLibrary(accessToken, accountId)`: obtiene entitlements via GET a `entitlement-public-service-prod08.ol.epicgames.com/entitlement/api/account/{accountId}/entitlements?count=5000`. Filtra y mapea exactamente igual que el flujo GDPR.
+- **AVISO**: usa API interna no documentada de Epic. Puede cambiar o dejar de funcionar sin previo aviso.
+
+**Flujo alternativo — Importación GDPR:**
+- `parseExportedLibrary(fileContent)`: el usuario exporta sus datos en epicgames.com/account/privacy (24-48h de espera), descarga el ZIP y pega el JSON en la app.
+
+**Enriquecimiento de juegos** (común a ambos flujos):
+- Cada juego se busca en ITAD por título para obtener `itadGameId` (para ofertas futuras) y portada
+- Si ITAD falla, el juego se crea igual pero sin estos datos (robusto ante fallos — `Promise.allSettled`)
+
+**Búsqueda de catálogo**: GraphQL no oficial en `graphql.epicgames.com/graphql`. Solo para búsqueda.
+
+**Inyecciones**: Depende de `IIsThereAnyDealService` para enriquecimiento.
+
+**Constantes** (`ApiConstants.ts`):
+- `EPIC_AUTH_TOKEN_URL` — endpoint de token
+- `EPIC_ENTITLEMENTS_URL` — endpoint de biblioteca
+- `EPIC_AUTH_CLIENT_ID` / `EPIC_AUTH_CLIENT_SECRET` — credenciales de `launcherAppClient2`
+- `EPIC_AUTH_REDIRECT_URL` — URL que el usuario abre en el navegador
 
 ### `ProtonDbServiceImpl`
 

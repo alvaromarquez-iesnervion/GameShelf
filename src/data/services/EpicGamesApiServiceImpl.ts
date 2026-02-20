@@ -5,11 +5,18 @@ import { IEpicGamesApiService } from '../../domain/interfaces/services/IEpicGame
 import { IIsThereAnyDealService } from '../../domain/interfaces/services/IIsThereAnyDealService';
 import { Game } from '../../domain/entities/Game';
 import { SearchResult } from '../../domain/entities/SearchResult';
+import { EpicAuthToken } from '../../domain/dtos/EpicAuthToken';
 import { Platform } from '../../domain/enums/Platform';
-import { EPIC_GRAPHQL_URL } from '../config/ApiConstants';
+import {
+    EPIC_GRAPHQL_URL,
+    EPIC_AUTH_TOKEN_URL,
+    EPIC_ENTITLEMENTS_URL,
+    EPIC_AUTH_CLIENT_ID,
+    EPIC_AUTH_CLIENT_SECRET,
+} from '../config/ApiConstants';
 import { TYPES } from '../../di/types';
 
-// Estructura del JSON de entitlements en el export GDPR de Epic
+// Estructura del JSON de entitlements (GDPR export y API de entitlements comparten el mismo shape)
 interface EpicEntitlement {
     catalogItemId: string;
     catalogNamespace: string;
@@ -17,15 +24,28 @@ interface EpicEntitlement {
     itemType: string;
 }
 
+// Respuesta raw del endpoint de token de Epic
+interface EpicTokenResponse {
+    access_token: string;
+    account_id: string;
+    displayName: string;
+    expires_at: string; // ISO 8601
+}
+
 /**
- * Epic NO ofrece API de biblioteca para apps de terceros.
- * Flujo de importación:
+ * Flujo preferido (authorization code — API interna no oficial):
+ *   1. El usuario abre EPIC_AUTH_REDIRECT_URL en el navegador e inicia sesión
+ *   2. Epic muestra un authorization code de ~32 caracteres en pantalla
+ *   3. exchangeAuthCode(code) → EpicAuthToken
+ *   4. fetchLibrary(token) → Game[]
+ *
+ * Flujo alternativo (importación GDPR):
  *   1. Usuario solicita datos en epicgames.com/account/privacy (espera 24h+)
  *   2. Descarga el ZIP → extrae el JSON de entitlements
- *   3. Sube el JSON a la app → parseExportedLibrary()
+ *   3. parseExportedLibrary(fileContent) → Game[]
  *
  * Para búsqueda se usa la GraphQL pública no documentada.
- * AVISO: puede cambiar o romperse sin previo aviso.
+ * AVISO: todos los endpoints de Epic pueden cambiar o romperse sin previo aviso.
  */
 @injectable()
 export class EpicGamesApiServiceImpl implements IEpicGamesApiService {
@@ -34,6 +54,94 @@ export class EpicGamesApiServiceImpl implements IEpicGamesApiService {
         @inject(TYPES.IIsThereAnyDealService)
         private readonly itadService: IIsThereAnyDealService,
     ) {}
+
+    /**
+     * Intercambia un authorization code por un access token de Epic.
+     *
+     * El usuario obtiene el code abriendo en su navegador:
+     *   EPIC_AUTH_REDIRECT_URL
+     * Epic redirige a una página que muestra el code en texto plano.
+     *
+     * AVISO: el code expira en ~5 minutos.
+     */
+    async exchangeAuthCode(code: string): Promise<EpicAuthToken> {
+        // Basic auth = Base64(clientId:clientSecret)
+        const credentials = Buffer.from(
+            `${EPIC_AUTH_CLIENT_ID}:${EPIC_AUTH_CLIENT_SECRET}`,
+        ).toString('base64');
+
+        let response;
+        try {
+            response = await axios.post<EpicTokenResponse>(
+                EPIC_AUTH_TOKEN_URL,
+                `grant_type=authorization_code&code=${encodeURIComponent(code.trim())}`,
+                {
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'Authorization': `basic ${credentials}`,
+                    },
+                },
+            );
+        } catch (err: unknown) {
+            // Epic devuelve 400 con body { errorCode, errorMessage } cuando el code es inválido
+            const axiosErr = err as { response?: { data?: { errorMessage?: string } } };
+            const epicMsg = axiosErr.response?.data?.errorMessage;
+            if (epicMsg) {
+                throw new Error(`Epic Games: ${epicMsg}`);
+            }
+            throw new Error(
+                'No se pudo conectar con Epic Games. Comprueba tu conexión e inténtalo de nuevo.',
+            );
+        }
+
+        const { access_token, account_id, displayName, expires_at } = response.data;
+        return new EpicAuthToken(
+            access_token,
+            account_id,
+            displayName,
+            new Date(expires_at),
+        );
+    }
+
+    /**
+     * Obtiene la biblioteca de entitlements del usuario autenticado.
+     * Filtra los mismos itemType que parseExportedLibrary (EXECUTABLE / DURABLE_ENTITLEMENT)
+     * y enriquece con ITAD exactamente igual que el flujo GDPR.
+     */
+    async fetchLibrary(accessToken: string, accountId: string): Promise<Game[]> {
+        let entitlements: EpicEntitlement[] = [];
+        try {
+            const response = await axios.get<EpicEntitlement[]>(
+                `${EPIC_ENTITLEMENTS_URL}/${accountId}/entitlements`,
+                {
+                    params: { count: 5000 },
+                    headers: { Authorization: `Bearer ${accessToken}` },
+                },
+            );
+            entitlements = Array.isArray(response.data) ? response.data : [];
+        } catch (err: unknown) {
+            const axiosErr = err as { response?: { data?: { errorMessage?: string } } };
+            const epicMsg = axiosErr.response?.data?.errorMessage;
+            if (epicMsg) {
+                throw new Error(`Epic Games: ${epicMsg}`);
+            }
+            throw new Error(
+                'No se pudo obtener tu biblioteca de Epic Games. Inténtalo de nuevo.',
+            );
+        }
+
+        const gameEntitlements = entitlements.filter(
+            e => e.itemType === 'EXECUTABLE' || e.itemType === 'DURABLE_ENTITLEMENT',
+        );
+
+        const results = await Promise.allSettled(
+            gameEntitlements.map(e => this.mapEpicEntitlementToDomain(e)),
+        );
+
+        return results
+            .filter((r): r is PromiseFulfilledResult<Game> => r.status === 'fulfilled')
+            .map(r => r.value);
+    }
 
     async parseExportedLibrary(fileContent: string): Promise<Game[]> {
         let entitlements: EpicEntitlement[] = [];

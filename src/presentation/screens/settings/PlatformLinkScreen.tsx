@@ -10,6 +10,8 @@ import {
     ActivityIndicator,
     Modal,
     KeyboardAvoidingView,
+    Linking,
+    ScrollView,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -36,6 +38,8 @@ export const PlatformLinkScreen: React.FC = observer(() => {
     const [steamModalVisible, setSteamModalVisible] = useState(false);
     const [steamInput, setSteamInput] = useState('');
     const [epicModalVisible, setEpicModalVisible] = useState(false);
+    // 'authcode' = flujo nuevo (auth code); 'gdpr' = fallback importación manual
+    const [epicMode, setEpicMode] = useState<'authcode' | 'gdpr'>('authcode');
     const [epicInput, setEpicInput] = useState('');
 
     useEffect(() => {
@@ -77,12 +81,20 @@ export const PlatformLinkScreen: React.FC = observer(() => {
         }
     };
 
-    // ─── Epic — importación manual ───────────────────────────────────────────
+    // ─── Epic — vinculación (auth code preferido, GDPR como fallback) ─────────
     const handleOpenEpicModal = () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         vm.clearError();
         setEpicInput('');
+        setEpicMode('authcode');
         setEpicModalVisible(true);
+    };
+
+    const handleOpenEpicInBrowser = () => {
+        const url = vm.getEpicAuthUrl();
+        Linking.openURL(url).catch(() => {
+            Alert.alert('Error', 'No se pudo abrir el navegador. Copia esta URL manualmente:\n\n' + url);
+        });
     };
 
     const handleConfirmEpic = async () => {
@@ -90,7 +102,13 @@ export const PlatformLinkScreen: React.FC = observer(() => {
         if (!trimmed) return;
 
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        const success = await vm.linkEpic(userId, trimmed);
+
+        let success: boolean;
+        if (epicMode === 'authcode') {
+            success = await vm.linkEpicByAuthCode(userId, trimmed);
+        } else {
+            success = await vm.linkEpic(userId, trimmed);
+        }
 
         if (success) {
             setEpicModalVisible(false);
@@ -102,6 +120,12 @@ export const PlatformLinkScreen: React.FC = observer(() => {
                 [{ text: 'Entendido' }],
             );
         }
+    };
+
+    const handleSwitchEpicMode = (mode: 'authcode' | 'gdpr') => {
+        vm.clearError();
+        setEpicInput('');
+        setEpicMode(mode);
     };
 
     const handleUnlink = (platform: PlatformEnum) => {
@@ -238,13 +262,13 @@ export const PlatformLinkScreen: React.FC = observer(() => {
                 visible={epicModalVisible}
                 animationType="slide"
                 presentationStyle="formSheet"
-                onRequestClose={() => setEpicModalVisible(false)}
+                onRequestClose={() => { setEpicModalVisible(false); vm.clearError(); }}
             >
                 <KeyboardAvoidingView
                     style={styles.modalContainer}
                     behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 >
-                    {/* Header del modal */}
+                    {/* Header */}
                     <View style={styles.modalHeader}>
                         <View style={styles.modalHandle} />
                         <Text style={styles.modalTitle}>Vincular Epic Games</Text>
@@ -257,68 +281,183 @@ export const PlatformLinkScreen: React.FC = observer(() => {
                         </TouchableOpacity>
                     </View>
 
-                    <View style={styles.modalBody}>
-                        <Text style={styles.modalInstruction}>
-                            Descarga tu biblioteca de Epic en 4 pasos:
-                        </Text>
-
-                        {/* Pasos */}
-                        <View style={styles.stepsBox}>
-                            <Step number={1} text="Ve a epicgames.com/account/privacy" />
-                            <Step number={2} text="Haz clic en 'Descargar tus datos personales'" />
-                            <Step number={3} text="Espera 24-48 horas y descarga el ZIP" />
-                            <Step number={4} text="Abre 'entitlementGrantByEntitlementName.json' y cópialo" />
-                        </View>
-
-                        {/* Input de JSON */}
-                        <Text style={styles.modalLabel}>Pega el contenido del JSON aquí:</Text>
-                        <TextInput
-                            style={styles.epicModalInput}
-                            placeholder="Pega el contenido JSON..."
-                            placeholderTextColor={colors.textDisabled}
-                            value={epicInput}
-                            onChangeText={setEpicInput}
-                            multiline
-                            numberOfLines={8}
-                            textAlignVertical="top"
-                            autoCapitalize="none"
-                            autoCorrect={false}
-                            keyboardAppearance="dark"
-                        />
-
-                        {/* Error */}
-                        {vm.errorMessage ? (
-                            <View style={styles.modalError}>
-                                <Feather name="alert-circle" size={14} color={colors.error} />
-                                <Text style={styles.modalErrorText}>{vm.errorMessage}</Text>
-                            </View>
-                        ) : null}
-
-                        {/* Botón confirmar */}
+                    {/* Selector de modo */}
+                    <View style={styles.modeSelector}>
                         <TouchableOpacity
-                            style={[
-                                styles.confirmBtn,
-                                (!epicInput.trim() || vm.isLinking) && styles.confirmBtnDisabled,
-                            ]}
-                            onPress={handleConfirmEpic}
-                            disabled={!epicInput.trim() || vm.isLinking}
-                            activeOpacity={0.8}
+                            style={[styles.modeTab, epicMode === 'authcode' && styles.modeTabActive]}
+                            onPress={() => handleSwitchEpicMode('authcode')}
+                            activeOpacity={0.75}
                         >
-                            {vm.isLinking ? (
-                                <ActivityIndicator size="small" color={colors.onPrimary} />
-                            ) : (
-                                <>
-                                    <Feather name="link" size={16} color={colors.onPrimary} />
-                                    <Text style={styles.confirmBtnText}>Vincular Epic Games</Text>
-                                </>
-                            )}
+                            <Feather
+                                name="zap"
+                                size={13}
+                                color={epicMode === 'authcode' ? colors.primary : colors.textTertiary}
+                            />
+                            <Text style={[styles.modeTabText, epicMode === 'authcode' && styles.modeTabTextActive]}>
+                                Inicio de sesión
+                            </Text>
                         </TouchableOpacity>
-
-                        <Text style={styles.modalFootnote}>
-                            Tu JSON nunca se comparte con servidores externos.{'\n'}
-                            Solo se procesa localmente en tu dispositivo.
-                        </Text>
+                        <TouchableOpacity
+                            style={[styles.modeTab, epicMode === 'gdpr' && styles.modeTabActive]}
+                            onPress={() => handleSwitchEpicMode('gdpr')}
+                            activeOpacity={0.75}
+                        >
+                            <Feather
+                                name="file-text"
+                                size={13}
+                                color={epicMode === 'gdpr' ? colors.primary : colors.textTertiary}
+                            />
+                            <Text style={[styles.modeTabText, epicMode === 'gdpr' && styles.modeTabTextActive]}>
+                                Importar JSON
+                            </Text>
+                        </TouchableOpacity>
                     </View>
+
+                    <ScrollView
+                        style={styles.modalBody}
+                        contentContainerStyle={styles.modalBodyContent}
+                        keyboardShouldPersistTaps="handled"
+                    >
+                        {epicMode === 'authcode' ? (
+                            /* ── Flujo auth code (preferido) ── */
+                            <>
+                                <Text style={styles.modalInstruction}>
+                                    Inicia sesión en Epic y copia el código que aparece:
+                                </Text>
+
+                                <View style={styles.stepsBox}>
+                                    <Step
+                                        number={1}
+                                        text="Pulsa el botón de abajo para abrir Epic Games en el navegador e inicia sesión con tu cuenta"
+                                    />
+                                    <Step
+                                        number={2}
+                                        text='Copia el código que aparece en pantalla (campo "code") y pégalo aquí'
+                                    />
+                                </View>
+
+                                {/* Botón abrir navegador */}
+                                <TouchableOpacity
+                                    style={styles.openBrowserBtn}
+                                    onPress={handleOpenEpicInBrowser}
+                                    activeOpacity={0.8}
+                                >
+                                    <Feather name="external-link" size={15} color={colors.primary} />
+                                    <Text style={styles.openBrowserText}>Abrir Epic Games en el navegador</Text>
+                                </TouchableOpacity>
+
+                                {/* Input código */}
+                                <Text style={styles.modalLabel}>Pega el código aquí:</Text>
+                                <TextInput
+                                    style={styles.modalInput}
+                                    placeholder="Ej: a1b2c3d4e5f6..."
+                                    placeholderTextColor={colors.textDisabled}
+                                    value={epicInput}
+                                    onChangeText={setEpicInput}
+                                    autoCapitalize="none"
+                                    autoCorrect={false}
+                                    keyboardAppearance="dark"
+                                    returnKeyType="done"
+                                    onSubmitEditing={handleConfirmEpic}
+                                />
+
+                                {/* Error */}
+                                {vm.errorMessage ? (
+                                    <View style={styles.modalError}>
+                                        <Feather name="alert-circle" size={14} color={colors.error} />
+                                        <Text style={styles.modalErrorText}>{vm.errorMessage}</Text>
+                                    </View>
+                                ) : null}
+
+                                {/* Botón confirmar */}
+                                <TouchableOpacity
+                                    style={[
+                                        styles.confirmBtn,
+                                        (!epicInput.trim() || vm.isLinking) && styles.confirmBtnDisabled,
+                                    ]}
+                                    onPress={handleConfirmEpic}
+                                    disabled={!epicInput.trim() || vm.isLinking}
+                                    activeOpacity={0.8}
+                                >
+                                    {vm.isLinking ? (
+                                        <ActivityIndicator size="small" color={colors.onPrimary} />
+                                    ) : (
+                                        <>
+                                            <Feather name="link" size={16} color={colors.onPrimary} />
+                                            <Text style={styles.confirmBtnText}>Vincular Epic Games</Text>
+                                        </>
+                                    )}
+                                </TouchableOpacity>
+
+                                <Text style={styles.modalFootnote}>
+                                    El código caduca en ~5 minutos.{'\n'}
+                                    Usa una API interna de Epic — puede cambiar sin previo aviso.
+                                </Text>
+                            </>
+                        ) : (
+                            /* ── Flujo GDPR (fallback) ── */
+                            <>
+                                <Text style={styles.modalInstruction}>
+                                    Descarga tu biblioteca de Epic manualmente:
+                                </Text>
+
+                                <View style={styles.stepsBox}>
+                                    <Step number={1} text="Ve a epicgames.com/account/privacy" />
+                                    <Step number={2} text="Haz clic en 'Descargar tus datos personales'" />
+                                    <Step number={3} text="Espera 24-48 horas y descarga el ZIP" />
+                                    <Step number={4} text="Abre 'entitlementGrantByEntitlementName.json' y cópialo" />
+                                </View>
+
+                                <Text style={styles.modalLabel}>Pega el contenido del JSON aquí:</Text>
+                                <TextInput
+                                    style={styles.epicModalInput}
+                                    placeholder="Pega el contenido JSON..."
+                                    placeholderTextColor={colors.textDisabled}
+                                    value={epicInput}
+                                    onChangeText={setEpicInput}
+                                    multiline
+                                    numberOfLines={8}
+                                    textAlignVertical="top"
+                                    autoCapitalize="none"
+                                    autoCorrect={false}
+                                    keyboardAppearance="dark"
+                                />
+
+                                {/* Error */}
+                                {vm.errorMessage ? (
+                                    <View style={styles.modalError}>
+                                        <Feather name="alert-circle" size={14} color={colors.error} />
+                                        <Text style={styles.modalErrorText}>{vm.errorMessage}</Text>
+                                    </View>
+                                ) : null}
+
+                                {/* Botón confirmar */}
+                                <TouchableOpacity
+                                    style={[
+                                        styles.confirmBtn,
+                                        (!epicInput.trim() || vm.isLinking) && styles.confirmBtnDisabled,
+                                    ]}
+                                    onPress={handleConfirmEpic}
+                                    disabled={!epicInput.trim() || vm.isLinking}
+                                    activeOpacity={0.8}
+                                >
+                                    {vm.isLinking ? (
+                                        <ActivityIndicator size="small" color={colors.onPrimary} />
+                                    ) : (
+                                        <>
+                                            <Feather name="link" size={16} color={colors.onPrimary} />
+                                            <Text style={styles.confirmBtnText}>Vincular Epic Games</Text>
+                                        </>
+                                    )}
+                                </TouchableOpacity>
+
+                                <Text style={styles.modalFootnote}>
+                                    Tu JSON nunca se comparte con servidores externos.{'\n'}
+                                    Solo se procesa localmente en tu dispositivo.
+                                </Text>
+                            </>
+                        )}
+                    </ScrollView>
                 </KeyboardAvoidingView>
             </Modal>
         </View>
@@ -511,6 +650,8 @@ const styles = StyleSheet.create({
         paddingHorizontal: spacing.lg,
         paddingTop: spacing.lg,
     },
+    // Alias usado como contentContainerStyle del ScrollView en el modal Epic
+    // (modalBodyContent está definido en la sección Epic Modal abajo)
     modalInstruction: {
         ...typography.body,
         color: colors.textSecondary,
@@ -603,6 +744,57 @@ const styles = StyleSheet.create({
     },
 
     // ─── Epic Modal ──────────────────────────────────────────────────────────
+    modeSelector: {
+        flexDirection: 'row',
+        marginHorizontal: spacing.lg,
+        marginBottom: spacing.md,
+        backgroundColor: colors.surface,
+        borderRadius: radius.lg,
+        borderWidth: StyleSheet.hairlineWidth,
+        borderColor: colors.border,
+        overflow: 'hidden',
+    },
+    modeTab: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: spacing.xs,
+        paddingVertical: 10,
+    },
+    modeTabActive: {
+        backgroundColor: colors.background,
+        borderBottomWidth: 2,
+        borderBottomColor: colors.primary,
+    },
+    modeTabText: {
+        ...typography.small,
+        color: colors.textTertiary,
+        fontWeight: '500',
+    },
+    modeTabTextActive: {
+        color: colors.primary,
+        fontWeight: '600',
+    },
+    modalBodyContent: {
+        paddingBottom: spacing.xxl,
+    },
+    openBrowserBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: spacing.sm,
+        borderWidth: 1,
+        borderColor: colors.primary,
+        borderRadius: radius.md,
+        paddingVertical: 12,
+        marginBottom: spacing.lg,
+    },
+    openBrowserText: {
+        ...typography.body,
+        color: colors.primary,
+        fontWeight: '600',
+    },
     stepsBox: {
         backgroundColor: colors.surface,
         borderRadius: radius.lg,

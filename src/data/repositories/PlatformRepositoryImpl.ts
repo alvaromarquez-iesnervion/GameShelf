@@ -39,16 +39,17 @@ export class PlatformRepositoryImpl implements IPlatformRepository {
         return new LinkedPlatform(Platform.STEAM, steamId, linkedAt);
     }
 
-    async linkEpicPlatform(userId: string): Promise<LinkedPlatform> {
+    async linkEpicPlatform(userId: string, epicAccountId?: string): Promise<LinkedPlatform> {
         const linkedAt = new Date();
+        const externalUserId = epicAccountId ?? 'imported';
         await setDoc(
             doc(this.firestore, 'users', userId, 'platforms', 'epic_games'),
             {
-                externalUserId: 'imported',
+                externalUserId,
                 linkedAt: linkedAt.toISOString(),
             },
         );
-        return new LinkedPlatform(Platform.EPIC_GAMES, 'imported', linkedAt);
+        return new LinkedPlatform(Platform.EPIC_GAMES, externalUserId, linkedAt);
     }
 
     async unlinkPlatform(userId: string, platform: Platform): Promise<void> {

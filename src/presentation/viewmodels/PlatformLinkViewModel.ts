@@ -4,6 +4,7 @@ import { makeAutoObservable, runInAction } from 'mobx';
 import { IPlatformLinkUseCase } from '../../domain/interfaces/usecases/platforms/IPlatformLinkUseCase';
 import { LinkedPlatform } from '../../domain/entities/LinkedPlatform';
 import { Platform } from '../../domain/enums/Platform';
+import { EPIC_AUTH_REDIRECT_URL } from '../../data/config/ApiConstants';
 import { TYPES } from '../../di/types';
 
 /**
@@ -104,6 +105,40 @@ export class PlatformLinkViewModel {
 
         try {
             await this.platformLinkUseCase.linkSteam(userId, callbackUrl, params);
+            await this.loadLinkedPlatforms(userId);
+            return true;
+        } catch (error) {
+            runInAction(() => {
+                this._errorMessage = (error as Error).message;
+            });
+            return false;
+        } finally {
+            runInAction(() => {
+                this._isLinking = false;
+            });
+        }
+    }
+
+    /**
+     * Devuelve la URL que el usuario debe abrir en el navegador para autenticarse con Epic
+     * y obtener el authorization code.
+     */
+    getEpicAuthUrl(): string {
+        return EPIC_AUTH_REDIRECT_URL;
+    }
+
+    /**
+     * Vincula Epic Games usando el authorization code obtenido del navegador.
+     * Flujo preferido — requiere que el usuario haya copiado el código de ~32 chars.
+     */
+    async linkEpicByAuthCode(userId: string, authCode: string): Promise<boolean> {
+        runInAction(() => {
+            this._isLinking = true;
+            this._errorMessage = null;
+        });
+
+        try {
+            await this.platformLinkUseCase.linkEpicByAuthCode(userId, authCode);
             await this.loadLinkedPlatforms(userId);
             return true;
         } catch (error) {

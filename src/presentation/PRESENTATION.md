@@ -67,7 +67,7 @@ class LibraryViewModel {
 | `HomeViewModel` | Singleton | `recentlyPlayed`, `mostPlayed`, `searchResults`, `searchQuery`, `isLoadingHome`, `isSearching` | `loadHomeData`, `search`, `clearSearch` |
 | `GameDetailViewModel` | Transient | `gameDetail` (GameDetailDTO), `isLoading`, `errorMessage` | `loadGameDetail`, `clear` |
 | `SearchViewModel` | Transient | `results`, `query`, `isLoading`, `errorMessage` | `search`, `clearResults` |
-| `PlatformLinkViewModel` | Transient | `linkedPlatforms`, `isLinking`, `errorMessage` | `loadLinkedPlatforms`, `linkSteam`, `linkEpic`, `unlinkPlatform`, `getSteamLoginUrl` |
+| `PlatformLinkViewModel` | Transient | `linkedPlatforms`, `isLinking`, `errorMessage` | `loadLinkedPlatforms`, `linkSteam`, `linkSteamById`, `linkEpicByAuthCode`, `linkEpic`, `getEpicAuthUrl`, `unlinkPlatform`, `clearError` |
 | `SettingsViewModel` | Transient | `profile` (UserProfileDTO), `isLoading`, `errorMessage` | `loadProfile`, `updateNotificationPreferences` |
 
 ---

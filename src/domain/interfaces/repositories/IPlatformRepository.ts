@@ -9,8 +9,12 @@ import { Platform } from '../../enums/Platform';
 export interface IPlatformRepository {
     /** Almacena SteamID en Firestore (users/{id}/platforms/steam). */
     linkSteamPlatform(userId: string, steamId: string): Promise<LinkedPlatform>;
-    /** Marca la importación de Epic como completada. */
-    linkEpicPlatform(userId: string): Promise<LinkedPlatform>;
+    /**
+     * Marca Epic Games como vinculado.
+     * @param epicAccountId  Account ID real de Epic cuando se usa el flujo de auth code.
+     *                       Si se omite (flujo GDPR), se guarda el flag "imported".
+     */
+    linkEpicPlatform(userId: string, epicAccountId?: string): Promise<LinkedPlatform>;
     /** Elimina vinculación y juegos de esa plataforma de Firestore. */
     unlinkPlatform(userId: string, platform: Platform): Promise<void>;
     getLinkedPlatforms(userId: string): Promise<LinkedPlatform[]>;

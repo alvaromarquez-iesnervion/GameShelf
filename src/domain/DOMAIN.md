@@ -50,6 +50,7 @@ Solo existen DTOs cuando se agregan datos de **múltiples fuentes** para una sol
 |---|---|---|
 | `GameDetailDTO` | `GameDetail` (4 APIs) + `isInWishlist` | `GameDetailUseCase` → `GameDetailViewModel` |
 | `UserProfileDTO` | `User` + `LinkedPlatform[]` + `NotificationPreferences` | `SettingsUseCase` → `SettingsViewModel` |
+| `EpicAuthToken` | Token de autenticación de Epic (auth interna) | `IEpicGamesApiService.exchangeAuthCode` → `PlatformLinkUseCase.linkEpicByAuthCode` |
 
 ---
 
@@ -62,7 +63,7 @@ Abstraen el acceso a datos persistentes (Firestore). `data/` los implementa.
 | `IAuthRepository` | `register`, `login`, `logout`, `getCurrentUser`, `deleteAccount` |
 | `IGameRepository` | `getLibraryGames`, `getGameById`, `getOrCreateGameById`, `syncLibrary`, `searchGames` (via ITAD), `storeEpicGames` (interno) |
 | `IWishlistRepository` | `getWishlist`, `addToWishlist`, `removeFromWishlist`, `isInWishlist` |
-| `IPlatformRepository` | `linkSteamPlatform`, `linkEpicPlatform`, `unlinkPlatform`, `getLinkedPlatforms` |
+| `IPlatformRepository` | `linkSteamPlatform`, `linkEpicPlatform(userId, epicAccountId?)`, `unlinkPlatform`, `getLinkedPlatforms` |
 | `INotificationRepository` | `getNotificationPreferences`, `updateNotificationPreferences` |
 
 ---
@@ -74,7 +75,7 @@ Abstraen APIs externas de terceros.
 | Interfaz | API real | Notas |
 |---|---|---|
 | `ISteamApiService` | Steam Web API + OpenID 2.0 | `getOpenIdLoginUrl`, `extractSteamIdFromCallback`, `verifyOpenIdResponse`, `getUserGames`, `getRecentlyPlayedGames`, `checkProfileVisibility` |
-| `IEpicGamesApiService` | Sin API pública | `parseExportedLibrary` (JSON del export GDPR), `searchCatalog` (GraphQL no oficial) |
+| `IEpicGamesApiService` | API interna no oficial | `exchangeAuthCode` (intercambia auth code por token), `fetchLibrary` (obtiene entitlements con el token), `parseExportedLibrary` (JSON del export GDPR — fallback), `searchCatalog` (GraphQL no oficial) |
 | `IProtonDbService` | Endpoint JSON no oficial | `getCompatibilityRating(steamAppId)` → `ProtonDbRating \| null` |
 | `IHowLongToBeatService` | POST interno no oficial | `getGameDuration(gameTitle)` → `HltbResult \| null` |
 | `IIsThereAnyDealService` | API v2 oficial | `lookupGameId`, `lookupGameIdBySteamAppId`, `getPricesForGame`, `getHistoricalLow`, `searchGames` |

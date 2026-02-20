@@ -4,7 +4,49 @@ Registro acumulativo de decisiones, cambios y contexto relevante por sesión.
 
 ---
 
-## Estado actual del proyecto (Sesión 9 — Epic Games Integration Completa)
+## Estado actual del proyecto (Sesión 10 — Epic Games Auth Code)
+
+### Vinculación automática de Epic Games via Authorization Code
+
+**Motivación**: el flujo anterior requería solicitar una exportación GDPR (24-48h de espera), descargar un ZIP, encontrar un JSON específico y copiar su contenido. El nuevo flujo preferido requiere solo hacer login en Epic en el navegador y copiar un código corto.
+
+**Flujo nuevo (Auth Code — API interna no oficial):**
+1. El usuario pulsa "Abrir Epic Games en el navegador" (se abre `EPIC_AUTH_REDIRECT_URL` con `Linking.openURL`)
+2. Inicia sesión en su cuenta de Epic en el navegador
+3. Epic muestra una página con el authorization code (~32 chars)
+4. El usuario copia el código y lo pega en la app (TextInput de una línea)
+5. `exchangeAuthCode()` intercambia el code por un access token + accountId
+6. `fetchLibrary()` obtiene los entitlements con el token (misma estructura que GDPR)
+7. Los juegos se enriquecen con ITAD y se sincronizan
+
+**El flujo GDPR se mantiene** como pestaña secundaria ("Importar JSON") — fallback estable si Epic cambia la API.
+
+**Archivos modificados (10):**
+- `src/domain/dtos/EpicAuthToken.ts` — **NUEVO**: DTO con accessToken, accountId, displayName, expiresAt
+- `src/domain/interfaces/services/IEpicGamesApiService.ts` — +2 métodos: `exchangeAuthCode`, `fetchLibrary`
+- `src/domain/interfaces/usecases/platforms/IPlatformLinkUseCase.ts` — +1 método: `linkEpicByAuthCode`
+- `src/domain/interfaces/repositories/IPlatformRepository.ts` — `linkEpicPlatform` acepta `epicAccountId?` opcional
+- `src/data/config/ApiConstants.ts` — +5 constantes: `EPIC_AUTH_TOKEN_URL`, `EPIC_ENTITLEMENTS_URL`, `EPIC_AUTH_CLIENT_ID`, `EPIC_AUTH_CLIENT_SECRET`, `EPIC_AUTH_REDIRECT_URL`
+- `src/data/services/EpicGamesApiServiceImpl.ts` — implementación de `exchangeAuthCode` y `fetchLibrary`
+- `src/data/mocks/MockEpicGamesApiService.ts` — mocks de los dos nuevos métodos
+- `src/data/repositories/MemoryPlatformRepository.ts` — `linkEpicPlatform` acepta `epicAccountId?`
+- `src/data/mocks/MockPlatformRepository.ts` — `linkEpicPlatform` acepta `epicAccountId?`
+- `src/data/repositories/PlatformRepositoryImpl.ts` — `linkEpicPlatform` guarda accountId real o "imported"
+- `src/domain/usecases/platforms/PlatformLinkUseCase.ts` — implementación de `linkEpicByAuthCode`
+- `src/presentation/viewmodels/PlatformLinkViewModel.ts` — +2 métodos: `linkEpicByAuthCode`, `getEpicAuthUrl`
+- `src/presentation/screens/settings/PlatformLinkScreen.tsx` — modal Epic rediseñado con 2 pestañas
+
+**Decisión de diseño — cliente Epic:**
+Se usa `launcherAppClient2` (clientId: `34a02cf8f4414e29b15921876da36f9a`) porque es el cliente oficial del Epic Games Launcher. Sus credenciales son públicas y ampliamente conocidas en la comunidad de desarrolladores (repo EpicResearch — 400+ stars). Sin embargo, su uso viola los ToS de Epic — se documenta el riesgo explícitamente en comentarios.
+
+**AVISO de estabilidad:**
+La API de auth interna de Epic puede cambiar sin previo aviso. El flujo GDPR es el método estable de reserva.
+
+**TypeScript**: `npx tsc --noEmit` — ✅ 0 errores (el único error existente es `src/app/_layout.tsx` que es scaffold de Expo Router ignorado por AGENTS.md)
+
+---
+
+## Estado anterior (Sesión 9 — Epic Games Integration Completa)
 
 ### Implementación de Epic Games
 

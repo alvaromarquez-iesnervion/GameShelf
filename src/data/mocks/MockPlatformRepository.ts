@@ -25,9 +25,10 @@ export class MockPlatformRepository implements IPlatformRepository {
         return linked;
     }
 
-    async linkEpicPlatform(_userId: string): Promise<LinkedPlatform> {
+    async linkEpicPlatform(_userId: string, epicAccountId?: string): Promise<LinkedPlatform> {
         await simulateDelay(600);
-        const linked = new LinkedPlatform(Platform.EPIC_GAMES, 'imported', new Date());
+        const externalId = epicAccountId ?? 'imported';
+        const linked = new LinkedPlatform(Platform.EPIC_GAMES, externalId, new Date());
         this.platforms = this.platforms.filter(p => p.getPlatform() !== Platform.EPIC_GAMES);
         this.platforms.push(linked);
         return linked;

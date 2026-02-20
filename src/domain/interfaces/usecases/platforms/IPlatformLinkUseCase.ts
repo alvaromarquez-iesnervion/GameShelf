@@ -24,10 +24,24 @@ export interface IPlatformLinkUseCase {
      */
     linkSteamById(userId: string, profileUrlOrId: string): Promise<LinkedPlatform>;
     /**
-     * Completa el flujo de importación de Epic:
+     * Vinculación automática de Epic Games via authorization code (API interna no oficial).
+     * Flujo preferido — el usuario solo copia un código corto del navegador:
+     *  1. exchangeAuthCode → EpicAuthToken
+     *  2. fetchLibrary → Game[]
+     *  3. storeEpicGames
+     *  4. linkEpicPlatform (con accountId real)
+     *  5. syncLibrary de Epic (no bloqueante)
+     *
+     * AVISO: usa API interna de Epic. Puede dejar de funcionar sin previo aviso.
+     */
+    linkEpicByAuthCode(userId: string, authCode: string): Promise<LinkedPlatform>;
+    /**
+     * Vinculación manual de Epic via export GDPR (método de reserva).
+     * Requiere que el usuario solicite y descargue sus datos en epicgames.com/account/privacy.
      *  1. parseExportedLibrary (JSON GDPR)
-     *  2. linkEpicPlatform
-     *  3. Guarda los juegos parseados
+     *  2. storeEpicGames
+     *  3. linkEpicPlatform
+     *  4. syncLibrary de Epic (no bloqueante)
      */
     linkEpic(userId: string, fileContent: string): Promise<LinkedPlatform>;
     /** Elimina la vinculación y los juegos de esa plataforma. */

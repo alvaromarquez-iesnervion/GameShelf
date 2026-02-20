@@ -34,8 +34,9 @@ export class MemoryPlatformRepository implements IPlatformRepository {
         return linked;
     }
 
-    async linkEpicPlatform(userId: string): Promise<LinkedPlatform> {
-        const linked = new LinkedPlatform(Platform.EPIC_GAMES, 'imported', new Date());
+    async linkEpicPlatform(userId: string, epicAccountId?: string): Promise<LinkedPlatform> {
+        const externalId = epicAccountId ?? 'imported';
+        const linked = new LinkedPlatform(Platform.EPIC_GAMES, externalId, new Date());
         this.upsert(userId, linked);
         return linked;
     }

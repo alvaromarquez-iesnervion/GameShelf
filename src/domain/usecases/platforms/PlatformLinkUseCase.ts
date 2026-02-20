@@ -94,11 +94,38 @@ export class PlatformLinkUseCase implements IPlatformLinkUseCase {
         return linked;
     }
 
+    async linkEpicByAuthCode(userId: string, authCode: string): Promise<LinkedPlatform> {
+        // 1. Intercambiar el authorization code por un access token
+        const token = await this.epicService.exchangeAuthCode(authCode);
+
+        // 2. Obtener la biblioteca de entitlements con el token
+        const epicGames = await this.epicService.fetchLibrary(token.accessToken, token.accountId);
+
+        if (epicGames.length === 0) {
+            throw new Error(
+                'No se encontraron juegos en tu biblioteca de Epic Games.',
+            );
+        }
+
+        // 3. Almacenar juegos en el repositorio (en memoria, para sincronización posterior)
+        await this.gameRepository.storeEpicGames(userId, epicGames);
+
+        // 4. Marcar Epic como vinculado (guardamos el accountId real, no "imported")
+        const linked = await this.platformRepository.linkEpicPlatform(userId, token.accountId);
+
+        // 5. Sincronizar la biblioteca Epic (no bloqueante)
+        this.gameRepository.syncLibrary(userId, Platform.EPIC_GAMES).catch(() => {
+            // La sync puede fallar sin romper la vinculación ya completada
+        });
+
+        return linked;
+    }
+
     async linkEpic(userId: string, fileContent: string): Promise<LinkedPlatform> {
         // 1. Parsear el JSON del export GDPR de Epic
         // Devuelve array de Game con itadGameId enriquecido
         const epicGames = await this.epicService.parseExportedLibrary(fileContent);
-        
+
         if (epicGames.length === 0) {
             throw new Error(
                 'No se encontraron juegos en el archivo. ' +
@@ -113,7 +140,6 @@ export class PlatformLinkUseCase implements IPlatformLinkUseCase {
         const linked = await this.platformRepository.linkEpicPlatform(userId);
 
         // 4. Sincronizar la biblioteca Epic (no bloqueante)
-        // Esta llamada carga los juegos almacenados en el paso 2 en la biblioteca completa
         this.gameRepository.syncLibrary(userId, Platform.EPIC_GAMES).catch(() => {
             // La sync puede fallar sin romper la vinculación ya completada
         });
