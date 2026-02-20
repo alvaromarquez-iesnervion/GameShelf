@@ -35,6 +35,8 @@ export const PlatformLinkScreen: React.FC = observer(() => {
 
     const [steamModalVisible, setSteamModalVisible] = useState(false);
     const [steamInput, setSteamInput] = useState('');
+    const [epicModalVisible, setEpicModalVisible] = useState(false);
+    const [epicInput, setEpicInput] = useState('');
 
     useEffect(() => {
         if (userId) vm.loadLinkedPlatforms(userId);
@@ -76,9 +78,30 @@ export const PlatformLinkScreen: React.FC = observer(() => {
     };
 
     // ─── Epic — importación manual ───────────────────────────────────────────
-    const handleLinkEpic = async () => {
+    const handleOpenEpicModal = () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        await vm.linkEpic(userId, '{}');
+        vm.clearError();
+        setEpicInput('');
+        setEpicModalVisible(true);
+    };
+
+    const handleConfirmEpic = async () => {
+        const trimmed = epicInput.trim();
+        if (!trimmed) return;
+
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        const success = await vm.linkEpic(userId, trimmed);
+
+        if (success) {
+            setEpicModalVisible(false);
+            setEpicInput('');
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            Alert.alert(
+                'Epic Games vinculado',
+                'Tu biblioteca de Epic se está sincronizando en segundo plano.\n\nVe a Biblioteca y pulsa ↻ para ver tus juegos.',
+                [{ text: 'Entendido' }],
+            );
+        }
     };
 
     const handleUnlink = (platform: PlatformEnum) => {
@@ -115,7 +138,7 @@ export const PlatformLinkScreen: React.FC = observer(() => {
                     platform={PlatformEnum.EPIC_GAMES}
                     linked={epicLinked}
                     loading={vm.isLinking}
-                    onLink={handleLinkEpic}
+                    onLink={handleOpenEpicModal}
                     onUnlink={() => handleUnlink(PlatformEnum.EPIC_GAMES)}
                 />
             </View>
@@ -124,7 +147,7 @@ export const PlatformLinkScreen: React.FC = observer(() => {
                 Steam requiere que tu perfil y la sección "Estado del juego" sean públicos para sincronizar tu biblioteca.
             </Text>
 
-            {/* ─── Modal de vinculación Steam ─────────────────────────────── */}
+            {/* ─── Modal de vinculación Steam ────────────────────────────────────── */}
             <Modal
                 visible={steamModalVisible}
                 animationType="slide"
@@ -209,6 +232,95 @@ export const PlatformLinkScreen: React.FC = observer(() => {
                     </View>
                 </KeyboardAvoidingView>
             </Modal>
+
+            {/* ─── Modal de vinculación Epic ──────────────────────────────────── */}
+            <Modal
+                visible={epicModalVisible}
+                animationType="slide"
+                presentationStyle="formSheet"
+                onRequestClose={() => setEpicModalVisible(false)}
+            >
+                <KeyboardAvoidingView
+                    style={styles.modalContainer}
+                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                >
+                    {/* Header del modal */}
+                    <View style={styles.modalHeader}>
+                        <View style={styles.modalHandle} />
+                        <Text style={styles.modalTitle}>Vincular Epic Games</Text>
+                        <TouchableOpacity
+                            style={styles.modalCloseBtn}
+                            onPress={() => { setEpicModalVisible(false); vm.clearError(); }}
+                            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                        >
+                            <Feather name="x" size={20} color={colors.textSecondary} />
+                        </TouchableOpacity>
+                    </View>
+
+                    <View style={styles.modalBody}>
+                        <Text style={styles.modalInstruction}>
+                            Descarga tu biblioteca de Epic en 4 pasos:
+                        </Text>
+
+                        {/* Pasos */}
+                        <View style={styles.stepsBox}>
+                            <Step number={1} text="Ve a epicgames.com/account/privacy" />
+                            <Step number={2} text="Haz clic en 'Descargar tus datos personales'" />
+                            <Step number={3} text="Espera 24-48 horas y descarga el ZIP" />
+                            <Step number={4} text="Abre 'entitlementGrantByEntitlementName.json' y cópialo" />
+                        </View>
+
+                        {/* Input de JSON */}
+                        <Text style={styles.modalLabel}>Pega el contenido del JSON aquí:</Text>
+                        <TextInput
+                            style={styles.epicModalInput}
+                            placeholder="Pega el contenido JSON..."
+                            placeholderTextColor={colors.textDisabled}
+                            value={epicInput}
+                            onChangeText={setEpicInput}
+                            multiline
+                            numberOfLines={8}
+                            textAlignVertical="top"
+                            autoCapitalize="none"
+                            autoCorrect={false}
+                            keyboardAppearance="dark"
+                        />
+
+                        {/* Error */}
+                        {vm.errorMessage ? (
+                            <View style={styles.modalError}>
+                                <Feather name="alert-circle" size={14} color={colors.error} />
+                                <Text style={styles.modalErrorText}>{vm.errorMessage}</Text>
+                            </View>
+                        ) : null}
+
+                        {/* Botón confirmar */}
+                        <TouchableOpacity
+                            style={[
+                                styles.confirmBtn,
+                                (!epicInput.trim() || vm.isLinking) && styles.confirmBtnDisabled,
+                            ]}
+                            onPress={handleConfirmEpic}
+                            disabled={!epicInput.trim() || vm.isLinking}
+                            activeOpacity={0.8}
+                        >
+                            {vm.isLinking ? (
+                                <ActivityIndicator size="small" color={colors.onPrimary} />
+                            ) : (
+                                <>
+                                    <Feather name="link" size={16} color={colors.onPrimary} />
+                                    <Text style={styles.confirmBtnText}>Vincular Epic Games</Text>
+                                </>
+                            )}
+                        </TouchableOpacity>
+
+                        <Text style={styles.modalFootnote}>
+                            Tu JSON nunca se comparte con servidores externos.{'\n'}
+                            Solo se procesa localmente en tu dispositivo.
+                        </Text>
+                    </View>
+                </KeyboardAvoidingView>
+            </Modal>
         </View>
     );
 });
@@ -262,6 +374,20 @@ const Example: React.FC<ExampleProps> = ({ icon, text, label }) => (
             <Text style={styles.exampleLabel}>{label}</Text>
             <Text style={styles.exampleText} numberOfLines={1}>{text}</Text>
         </View>
+    </View>
+);
+
+interface StepProps {
+    number: number;
+    text: string;
+}
+
+const Step: React.FC<StepProps> = ({ number, text }) => (
+    <View style={styles.stepRow}>
+        <View style={styles.stepNumber}>
+            <Text style={styles.stepNumberText}>{number}</Text>
+        </View>
+        <Text style={styles.stepText}>{text}</Text>
     </View>
 );
 
@@ -474,5 +600,63 @@ const styles = StyleSheet.create({
         color: colors.textTertiary,
         textAlign: 'center',
         lineHeight: 18,
+    },
+
+    // ─── Epic Modal ──────────────────────────────────────────────────────────
+    stepsBox: {
+        backgroundColor: colors.surface,
+        borderRadius: radius.lg,
+        padding: spacing.md,
+        marginBottom: spacing.lg,
+        borderWidth: StyleSheet.hairlineWidth,
+        borderColor: colors.border,
+        gap: spacing.sm,
+    },
+    stepRow: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        gap: spacing.sm,
+    },
+    stepNumber: {
+        width: 28,
+        height: 28,
+        borderRadius: radius.full,
+        backgroundColor: colors.primary,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginTop: 2,
+    },
+    stepNumberText: {
+        ...typography.small,
+        color: colors.onPrimary,
+        fontWeight: '600',
+    },
+    stepText: {
+        ...typography.small,
+        color: colors.textSecondary,
+        flex: 1,
+        paddingTop: 4,
+        lineHeight: 18,
+    },
+    modalLabel: {
+        ...typography.small,
+        color: colors.textTertiary,
+        fontSize: 12,
+        textTransform: 'uppercase',
+        letterSpacing: 0.4,
+        marginBottom: spacing.xs,
+    },
+    epicModalInput: {
+        backgroundColor: colors.surface,
+        borderRadius: radius.md,
+        borderWidth: 1,
+        borderColor: colors.border,
+        color: colors.textPrimary,
+        fontSize: 14,
+        fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+        paddingHorizontal: spacing.md,
+        paddingVertical: spacing.md,
+        marginBottom: spacing.md,
+        height: 200,
     },
 });

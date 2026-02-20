@@ -1,7 +1,7 @@
 # GameShelf - Estado del Proyecto
 
 ## Última actualización
-20 de Febrero de 2026
+20 de Febrero de 2026 (Sesión 9 — Epic Games Integration Completa)
 
 ## Resumen General
 
@@ -186,9 +186,10 @@ GameShelf/
 
 ### Ajustes
 - [x] Perfil de usuario
-- [x] Plataformas vinculadas
+- [x] Plataformas vinculadas (Steam + Epic completamente funcionales)
 - [x] Preferencias de notificaciones
-- [x] Vincular/desvincular Steam/Epic
+- [x] Vincular/desvincular Steam vía SteamID/URL/vanity name
+- [x] Vincular/desvincular Epic vía export GDPR JSON import
 
 ---
 

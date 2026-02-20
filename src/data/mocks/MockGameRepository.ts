@@ -80,4 +80,9 @@ export class MockGameRepository implements IGameRepository {
             r.getTitle().toLowerCase().includes(lower),
         );
     }
+
+    async storeEpicGames(_userId: string, _games: Game[]): Promise<void> {
+        // En mocks, no necesitamos hacer nada especial
+        await simulateDelay(100);
+    }
 }

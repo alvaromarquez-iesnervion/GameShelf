@@ -104,4 +104,20 @@ export class GameRepositoryImpl implements IGameRepository {
         // Búsqueda delegada en ITAD (catálogo más amplio: Steam, Epic, GOG, Humble, etc.)
         return this.itadService.searchGames(query);
     }
+
+    async storeEpicGames(userId: string, games: Game[]): Promise<void> {
+        // Almacenar juegos de Epic en Firestore
+        if (games.length === 0) return;
+
+        const BATCH_SIZE = 500;
+        for (let i = 0; i < games.length; i += BATCH_SIZE) {
+            const batch = writeBatch(this.firestore);
+            const chunk = games.slice(i, i + BATCH_SIZE);
+            for (const game of chunk) {
+                const ref = doc(this.firestore, 'users', userId, 'library', game.getId());
+                batch.set(ref, FirestoreGameMapper.toFirestore(game), { merge: true });
+            }
+            await batch.commit();
+        }
+    }
 }

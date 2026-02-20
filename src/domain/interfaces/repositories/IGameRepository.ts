@@ -13,4 +13,6 @@ export interface IGameRepository {
     syncLibrary(userId: string, platform: Platform): Promise<Game[]>;
     /** Búsqueda general vía ITAD /games/search/v1 (catálogo más amplio). */
     searchGames(query: string): Promise<SearchResult[]>;
+    /** Almacena juegos parseados de Epic en memoria (uso interno del use case). */
+    storeEpicGames(userId: string, games: Game[]): Promise<void>;
 }

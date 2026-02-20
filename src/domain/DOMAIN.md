@@ -60,7 +60,7 @@ Abstraen el acceso a datos persistentes (Firestore). `data/` los implementa.
 | Interfaz | Responsabilidad |
 |---|---|
 | `IAuthRepository` | `register`, `login`, `logout`, `getCurrentUser`, `deleteAccount` |
-| `IGameRepository` | `getLibraryGames`, `getGameById`, `syncLibrary`, `searchGames` (via ITAD) |
+| `IGameRepository` | `getLibraryGames`, `getGameById`, `getOrCreateGameById`, `syncLibrary`, `searchGames` (via ITAD), `storeEpicGames` (interno) |
 | `IWishlistRepository` | `getWishlist`, `addToWishlist`, `removeFromWishlist`, `isInWishlist` |
 | `IPlatformRepository` | `linkSteamPlatform`, `linkEpicPlatform`, `unlinkPlatform`, `getLinkedPlatforms` |
 | `INotificationRepository` | `getNotificationPreferences`, `updateNotificationPreferences` |
@@ -109,6 +109,6 @@ Contienen la lógica de negocio real. Orquestan repositorios y servicios.
 | `WishlistUseCase` | `getWishlist`: enriquece cada item con `getBestDeal()` de ITAD |
 | `GameDetailUseCase` | `getGameDetail`: consulta ProtonDB, HLTB, ITAD y wishlist en **paralelo** con `Promise.allSettled` — el fallo de una API no rompe las demás |
 | `SearchUseCase` | `searchGames`: busca via `IGameRepository` y cruza con `isInWishlist` para marcar el flag |
-| `PlatformLinkUseCase` | Flujos separados: `linkSteam` (OpenID 2.0 → verificar → extraer SteamID → sync), `linkEpic` (parsear JSON → almacenar → marcar flag) |
+| `PlatformLinkUseCase` | Flujos separados: `linkSteam` (OpenID 2.0 → verificar → extraer SteamID → sync), `linkEpic` (parsear JSON → enriquecer con ITAD → almacenar en repo → sincronizar) |
 | `SettingsUseCase` | `getProfile`: agrega `User` + `LinkedPlatform[]` + `NotificationPreferences` en un `UserProfileDTO` |
 | `HomeUseCase` | `getRecentlyPlayed`: consulta Steam API para juegos jugados en últimas 2 semanas; `getMostPlayed`: ordena biblioteca por playtime |

@@ -37,8 +37,9 @@ import { MockProtonDbService } from '../data/mocks/MockProtonDbService';
 
 import { MockIsThereAnyDealService } from '../data/mocks/MockIsThereAnyDealService';
 
-// ─── Implementaciones reales (Steam — sin Firebase) ───────────────────────────
+// ─── Implementaciones reales (Steam + Epic — sin Firebase) ────────────────────
 import { SteamApiServiceImpl } from '../data/services/SteamApiServiceImpl';
+import { EpicGamesApiServiceImpl } from '../data/services/EpicGamesApiServiceImpl';
 import { ProtonDbServiceImpl } from '../data/services/ProtonDbServiceImpl';
 import { HowLongToBeatServiceImpl } from '../data/services/HowLongToBeatServiceImpl';
 import { IsThereAnyDealServiceImpl } from '../data/services/IsThereAnyDealServiceImpl';
@@ -108,7 +109,8 @@ if (useRealSteam) {
 }
 
 // ─── Servicios externos ───────────────────────────────────────────────────────
-container.bind<IEpicGamesApiService>(TYPES.IEpicGamesApiService).to(MockEpicGamesApiService);
+// Epic: usar implementación real (no requiere API key, parsea export GDPR)
+container.bind<IEpicGamesApiService>(TYPES.IEpicGamesApiService).to(EpicGamesApiServiceImpl);
 container.bind<IProtonDbService>(TYPES.IProtonDbService).to(ProtonDbServiceImpl);
 container.bind<IHowLongToBeatService>(TYPES.IHowLongToBeatService).to(HowLongToBeatServiceImpl);
 container.bind<IIsThereAnyDealService>(TYPES.IIsThereAnyDealService).to(IsThereAnyDealServiceImpl);

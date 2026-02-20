@@ -96,13 +96,27 @@ export class PlatformLinkUseCase implements IPlatformLinkUseCase {
 
     async linkEpic(userId: string, fileContent: string): Promise<LinkedPlatform> {
         // 1. Parsear el JSON del export GDPR de Epic
-        await this.epicService.parseExportedLibrary(fileContent);
+        // Devuelve array de Game con itadGameId enriquecido
+        const epicGames = await this.epicService.parseExportedLibrary(fileContent);
+        
+        if (epicGames.length === 0) {
+            throw new Error(
+                'No se encontraron juegos en el archivo. ' +
+                'Asegúrate de que es el JSON correcto del export GDPR de Epic Games.',
+            );
+        }
 
-        // 2. Marcar Epic como vinculado en Firestore
+        // 2. Almacenar juegos parseados en el repositorio (en memoria, para sincronización posterior)
+        await this.gameRepository.storeEpicGames(userId, epicGames);
+
+        // 3. Marcar Epic como vinculado en Firestore
         const linked = await this.platformRepository.linkEpicPlatform(userId);
 
-        // 3. Sincronizar la biblioteca Epic (no bloqueante)
-        this.gameRepository.syncLibrary(userId, Platform.EPIC_GAMES).catch(() => {});
+        // 4. Sincronizar la biblioteca Epic (no bloqueante)
+        // Esta llamada carga los juegos almacenados en el paso 2 en la biblioteca completa
+        this.gameRepository.syncLibrary(userId, Platform.EPIC_GAMES).catch(() => {
+            // La sync puede fallar sin romper la vinculación ya completada
+        });
 
         return linked;
     }

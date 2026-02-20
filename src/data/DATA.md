@@ -71,8 +71,13 @@ Implementan las interfaces de `domain/interfaces/services/`. Cada servicio encap
 ### `EpicGamesApiServiceImpl`
 
 - **No hay API de biblioteca pública**. Flujo: el usuario exporta sus datos (GDPR en epicgames.com/account/privacy), sube el ZIP/JSON a la app, y `parseExportedLibrary()` extrae los juegos.
+- **Enriquecimiento de juegos**: 
+  - Cada juego parseado se busca en ITAD por título para obtener `itadGameId` (para ofertas futuras)
+  - Se intenta obtener la portada desde ITAD también
+  - Si las búsquedas fallan, el juego se crea igual pero sin estos datos (robusto ante fallos de API)
+  - Usa `Promise.allSettled` para que el fallo de una API no rompa las demás
 - **Búsqueda de catálogo**: GraphQL no oficial en `graphql.epicgames.com/graphql`. Solo para búsqueda, no para biblioteca.
-- La portada se intenta obtener de la GraphQL o se usa un placeholder.
+- **Inyecciones**: Depende de `IIsThereAnyDealService` para enriquecimiento
 
 ### `ProtonDbServiceImpl`
 
