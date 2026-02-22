@@ -4,7 +4,48 @@ Registro acumulativo de decisiones, cambios y contexto relevante por sesión.
 
 ---
 
-## Estado actual del proyecto (Sesión 11 — Firebase activado)
+## Estado actual del proyecto (Sesión 12 — Auth completo + ForgotPassword)
+
+### Auditoría y corrección del sistema de autenticación
+
+**Motivación**: auditoría completa del flujo de auth tras activar Firebase. Se encontraron 4 bugs y una funcionalidad ausente (reset de contraseña).
+
+**Bugs corregidos:**
+
+1. **`App.tsx`**: `initializeFirebase()` ahora se llama condicionalmente (`if EXPO_PUBLIC_FIREBASE_API_KEY`). Antes se llamaba siempre, intentando `initializeApp()` con campos `undefined` en modo mock.
+
+2. **`MockAuthRepository.ts`**: `logout()` y `deleteAccount()` ahora ponen `currentUser = null` correctamente. Antes reasignaban `MOCK_USER`, creando comportamiento inconsistente en testing. También cambiado el tipo del campo a `User | null`.
+
+3. **`AuthViewModel.ts`**: `checkAuthState()` ahora limpia `_errorMessage = null` al inicio, igual que el resto de métodos asíncronos.
+
+**Nueva funcionalidad — flujo "Olvidé mi contraseña":**
+
+- `IAuthRepository`: añadido método `resetPassword(email): Promise<void>`
+- `AuthRepositoryImpl`: implementado con `sendPasswordResetEmail()` de Firebase Auth
+- `MockAuthRepository`: mock que simula delay + valida formato email + retorna void
+- `AuthViewModel`: añadido `resetPassword(email): Promise<boolean>` con patrón habitual (isLoading, errorMessage, runInAction)
+- `navigationTypes.ts`: añadida ruta `ForgotPassword: undefined` a `AuthStackParamList`
+- `AuthStack.tsx`: registrada `ForgotPasswordScreen`
+- `ForgotPasswordScreen.tsx`: **NUEVA** — input email + botón enviar + estado de éxito con confirmación visual + botón volver
+- `LoginScreen.tsx`: añadido enlace "¿Olvidaste tu contraseña?" entre el campo password y el botón de login
+
+**Archivos modificados (9) + 1 nuevo:**
+- `src/core/App.tsx`
+- `src/data/mocks/MockAuthRepository.ts`
+- `src/presentation/viewmodels/AuthViewModel.ts`
+- `src/domain/interfaces/repositories/IAuthRepository.ts`
+- `src/data/repositories/AuthRepositoryImpl.ts`
+- `src/core/navigation/navigationTypes.ts`
+- `src/core/navigation/AuthStack.tsx`
+- `src/presentation/screens/auth/LoginScreen.tsx`
+- `src/domain/DOMAIN.md`
+- `src/presentation/screens/auth/ForgotPasswordScreen.tsx` ← NUEVO
+
+**TypeScript**: `npx tsc --noEmit` — ✅ 0 errores (solo error en `src/app/` scaffold ignorado)
+
+---
+
+## Estado anterior (Sesión 11 — Firebase activado)
 
 ### Configuración de Firebase real
 

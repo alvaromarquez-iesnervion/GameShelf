@@ -60,7 +60,7 @@ Abstraen el acceso a datos persistentes (Firestore). `data/` los implementa.
 
 | Interfaz | Responsabilidad |
 |---|---|
-| `IAuthRepository` | `register`, `login`, `logout`, `getCurrentUser`, `deleteAccount` |
+| `IAuthRepository` | `register`, `login`, `logout`, `getCurrentUser`, `deleteAccount`, `resetPassword` |
 | `IGameRepository` | `getLibraryGames`, `getGameById`, `getOrCreateGameById`, `syncLibrary`, `searchGames` (via ITAD), `storeEpicGames` (interno) |
 | `IWishlistRepository` | `getWishlist`, `addToWishlist`, `removeFromWishlist`, `isInWishlist` |
 | `IPlatformRepository` | `linkSteamPlatform`, `linkEpicPlatform(userId, epicAccountId?)`, `unlinkPlatform`, `getLinkedPlatforms` |

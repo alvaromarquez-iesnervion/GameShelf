@@ -113,6 +113,7 @@ export class AuthViewModel {
     async checkAuthState(): Promise<void> {
         runInAction(() => {
             this._isLoading = true;
+            this._errorMessage = null;
         });
 
         try {
@@ -147,6 +148,27 @@ export class AuthViewModel {
                 this._errorMessage = (error as Error).message;
             });
             throw error;
+        } finally {
+            runInAction(() => {
+                this._isLoading = false;
+            });
+        }
+    }
+
+    async resetPassword(email: string): Promise<boolean> {
+        runInAction(() => {
+            this._isLoading = true;
+            this._errorMessage = null;
+        });
+
+        try {
+            await this.authRepository.resetPassword(email);
+            return true;
+        } catch (error) {
+            runInAction(() => {
+                this._errorMessage = (error as Error).message;
+            });
+            return false;
         } finally {
             runInAction(() => {
                 this._isLoading = false;

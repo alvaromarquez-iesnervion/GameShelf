@@ -6,6 +6,7 @@ import {
     signInWithEmailAndPassword,
     signOut,
     deleteUser,
+    sendPasswordResetEmail,
 } from 'firebase/auth';
 import {
     Firestore,
@@ -106,5 +107,9 @@ export class AuthRepositoryImpl implements IAuthRepository {
 
         // 4. Borrar cuenta de Firebase Auth
         await deleteUser(firebaseUser);
+    }
+
+    async resetPassword(email: string): Promise<void> {
+        await sendPasswordResetEmail(this.auth, email);
     }
 }

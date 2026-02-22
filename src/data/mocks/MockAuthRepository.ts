@@ -16,7 +16,7 @@ import { MOCK_USER, simulateDelay } from './MockDataProvider';
 @injectable()
 export class MockAuthRepository implements IAuthRepository {
 
-    private currentUser: User = MOCK_USER; // sesión ya iniciada para testing
+    private currentUser: User | null = MOCK_USER; // sesión ya iniciada para testing
 
     async register(email: string, password: string): Promise<User> {
         await simulateDelay(800);
@@ -53,7 +53,7 @@ export class MockAuthRepository implements IAuthRepository {
 
     async logout(): Promise<void> {
         await simulateDelay(300);
-        this.currentUser = MOCK_USER; // mantiene sesión para testing
+        this.currentUser = null;
     }
 
     async getCurrentUser(): Promise<User | null> {
@@ -63,6 +63,14 @@ export class MockAuthRepository implements IAuthRepository {
 
     async deleteAccount(): Promise<void> {
         await simulateDelay(600);
-        this.currentUser = MOCK_USER; // mantiene sesión para testing
+        this.currentUser = null;
+    }
+
+    async resetPassword(email: string): Promise<void> {
+        await simulateDelay(600);
+        if (!email.includes('@')) {
+            throw new Error('El formato del email no es válido');
+        }
+        // En modo mock: simula éxito silenciosamente
     }
 }

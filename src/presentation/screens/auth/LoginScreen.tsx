@@ -45,6 +45,12 @@ export const LoginScreen: React.FC = observer(() => {
         navigation.navigate('Register');
     };
 
+    const handleNavigateForgotPassword = () => {
+        Haptics.selectionAsync();
+        authVm.clearError();
+        navigation.navigate('ForgotPassword');
+    };
+
     return (
         <KeyboardAvoidingView
             style={styles.container}
@@ -131,6 +137,15 @@ export const LoginScreen: React.FC = observer(() => {
                             />
                         </TouchableOpacity>
                     </View>
+
+                    {/* Forgot password */}
+                    <TouchableOpacity
+                        style={styles.forgotBtn}
+                        onPress={handleNavigateForgotPassword}
+                        activeOpacity={0.7}
+                    >
+                        <Text style={styles.forgotText}>¿Olvidaste tu contraseña?</Text>
+                    </TouchableOpacity>
 
                     <TouchableOpacity
                         style={[styles.primaryBtn, authVm.isLoading && styles.primaryBtnDisabled]}
@@ -275,6 +290,14 @@ const styles = StyleSheet.create({
     primaryBtnText: {
         ...typography.button,
         color: colors.onPrimary,
+    },
+    forgotBtn: {
+        alignSelf: 'flex-end',
+        paddingVertical: spacing.xs,
+    },
+    forgotText: {
+        ...typography.small,
+        color: colors.primary,
     },
     footerLink: {
         flexDirection: 'row',

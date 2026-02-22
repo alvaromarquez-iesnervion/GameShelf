@@ -8,4 +8,6 @@ export interface IAuthRepository {
     getCurrentUser(): Promise<User | null>;
     /** Borra subcolecciones Firestore + documento + cuenta Firebase Auth. Irreversible. */
     deleteAccount(): Promise<void>;
+    /** Envía un correo de recuperación de contraseña al email indicado. */
+    resetPassword(email: string): Promise<void>;
 }
