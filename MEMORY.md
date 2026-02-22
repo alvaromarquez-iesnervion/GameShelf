@@ -4,6 +4,26 @@ Registro acumulativo de decisiones, cambios y contexto relevante por sesión.
 
 ---
 
+## Sesión 16 — Fix "Tus más jugados" vacío con Steam vinculado
+
+### Bug
+
+La sección "Tus más jugados" en `SearchScreen` aparecía vacía aunque el usuario tuviese Steam vinculado.
+
+### Causa raíz
+
+`HomeUseCase.getMostPlayed()` leía directamente de Firestore (`getLibraryGames`) sin sincronizar primero con Steam. Si el usuario abría la app y navegaba a Búsqueda sin pasar antes por la pestaña Biblioteca (que dispara `autoSyncIfNeeded`), Firestore podía estar vacío y el resultado era `[]`.
+
+### Fix
+
+En `src/domain/usecases/home/HomeUseCase.ts` — método `getMostPlayed()`: antes de leer la biblioteca, comprueba si el usuario tiene Steam vinculado y, en caso afirmativo, llama a `gameRepository.syncLibrary(userId, Platform.STEAM)`. Si el sync falla, continúa con los datos en caché de Firestore (silent catch). Luego lee la biblioteca ya actualizada.
+
+### Archivos modificados (1)
+
+- `src/domain/usecases/home/HomeUseCase.ts` — `getMostPlayed()` añade sync previo
+
+---
+
 ## Sesión 15 — Refactor IGameRepository: userId en getGameById/getOrCreateGameById
 
 ### Motivación

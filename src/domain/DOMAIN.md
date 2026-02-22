@@ -112,4 +112,4 @@ Contienen la lógica de negocio real. Orquestan repositorios y servicios.
 | `SearchUseCase` | `searchGames`: busca via `IGameRepository` y cruza con `isInWishlist` para marcar el flag |
 | `PlatformLinkUseCase` | Flujos separados: `linkSteam` (OpenID 2.0 → verificar → extraer SteamID → sync), `linkEpic` (parsear JSON → enriquecer con ITAD → almacenar en repo → sincronizar) |
 | `SettingsUseCase` | `getProfile`: agrega `User` + `LinkedPlatform[]` + `NotificationPreferences` en un `UserProfileDTO` |
-| `HomeUseCase` | `getRecentlyPlayed`: consulta Steam API para juegos jugados en últimas 2 semanas; `getMostPlayed`: ordena biblioteca por playtime |
+| `HomeUseCase` | `getRecentlyPlayed`: consulta Steam API para juegos jugados en últimas 2 semanas; `getMostPlayed`: **sincroniza con Steam primero** (si Steam está vinculado), luego ordena biblioteca por playtime |
