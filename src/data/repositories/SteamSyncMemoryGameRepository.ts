@@ -10,22 +10,20 @@ import { SearchResult } from '../../domain/entities/SearchResult';
 import { Platform } from '../../domain/enums/Platform';
 import { TYPES } from '../../di/types';
 
-const TEST_USER_ID = 'mock-uid-dev-001';
-
 /**
  * IGameRepository en memoria que sincroniza desde las APIs reales de Steam y Epic.
  *
  * - Steam: llamadas a IPlayerService/GetOwnedGames/v1
  * - Epic: almacena juegos parseados del export GDPR en memoria
  *
- * Para testing: biblioteca se precarga automáticamente para el usuario de testing.
+ * Se usa cuando Steam API está activa pero Firebase no está configurado.
+ * Los datos se pierden al cerrar la app.
  */
 @injectable()
 export class SteamSyncMemoryGameRepository implements IGameRepository {
 
     private readonly gamesByUser = new Map<string, Game[]>();
-    private readonly epicGamesByUser = new Map<string, Game[]>(); // Almacén temporal para Epic
-    private initialized = false;
+    private readonly epicGamesByUser = new Map<string, Game[]>();
 
     constructor(
         @inject(TYPES.ISteamApiService)
@@ -36,31 +34,9 @@ export class SteamSyncMemoryGameRepository implements IGameRepository {
         private readonly platformRepository: IPlatformRepository,
         @inject(TYPES.IIsThereAnyDealService)
         private readonly itadService: IIsThereAnyDealService,
-    ) {
-        this.initializeForTesting();
-    }
-
-    private async initializeForTesting(): Promise<void> {
-        if (this.initialized) return;
-        
-        try {
-            const linked = await this.platformRepository.getLinkedPlatforms(TEST_USER_ID);
-            const steamPlatform = linked.find(p => p.getPlatform() === Platform.STEAM);
-            
-            if (steamPlatform) {
-                const steamGames = await this.steamService.getUserGames(steamPlatform.getExternalUserId());
-                this.gamesByUser.set(TEST_USER_ID, steamGames);
-            }
-            this.initialized = true;
-        } catch (error) {
-            console.warn('SteamSyncMemoryGameRepository: Could not preload library:', error);
-        }
-    }
+    ) {}
 
     async getLibraryGames(userId: string): Promise<Game[]> {
-        if (!this.initialized) {
-            await this.initializeForTesting();
-        }
         return [...(this.gamesByUser.get(userId) ?? [])];
     }
 

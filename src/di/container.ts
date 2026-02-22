@@ -25,34 +25,34 @@ import { IPlatformLinkUseCase } from '../domain/interfaces/usecases/platforms/IP
 import { ISettingsUseCase } from '../domain/interfaces/usecases/settings/ISettingsUseCase';
 import { IHomeUseCase } from '../domain/interfaces/usecases/home/IHomeUseCase';
 
-// ─── Mocks (fallback cuando no hay API keys configuradas) ────────────────────
+// ─── Mocks (fallback cuando no hay keys configuradas) ────────────────────────
 import { MockAuthRepository } from '../data/mocks/MockAuthRepository';
 import { MockGameRepository } from '../data/mocks/MockGameRepository';
 import { MockWishlistRepository } from '../data/mocks/MockWishlistRepository';
 import { MockPlatformRepository } from '../data/mocks/MockPlatformRepository';
 import { MockNotificationRepository } from '../data/mocks/MockNotificationRepository';
 import { MockSteamApiService } from '../data/mocks/MockSteamApiService';
-import { MockEpicGamesApiService } from '../data/mocks/MockEpicGamesApiService';
-import { MockProtonDbService } from '../data/mocks/MockProtonDbService';
 
-import { MockIsThereAnyDealService } from '../data/mocks/MockIsThereAnyDealService';
-
-// ─── Implementaciones reales (Steam + Epic — sin Firebase) ────────────────────
+// ─── Implementaciones reales (servicios externos) ─────────────────────────────
 import { SteamApiServiceImpl } from '../data/services/SteamApiServiceImpl';
 import { EpicGamesApiServiceImpl } from '../data/services/EpicGamesApiServiceImpl';
 import { ProtonDbServiceImpl } from '../data/services/ProtonDbServiceImpl';
 import { HowLongToBeatServiceImpl } from '../data/services/HowLongToBeatServiceImpl';
 import { IsThereAnyDealServiceImpl } from '../data/services/IsThereAnyDealServiceImpl';
-import { MemoryPlatformRepository } from '../data/repositories/MemoryPlatformRepository';
-import { SteamSyncMemoryGameRepository } from '../data/repositories/SteamSyncMemoryGameRepository';
 
-// ─── Implementaciones reales Firebase ────────────────────────────────────────
+// ─── Implementaciones reales (repositorios Firebase) ─────────────────────────
 import { AuthRepositoryImpl } from '../data/repositories/AuthRepositoryImpl';
 import { WishlistRepositoryImpl } from '../data/repositories/WishlistRepositoryImpl';
 import { NotificationRepositoryImpl } from '../data/repositories/NotificationRepositoryImpl';
+import { PlatformRepositoryImpl } from '../data/repositories/PlatformRepositoryImpl';
+import { GameRepositoryImpl } from '../data/repositories/GameRepositoryImpl';
 import { getFirebaseAuth, getFirebaseFirestore } from '../data/config/FirebaseConfig';
 import { Auth } from 'firebase/auth';
 import { Firestore } from 'firebase/firestore';
+
+// ─── Repositorios en memoria (fallback Steam sin Firebase) ───────────────────
+import { MemoryPlatformRepository } from '../data/repositories/MemoryPlatformRepository';
+import { SteamSyncMemoryGameRepository } from '../data/repositories/SteamSyncMemoryGameRepository';
 
 // ─── Use case implementations ─────────────────────────────────────────────────
 import { LibraryUseCase } from '../domain/usecases/library/LibraryUseCase';
@@ -70,17 +70,17 @@ const container = new Container({ defaultScope: 'Singleton' });
 /**
  * Modos de operación:
  *
- *  MODO MOCK (por defecto — EXPO_PUBLIC_STEAM_API_KEY no está configurada)
- *    → Todos los datos son ficticios. Útil para UI development y demos.
- *
- *  MODO STEAM REAL (EXPO_PUBLIC_STEAM_API_KEY presente en .env)
- *    → ISteamApiService llama a la API real de Steam.
- *    → Los juegos y plataformas se guardan en memoria (se pierden al cerrar la app).
- *    → Auth, Wishlist y Notificaciones persisten en Firebase Firestore.
- *
- *  MODO PRODUCCIÓN COMPLETO (requiere Firebase + Steam configurados)
- *    → Auth, Wishlist, Notifications → Firebase Firestore.
+ *  MODO PRODUCCIÓN (Firebase + Steam configurados — estado actual)
+ *    → Todo usa implementaciones reales con persistencia en Firestore.
+ *    → Auth, Wishlist, Notifications, Games, Platforms → Firebase Firestore.
  *    → Steam, Epic, ProtonDB, HLTB, ITAD → APIs reales.
+ *
+ *  MODO STEAM SIN FIREBASE (solo EXPO_PUBLIC_STEAM_API_KEY configurada)
+ *    → Steam API real, juegos y plataformas en memoria (se pierden al cerrar).
+ *    → Auth, Wishlist, Notifications → mocks.
+ *
+ *  MODO MOCK COMPLETO (sin keys)
+ *    → Todos los datos son ficticios. Útil para desarrollo de UI sin servicios externos.
  */
 const steamApiKey = process.env['EXPO_PUBLIC_STEAM_API_KEY'] ?? '';
 const useRealSteam = steamApiKey.length > 0;
@@ -106,19 +106,13 @@ if (useFirebase) {
 }
 
 // ─── Steam / Juegos / Plataformas ─────────────────────────────────────────────
-if (useRealSteam) {
-    /**
-     * MODO STEAM REAL
-     * SteamApiServiceImpl llama a:
-     *   - IPlayerService/GetOwnedGames/v1  → biblioteca del usuario
-     *   - ISteamUser/GetPlayerSummaries/v2 → visibilidad del perfil
-     *   - steamcommunity.com/openid/login  → verificación OpenID
-     *
-     * MemoryPlatformRepository + SteamSyncMemoryGameRepository:
-     *   → Sin Firebase, datos en memoria.
-     *
-     * TODO (Firebase): reemplazar por PlatformRepositoryImpl + GameRepositoryImpl.
-     */
+if (useFirebase && useRealSteam) {
+    // MODO PRODUCCIÓN: todo persiste en Firestore
+    container.bind<ISteamApiService>(TYPES.ISteamApiService).to(SteamApiServiceImpl);
+    container.bind<IPlatformRepository>(TYPES.IPlatformRepository).to(PlatformRepositoryImpl);
+    container.bind<IGameRepository>(TYPES.IGameRepository).to(GameRepositoryImpl);
+} else if (useRealSteam) {
+    // MODO STEAM SIN FIREBASE: Steam real, datos en memoria
     container.bind<ISteamApiService>(TYPES.ISteamApiService).to(SteamApiServiceImpl);
     container.bind<IPlatformRepository>(TYPES.IPlatformRepository).to(MemoryPlatformRepository);
     container.bind<IGameRepository>(TYPES.IGameRepository).to(SteamSyncMemoryGameRepository);

@@ -21,6 +21,7 @@ export class LibraryViewModel {
     private _isSyncing: boolean = false;
     private _searchQuery: string = '';
     private _errorMessage: string | null = null;
+    private _hasSynced: boolean = false;
 
     constructor(
         @inject(TYPES.ILibraryUseCase)
@@ -120,6 +121,58 @@ export class LibraryViewModel {
 
     clearSearch(): void {
         this._searchQuery = '';
+    }
+
+    /**
+     * Llamado al arrancar la app tras autenticarse.
+     * 1. Carga la biblioteca Firestore inmediatamente (respuesta rápida).
+     * 2. Si el usuario tiene plataformas vinculadas y no hemos sincronizado
+     *    en esta sesión, lanza una sincronización en background para cada
+     *    plataforma y actualiza la UI cuando termina.
+     */
+    async autoSyncIfNeeded(userId: string): Promise<void> {
+        if (this._hasSynced) return;
+
+        // Carga rápida desde Firestore (lo que ya está guardado)
+        await this.loadLibrary(userId);
+
+        const platforms = this._linkedPlatforms;
+        if (platforms.length === 0) return;
+
+        // Sincronización en background — no bloquea la UI
+        runInAction(() => {
+            this._isSyncing = true;
+            this._hasSynced = true;
+        });
+
+        try {
+            const results = await Promise.allSettled(
+                platforms.map(p => this.libraryUseCase.syncLibrary(userId, p.getPlatform())),
+            );
+
+            // Reunir todos los juegos de todas las plataformas sincronizadas
+            const allGames: Game[] = [];
+            for (const result of results) {
+                if (result.status === 'fulfilled') {
+                    allGames.push(...result.value);
+                }
+            }
+
+            if (allGames.length > 0) {
+                runInAction(() => {
+                    this._games = allGames;
+                });
+            }
+        } catch (error) {
+            // El error de sync no es crítico — la biblioteca en caché sigue disponible
+            runInAction(() => {
+                this._errorMessage = (error as Error).message;
+            });
+        } finally {
+            runInAction(() => {
+                this._isSyncing = false;
+            });
+        }
     }
 
     clearError(): void {

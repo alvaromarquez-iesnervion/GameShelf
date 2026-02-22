@@ -4,7 +4,67 @@ Registro acumulativo de decisiones, cambios y contexto relevante por sesión.
 
 ---
 
-## Estado actual del proyecto (Sesión 12 — Auth completo + ForgotPassword)
+## Estado actual del proyecto (Sesión 13 — Modo producción completo, sin mocks)
+
+### Activación de repositorios Firebase reales + auto-sync
+
+**Motivación**: los repositorios `MemoryPlatformRepository` y `SteamSyncMemoryGameRepository` seguían activos con datos de testing hardcodeados incluso con Firebase configurado. Se eliminan y se activan las implementaciones reales con Firestore.
+
+**Cambios realizados:**
+
+1. **`src/di/container.ts`**:
+   - Nueva rama `useFirebase && useRealSteam` (modo producción) enlaza `PlatformRepositoryImpl` y `GameRepositoryImpl`
+   - La rama `useRealSteam` (sin Firebase) mantiene los repos en memoria como fallback legítimo
+   - La rama `else` mantiene mocks completos para desarrollo sin keys
+   - Eliminados imports de `MockSteamApiService`, `MockEpicGamesApiService`, `MockProtonDbService`, `MockIsThereAnyDealService` (nunca se usaban en rutas activas)
+   - Añadidos imports de `PlatformRepositoryImpl` y `GameRepositoryImpl`
+
+2. **`src/presentation/viewmodels/LibraryViewModel.ts`**:
+   - Añadido campo `_hasSynced: boolean` (flag de sesión para evitar doble sync)
+   - Nuevo método `autoSyncIfNeeded(userId)`:
+     - Carga la biblioteca Firestore inmediatamente (carga rápida desde caché)
+     - Si hay plataformas vinculadas, sincroniza todas en paralelo con `Promise.allSettled`
+     - Actualiza `_games` con el resultado combinado
+     - El error de sync no bloquea — la caché sigue disponible
+
+3. **`src/core/navigation/RootNavigator.tsx`**:
+   - Inyectado `LibraryViewModel`
+   - `useEffect` que observa `authVm.isAuthenticated`: al pasar a `true`, llama `libraryVm.autoSyncIfNeeded(uid)` una sola vez por sesión (protegido con `syncStartedRef`)
+   - Al cerrar sesión, `syncStartedRef` se resetea para la próxima sesión
+
+4. **`src/data/repositories/MemoryPlatformRepository.ts`**:
+   - Eliminadas constantes `TEST_STEAM_ID` y `TEST_USER_ID`
+   - Constructor ahora inicia con `new Map()` vacío (sin datos precargados)
+   - Actualizado el JSDoc
+
+5. **`src/data/repositories/SteamSyncMemoryGameRepository.ts`**:
+   - Eliminada constante `TEST_USER_ID`
+   - Eliminado método `initializeForTesting()` y su llamada en el constructor
+   - Eliminado flag `initialized` y la verificación en `getLibraryGames()`
+   - Actualizado el JSDoc
+
+6. **`ESTADO.md`**:
+   - Eliminada sección "⚠️ Configuración temporal para testing"
+   - Actualizado estado a "Producción"
+   - Actualizada sección "Cómo ejecutar" con los tres modos de operación
+
+**Archivos modificados (6):**
+- `src/di/container.ts`
+- `src/presentation/viewmodels/LibraryViewModel.ts`
+- `src/core/navigation/RootNavigator.tsx`
+- `src/data/repositories/MemoryPlatformRepository.ts`
+- `src/data/repositories/SteamSyncMemoryGameRepository.ts`
+- `ESTADO.md`
+
+**Estado de mocks tras este cambio:**
+- `MockAuthRepository`, `MockWishlistRepository`, `MockNotificationRepository`, `MockPlatformRepository`, `MockGameRepository`, `MockSteamApiService` → siguen existiendo como fallback cuando no hay keys configuradas. No se usan en producción. No parchean errores.
+- Servicios externos (`MockEpicGamesApiService`, `MockProtonDbService`, `MockHowLongToBeatService`, `MockIsThereAnyDealService`) → solo como referencia/futura testing. No bindeados en ninguna rama del contenedor.
+
+**TypeScript**: `npx tsc --noEmit` — ✅ 0 errores
+
+---
+
+## Estado anterior (Sesión 12 — Auth completo + ForgotPassword)
 
 ### Auditoría y corrección del sistema de autenticación
 
