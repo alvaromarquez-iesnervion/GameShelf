@@ -4,7 +4,41 @@ Registro acumulativo de decisiones, cambios y contexto relevante por sesión.
 
 ---
 
-## Estado actual del proyecto (Sesión 10 — Epic Games Auth Code)
+## Estado actual del proyecto (Sesión 11 — Firebase activado)
+
+### Configuración de Firebase real
+
+**Motivación**: hasta ahora Auth, Wishlist y Notificaciones usaban mocks en memoria. Con Firebase configurado, los datos persisten entre sesiones y entre dispositivos.
+
+**Cambios realizados:**
+
+1. **`.env`**: rellenadas las 6 variables `EXPO_PUBLIC_FIREBASE_*` con el proyecto `gameshelf-180a3`.
+
+2. **`src/core/App.tsx`**: añadida llamada a `initializeFirebase()` antes de importar el contenedor DI. Esto garantiza que las instancias `Auth` y `Firestore` estén listas antes de que Inversify las inyecte.
+
+3. **`src/di/container.ts`**:
+   - Añadida variable `useFirebase` (detecta `EXPO_PUBLIC_FIREBASE_API_KEY` presente).
+   - Registradas las instancias `Auth` y `Firestore` como `toDynamicValue` con `TYPES.FirebaseAuth` / `TYPES.Firestore`.
+   - Auth, Wishlist y Notification: ahora usan `AuthRepositoryImpl`, `WishlistRepositoryImpl`, `NotificationRepositoryImpl` cuando `useFirebase = true`; en caso contrario caen al mock.
+
+**Archivos modificados (3):**
+- `.env`
+- `src/core/App.tsx`
+- `src/di/container.ts`
+
+**Estado de los repositorios Firebase (ahora activos):**
+- `AuthRepositoryImpl` — Auth + Firestore (colección `users`)
+- `WishlistRepositoryImpl` — Firestore (subcolección `users/{uid}/wishlist`)
+- `NotificationRepositoryImpl` — Firestore (doc `users/{uid}/settings/notifications`)
+
+**Nota sobre configuración temporal de testing:**
+Con Firebase real activo, el `MockAuthRepository` ya no se usa. La sesión ya NO arranca pre-logueada. El usuario debe registrarse o hacer login real. Los cambios de testing en `MemoryPlatformRepository` y `SteamSyncMemoryGameRepository` siguen activos (Steam pre-vinculado) pero solo afectan a la capa de juegos/plataformas que aún usa memoria.
+
+**TypeScript**: pendiente de verificar — los repos *Impl ya existían sin errores previos.
+
+---
+
+## Estado anterior (Sesión 10 — Epic Games Auth Code)
 
 ### Vinculación automática de Epic Games via Authorization Code
 

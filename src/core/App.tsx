@@ -5,6 +5,10 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { RootNavigator } from './navigation/RootNavigator';
 import { colors } from '../presentation/theme/colors';
 
+// Inicializar Firebase antes del contenedor DI
+import { initializeFirebase } from '../data/config/FirebaseConfig';
+initializeFirebase();
+
 // Importar container para que se ejecuten todos los bindings
 import '../di/container';
 

@@ -20,15 +20,27 @@ Esta capa conoce todas las demás capas (`domain/`, `data/`, `presentation/`) pe
 
 ## `container.ts` — Bindings
 
+El contenedor detecta las variables de entorno en tiempo de arranque y elige la implementación adecuada:
+
+| Variable presente | Efecto |
+|---|---|
+| `EXPO_PUBLIC_FIREBASE_API_KEY` | Auth, Wishlist, Notification → `*RepositoryImpl` reales |
+| `EXPO_PUBLIC_STEAM_API_KEY` | Steam, Games, Platforms → implementaciones reales en memoria |
+| Ninguna | Todo → mocks |
+
 Registra todos los bindings en este orden:
 
 ```
+Instancias Firebase (cuando useFirebase = true)
+  TYPES.FirebaseAuth      → getFirebaseAuth()   (toDynamicValue)
+  TYPES.Firestore         → getFirebaseFirestore() (toDynamicValue)
+
 Repositorios (singleton)
-  IAuthRepository         → AuthRepositoryImpl
-  IGameRepository         → GameRepositoryImpl
-  IWishlistRepository     → WishlistRepositoryImpl
-  IPlatformRepository     → PlatformRepositoryImpl
-  INotificationRepository → NotificationRepositoryImpl
+  IAuthRepository         → AuthRepositoryImpl  (o MockAuthRepository)
+  IGameRepository         → SteamSyncMemoryGameRepository (o MockGameRepository)
+  IWishlistRepository     → WishlistRepositoryImpl (o MockWishlistRepository)
+  IPlatformRepository     → MemoryPlatformRepository (o MockPlatformRepository)
+  INotificationRepository → NotificationRepositoryImpl (o MockNotificationRepository)
 
 Servicios externos (singleton)
   ISteamApiService        → SteamApiServiceImpl
@@ -124,20 +136,21 @@ const authVm = useInjection<AuthViewModel>(TYPES.AuthViewModel);
   - `'babel-plugin-transform-typescript-metadata'`
   - `['@babel/plugin-proposal-decorators', { legacy: true }]`
 
-### Mocks activados por defecto
-**`EXPO_PUBLIC_USE_MOCKS !== 'false'`**:
-- Todos los repositorios y servicios (incluidos Steam excepto API real) usan implementaciones mock.
+### Activación de implementaciones reales
 
-**`EXPO_PUBLIC_USE_MOCKS === 'false'`**:
-- Repositorios: enlazados a implementaciones reales de Firebase (AuthRepositoryImpl, GameRepositoryImpl, etc.)
+**Firebase (Auth + Firestore)** — activo cuando `EXPO_PUBLIC_FIREBASE_API_KEY` está en `.env`:
+- `initializeFirebase()` se llama en `App.tsx` antes de importar el contenedor
+- `TYPES.FirebaseAuth` y `TYPES.Firestore` se registran como `toDynamicValue`
+- `AuthRepositoryImpl`, `WishlistRepositoryImpl`, `NotificationRepositoryImpl` se enlazan en lugar de sus mocks
 
-**Steam API en modo real**:
-- Requiere `EXPO_PUBLIC_STEAM_API_KEY` en `.env`
-- El contenedor DI activa SteamApiServiceImpl en lugar del mock automáticamente.
+**Steam API en modo real** — activo cuando `EXPO_PUBLIC_STEAM_API_KEY` está en `.env`:
+- El contenedor DI activa `SteamApiServiceImpl`, `MemoryPlatformRepository`, `SteamSyncMemoryGameRepository`
 
 **ProtonDB y HLTB**: Siempre usan implementaciones reales (no requieren API key).
 
+**Sin variables configuradas**: Todo cae a mocks. Útil para desarrollo de UI sin servicios externos.
+
 ### Firebase Config
-- `FirebaseConfig.ts` y `ApiConstants.ts` existen en `data/config/`
-- `initializeFirebase()` se llama desde `App.tsx` cuando usas Firebase real
-- Los repositorios pueden estar enlazados al mock o a las implementaciones reales según `.env`
+- `FirebaseConfig.ts` en `data/config/`: exporta `initializeFirebase()`, `getFirebaseAuth()`, `getFirebaseFirestore()`
+- `initializeFirebase()` se llama en `App.tsx` antes de importar `container.ts`
+- Proyecto Firebase activo: `gameshelf-180a3`

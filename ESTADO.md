@@ -1,7 +1,7 @@
 # GameShelf - Estado del Proyecto
 
 ## Última actualización
-20 de Febrero de 2026 (Sesión 9 — Epic Games Integration Completa)
+22 de Febrero de 2026 (Sesión 11 — Firebase activado)
 
 ## Resumen General
 
@@ -126,7 +126,8 @@ GameShelf/
 ### ✅ Dependency Injection (Completa)
 - Contenedor Inversify con bindings para todos los repos, servicios, use cases y ViewModels
 - Hook `useInjection` para acceder a dependencias desde componentes React
-- Mocks activos por defecto (`EXPO_PUBLIC_USE_MOCKS !== 'false'`)
+- Firebase activo: `AuthRepositoryImpl`, `WishlistRepositoryImpl`, `NotificationRepositoryImpl` enlazados cuando `EXPO_PUBLIC_FIREBASE_API_KEY` está presente
+- Steam activo: `SteamApiServiceImpl` y repos en memoria cuando `EXPO_PUBLIC_STEAM_API_KEY` está presente
 
 ### ✅ Presentation (Completa)
 - **8 ViewModels**: Auth, Library, Wishlist, Home, GameDetail, Search, PlatformLink, Settings
@@ -231,18 +232,18 @@ npx expo start
 ```
 
 ### Por defecto (Mocks)
-La aplicación usa todos los repositorios y servicios externos (excepto la API de Steam que requiere clave) en modo mock por defecto (`EXPO_PUBLIC_USE_MOCKS` no es `'false'`). Esto permite desarrollar y probar sin configurar Firebase.
+Sin ninguna variable de entorno configurada, la app usa mocks para todo. Útil para desarrollo de UI sin necesidad de servicios externos.
 
 ### Usar datos reales
-**Firebase (Auth + Firestore):**
-1. Configura Firebase en `.env` con tus claves (AUTH_CREDENTIALS_BASE64)
-2. En `container.ts`, cambia los bindings de repositorios a implementaciones reales (AuthRepositoryImpl, GameRepositoryImpl, etc.) sustituyendo los mocks
-3. Establece `EXPO_PUBLIC_USE_MOCKS=false` en `.env`
+**Firebase (Auth + Firestore) — ACTIVO:**
+- Proyecto `gameshelf-180a3` configurado en `.env`
+- `AuthRepositoryImpl`, `WishlistRepositoryImpl` y `NotificationRepositoryImpl` se activan automáticamente cuando `EXPO_PUBLIC_FIREBASE_API_KEY` está presente
+- `initializeFirebase()` se llama en `App.tsx` antes de montar el contenedor DI
 
-**Steam API (real):**
-1. Añade `EXPO_PUBLIC_STEAM_API_KEY` en `.env`
-2. El contenedor DI configurará SteamApiServiceImpl en modo real (no mock) automáticamente
-3. Las otras APIs (Epic, ProtonDB, HLTB, ITAD) siguen funcionando en modo mock
+**Steam API (real) — ACTIVO:**
+1. `EXPO_PUBLIC_STEAM_API_KEY` presente en `.env`
+2. El contenedor DI configura `SteamApiServiceImpl` automáticamente
+3. Juegos y plataformas se guardan en memoria (sin Firestore por ahora)
 
 ---
 

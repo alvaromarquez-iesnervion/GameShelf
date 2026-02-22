@@ -46,6 +46,14 @@ import { IsThereAnyDealServiceImpl } from '../data/services/IsThereAnyDealServic
 import { MemoryPlatformRepository } from '../data/repositories/MemoryPlatformRepository';
 import { SteamSyncMemoryGameRepository } from '../data/repositories/SteamSyncMemoryGameRepository';
 
+// ─── Implementaciones reales Firebase ────────────────────────────────────────
+import { AuthRepositoryImpl } from '../data/repositories/AuthRepositoryImpl';
+import { WishlistRepositoryImpl } from '../data/repositories/WishlistRepositoryImpl';
+import { NotificationRepositoryImpl } from '../data/repositories/NotificationRepositoryImpl';
+import { getFirebaseAuth, getFirebaseFirestore } from '../data/config/FirebaseConfig';
+import { Auth } from 'firebase/auth';
+import { Firestore } from 'firebase/firestore';
+
 // ─── Use case implementations ─────────────────────────────────────────────────
 import { LibraryUseCase } from '../domain/usecases/library/LibraryUseCase';
 import { WishlistUseCase } from '../domain/usecases/wishlist/WishlistUseCase';
@@ -68,21 +76,34 @@ const container = new Container({ defaultScope: 'Singleton' });
  *  MODO STEAM REAL (EXPO_PUBLIC_STEAM_API_KEY presente en .env)
  *    → ISteamApiService llama a la API real de Steam.
  *    → Los juegos y plataformas se guardan en memoria (se pierden al cerrar la app).
- *    → El resto de servicios siguen siendo mocks.
+ *    → Auth, Wishlist y Notificaciones persisten en Firebase Firestore.
  *
- *  MODO PRODUCCIÓN COMPLETO (TODO — requiere Firebase configurado)
- *    → AuthRepositoryImpl, GameRepositoryImpl, PlatformRepositoryImpl, etc.
- *    → Ver src/data/repositories/*Impl.ts y src/data/config/FirebaseConfig.ts
- *    → Configurar EXPO_PUBLIC_FIREBASE_* en .env y descomentar bindings abajo.
+ *  MODO PRODUCCIÓN COMPLETO (requiere Firebase + Steam configurados)
+ *    → Auth, Wishlist, Notifications → Firebase Firestore.
+ *    → Steam, Epic, ProtonDB, HLTB, ITAD → APIs reales.
  */
 const steamApiKey = process.env['EXPO_PUBLIC_STEAM_API_KEY'] ?? '';
 const useRealSteam = steamApiKey.length > 0;
 
-// ─── Auth, Wishlist, Notificaciones — siempre mocks por ahora ────────────────
-// TODO (Firebase): sustituir por AuthRepositoryImpl, WishlistRepositoryImpl, etc.
-container.bind<IAuthRepository>(TYPES.IAuthRepository).to(MockAuthRepository);
-container.bind<IWishlistRepository>(TYPES.IWishlistRepository).to(MockWishlistRepository);
-container.bind<INotificationRepository>(TYPES.INotificationRepository).to(MockNotificationRepository);
+const firebaseApiKey = process.env['EXPO_PUBLIC_FIREBASE_API_KEY'] ?? '';
+const useFirebase = firebaseApiKey.length > 0;
+
+// ─── Firebase Auth + Firestore — instancias constantes ───────────────────────
+if (useFirebase) {
+    container.bind<Auth>(TYPES.FirebaseAuth).toDynamicValue(() => getFirebaseAuth());
+    container.bind<Firestore>(TYPES.Firestore).toDynamicValue(() => getFirebaseFirestore());
+}
+
+// ─── Auth, Wishlist, Notificaciones ──────────────────────────────────────────
+if (useFirebase) {
+    container.bind<IAuthRepository>(TYPES.IAuthRepository).to(AuthRepositoryImpl);
+    container.bind<IWishlistRepository>(TYPES.IWishlistRepository).to(WishlistRepositoryImpl);
+    container.bind<INotificationRepository>(TYPES.INotificationRepository).to(NotificationRepositoryImpl);
+} else {
+    container.bind<IAuthRepository>(TYPES.IAuthRepository).to(MockAuthRepository);
+    container.bind<IWishlistRepository>(TYPES.IWishlistRepository).to(MockWishlistRepository);
+    container.bind<INotificationRepository>(TYPES.INotificationRepository).to(MockNotificationRepository);
+}
 
 // ─── Steam / Juegos / Plataformas ─────────────────────────────────────────────
 if (useRealSteam) {
