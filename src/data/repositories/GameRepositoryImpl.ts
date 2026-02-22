@@ -44,26 +44,52 @@ export class GameRepositoryImpl implements IGameRepository {
     }
 
     async getOrCreateGameById(gameId: string, steamAppId?: number | null): Promise<Game> {
+        // 1. Intentar resolución directa por ID en la colección global /games
         try {
             return await this.getGameById(gameId);
-        } catch {
-            const info = await this.itadService.getGameInfo(gameId);
-            if (!info) {
-                throw new Error(`No se pudo obtener información del juego "${gameId}".`);
-            }
-            
+        } catch { /* no existe en /games — continuar */ }
+
+        // 2. Si el gameId parece un steamAppId numérico (juego que viene de la biblioteca
+        //    del usuario, cuyo doc ID en /users/{uid}/library/ es el steamAppId como string),
+        //    resolver vía ITAD usando el steamAppId para obtener el itadGameId y el título.
+        const looksLikeSteamAppId = /^\d+$/.test(gameId);
+        if (looksLikeSteamAppId) {
+            const resolvedSteamAppId = steamAppId ?? parseInt(gameId, 10);
+            // Obtener el ITAD UUID a partir del steamAppId
+            const itadId = await this.itadService.lookupGameIdBySteamAppId(gameId);
+            // Si tenemos el itadId, obtener título y cover desde ITAD
+            const info = itadId ? await this.itadService.getGameInfo(itadId) : null;
+
             return new Game(
-                steamAppId?.toString() ?? gameId,
-                info.title,
-                '',
-                info.coverUrl,
-                Platform.STEAM,
-                info.steamAppId ?? steamAppId ?? null,
                 gameId,
+                info?.title ?? '',
+                '',
+                info?.coverUrl ?? '',
+                Platform.STEAM,
+                resolvedSteamAppId,
+                itadId ?? null,
                 0,
                 null,
             );
         }
+
+        // 3. El gameId es un ITAD UUID u otro identificador externo: buscar en ITAD
+        const info = await this.itadService.getGameInfo(gameId);
+        if (!info) {
+            throw new Error(`No se pudo obtener información del juego "${gameId}".`);
+        }
+
+        return new Game(
+            steamAppId?.toString() ?? gameId,
+            info.title,
+            '',
+            info.coverUrl,
+            Platform.STEAM,
+            info.steamAppId ?? steamAppId ?? null,
+            gameId,
+            0,
+            null,
+        );
     }
 
     async syncLibrary(userId: string, platform: Platform): Promise<Game[]> {

@@ -49,27 +49,48 @@ export class SteamSyncMemoryGameRepository implements IGameRepository {
     }
 
     async getOrCreateGameById(gameId: string, steamAppId?: number | null): Promise<Game> {
+        // 1. Buscar en la biblioteca en memoria (el caso más común para juegos de la biblioteca)
         try {
             return await this.getGameById(gameId);
-        } catch {
-            // No está en la biblioteca, crear desde ITAD
-            const info = await this.itadService.getGameInfo(gameId);
-            if (!info) {
-                throw new Error(`No se pudo obtener información del juego "${gameId}".`);
-            }
-            
+        } catch { /* no está en memoria — continuar */ }
+
+        // 2. Si el gameId parece un steamAppId numérico, resolver vía ITAD
+        const looksLikeSteamAppId = /^\d+$/.test(gameId);
+        if (looksLikeSteamAppId) {
+            const resolvedSteamAppId = steamAppId ?? parseInt(gameId, 10);
+            const itadId = await this.itadService.lookupGameIdBySteamAppId(gameId);
+            const info = itadId ? await this.itadService.getGameInfo(itadId) : null;
+
             return new Game(
-                steamAppId?.toString() ?? gameId,
-                info.title,
-                '',
-                info.coverUrl,
-                Platform.STEAM,
-                info.steamAppId ?? steamAppId ?? null,
                 gameId,
+                info?.title ?? '',
+                '',
+                info?.coverUrl ?? '',
+                Platform.STEAM,
+                resolvedSteamAppId,
+                itadId ?? null,
                 0,
                 null,
             );
         }
+
+        // 3. El gameId es un ITAD UUID u otro identificador externo
+        const info = await this.itadService.getGameInfo(gameId);
+        if (!info) {
+            throw new Error(`No se pudo obtener información del juego "${gameId}".`);
+        }
+
+        return new Game(
+            steamAppId?.toString() ?? gameId,
+            info.title,
+            '',
+            info.coverUrl,
+            Platform.STEAM,
+            info.steamAppId ?? steamAppId ?? null,
+            gameId,
+            0,
+            null,
+        );
     }
 
     async syncLibrary(userId: string, platform: Platform): Promise<Game[]> {

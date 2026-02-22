@@ -4,6 +4,29 @@ Registro acumulativo de decisiones, cambios y contexto relevante por sesión.
 
 ---
 
+## Sesión 14 — Fix bug GameDetail desde biblioteca
+
+### Bug: error de ID al abrir detalle desde la biblioteca sincronizada
+
+**Causa raíz:** `getOrCreateGameById` en `GameRepositoryImpl` y `SteamSyncMemoryGameRepository` asumía que cualquier `gameId` no encontrado era un ITAD UUID, y llamaba a `itadService.getGameInfo(gameId)`. Pero los juegos de la biblioteca tienen como ID el `steamAppId` numérico (ej. `'1245620'`), no un UUID de ITAD.
+
+**Flujo del bug:**
+1. Biblioteca carga juegos de Firestore. El doc ID en `/users/{uid}/library/` es el `steamAppId` como string (así se guarda en `syncLibrary`).
+2. `LibraryScreen` navega a `GameDetail` con `gameId: item.getId()` → `'1245620'`.
+3. `getOrCreateGameById('1245620')` → `getGameById('1245620')` busca en la colección global `/games/1245620` (no existe) → lanza error.
+4. Catch llama `itadService.getGameInfo('1245620')` — un steamAppId string pasado como si fuera un ITAD UUID → falla o devuelve datos incorrectos.
+
+**Fix aplicado en `GameRepositoryImpl` y `SteamSyncMemoryGameRepository`:**
+- Tras el catch del `getGameById`, se detecta si el `gameId` es numérico (`/^\d+$/.test(gameId)`).
+- Si es numérico: se trata como steamAppId → llama a `lookupGameIdBySteamAppId(gameId)` para obtener el ITAD UUID, luego `getGameInfo(itadId)` para título y cover.
+- Si no es numérico: flujo anterior intacto (es un ITAD UUID → `getGameInfo(gameId)`).
+
+**Archivos modificados:**
+- `src/data/repositories/GameRepositoryImpl.ts` — método `getOrCreateGameById`
+- `src/data/repositories/SteamSyncMemoryGameRepository.ts` — método `getOrCreateGameById`
+
+---
+
 ## Estado actual del proyecto (Sesión 13 — Modo producción completo, sin mocks)
 
 ### Activación de repositorios Firebase reales + auto-sync
