@@ -27,6 +27,8 @@ export class FirestoreGameMapper {
             (data.platform as Platform) ?? Platform.STEAM,
             data.steamAppId ?? null,
             data.itadGameId ?? null,
+            data.playtime ?? 0,
+            data.lastPlayed?.toDate() ?? null,
         );
     }
 
@@ -38,6 +40,8 @@ export class FirestoreGameMapper {
             platform: game.getPlatform(),
             steamAppId: game.getSteamAppId(),
             itadGameId: game.getItadGameId(),
+            playtime: game.getPlaytime(),
+            lastPlayed: game.getLastPlayed(),
         };
     }
 }
