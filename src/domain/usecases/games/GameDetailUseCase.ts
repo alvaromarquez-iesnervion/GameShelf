@@ -35,7 +35,7 @@ export class GameDetailUseCase implements IGameDetailUseCase {
     ) {}
 
     async getGameDetail(gameId: string, userId: string, providedSteamAppId?: number): Promise<GameDetailDTO> {
-        const game = await this.gameRepository.getOrCreateGameById(gameId, providedSteamAppId);
+        const game = await this.gameRepository.getOrCreateGameById(userId, gameId, providedSteamAppId);
 
         const steamAppId = game.getSteamAppId();
         const [protonResult, hltbResult, dealsResult, wishlistResult] =

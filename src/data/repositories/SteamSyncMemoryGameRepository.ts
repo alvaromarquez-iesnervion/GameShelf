@@ -40,18 +40,17 @@ export class SteamSyncMemoryGameRepository implements IGameRepository {
         return [...(this.gamesByUser.get(userId) ?? [])];
     }
 
-    async getGameById(gameId: string): Promise<Game> {
-        for (const games of this.gamesByUser.values()) {
-            const found = games.find(g => g.getId() === gameId);
-            if (found) return found;
-        }
-        throw new Error(`Juego con ID "${gameId}" no encontrado.`);
+    async getGameById(userId: string, gameId: string): Promise<Game> {
+        const games = this.gamesByUser.get(userId) ?? [];
+        const found = games.find(g => g.getId() === gameId);
+        if (found) return found;
+        throw new Error(`Juego con ID "${gameId}" no encontrado en la biblioteca de ${userId}.`);
     }
 
-    async getOrCreateGameById(gameId: string, steamAppId?: number | null): Promise<Game> {
-        // 1. Buscar en la biblioteca en memoria (el caso más común para juegos de la biblioteca)
+    async getOrCreateGameById(userId: string, gameId: string, steamAppId?: number | null): Promise<Game> {
+        // 1. Buscar en la biblioteca en memoria del usuario (caso más común)
         try {
-            return await this.getGameById(gameId);
+            return await this.getGameById(userId, gameId);
         } catch { /* no está en memoria — continuar */ }
 
         // 2. Si el gameId parece un steamAppId numérico, resolver vía ITAD

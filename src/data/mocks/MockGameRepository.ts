@@ -27,8 +27,9 @@ export class MockGameRepository implements IGameRepository {
         return [...MOCK_ALL_GAMES];
     }
 
-    async getGameById(gameId: string): Promise<Game> {
+    async getGameById(userId: string, gameId: string): Promise<Game> {
         await simulateDelay(300);
+        // En mocks, la "biblioteca del usuario" es MOCK_ALL_GAMES (no hay separación por userId)
         const game = MOCK_ALL_GAMES.find(g => g.getId() === gameId);
         if (!game) {
             throw new Error(`Juego con ID "${gameId}" no encontrado en los mocks`);
@@ -36,14 +37,14 @@ export class MockGameRepository implements IGameRepository {
         return game;
     }
 
-    async getOrCreateGameById(gameId: string, steamAppId?: number | null): Promise<Game> {
+    async getOrCreateGameById(userId: string, gameId: string, steamAppId?: number | null): Promise<Game> {
         await simulateDelay(300);
+
+        // 1. Buscar en la biblioteca mock del usuario
         const game = MOCK_ALL_GAMES.find(g => g.getId() === gameId);
         if (game) return game;
-        
-        const gameBySteamId = MOCK_ALL_GAMES.find(g => g.getSteamAppId()?.toString() === steamAppId?.toString());
-        if (gameBySteamId) return gameBySteamId;
-        
+
+        // 2. Juego no en biblioteca: buscar en resultados de búsqueda (simula resolución ITAD)
         const searchResult = MOCK_SEARCH_RESULTS.find(r => r.getId() === gameId);
         if (searchResult) {
             return new Game(
@@ -58,7 +59,7 @@ export class MockGameRepository implements IGameRepository {
                 null,
             );
         }
-        
+
         throw new Error(`Juego con ID "${gameId}" no encontrado.`);
     }
 

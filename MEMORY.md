@@ -4,6 +4,41 @@ Registro acumulativo de decisiones, cambios y contexto relevante por sesión.
 
 ---
 
+## Sesión 15 — Refactor IGameRepository: userId en getGameById/getOrCreateGameById
+
+### Motivación
+
+La colección global `/games/{gameId}` de Firestore nunca se poblaba desde la app (no había ningún `setDoc` hacia ella). `getGameById` leía de ahí, lo que siempre fallaba. `getOrCreateGameById` hacía una petición de red innecesaria antes de caer al fallback de ITAD.
+
+La solución correcta: buscar primero en `/users/{uid}/library/{gameId}`, que es donde están realmente los juegos del usuario.
+
+### Cambios
+
+1. **`src/domain/interfaces/repositories/IGameRepository.ts`**
+   - `getGameById(userId, gameId)` — ahora requiere userId
+   - `getOrCreateGameById(userId, gameId, steamAppId?)` — ahora requiere userId
+
+2. **`src/data/repositories/GameRepositoryImpl.ts`**
+   - `getGameById` busca en `/users/{uid}/library/{gameId}` en lugar de `/games/{gameId}`
+   - `getOrCreateGameById` busca en la biblioteca del usuario primero, luego fallback a ITAD
+
+3. **`src/data/repositories/SteamSyncMemoryGameRepository.ts`**
+   - `getGameById` busca solo en la map del usuario concreto (`gamesByUser.get(userId)`) en lugar de iterar sobre todos los usuarios
+
+4. **`src/data/mocks/MockGameRepository.ts`**
+   - Misma firma. Limpieza: eliminada la búsqueda redundante por `steamAppId` (ya no hace falta)
+
+5. **`src/domain/usecases/games/GameDetailUseCase.ts`**
+   - Pasa `userId` como primer argumento a `getOrCreateGameById`
+
+### Resultado
+
+- La colección global `/games/*` queda efectivamente obsoleta en la app (ningún repositorio la escribe ni lee)
+- Juegos de la biblioteca se sirven con todos sus datos reales desde Firestore sin llamadas externas innecesarias
+- Juegos del buscador (no en biblioteca) siguen resolviéndose correctamente vía ITAD
+
+---
+
 ## Sesión 14 — Fix bug GameDetail desde biblioteca
 
 ### Bug: error de ID al abrir detalle desde la biblioteca sincronizada

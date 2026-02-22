@@ -35,29 +35,27 @@ export class GameRepositoryImpl implements IGameRepository {
         return snap.docs.map(d => FirestoreGameMapper.toDomain(d.id, d.data()));
     }
 
-    async getGameById(gameId: string): Promise<Game> {
-        const snap = await getDoc(doc(this.firestore, 'games', gameId));
+    async getGameById(userId: string, gameId: string): Promise<Game> {
+        const snap = await getDoc(
+            doc(this.firestore, 'users', userId, 'library', gameId),
+        );
         if (!snap.exists()) {
-            throw new Error(`Juego ${gameId} no encontrado en Firestore`);
+            throw new Error(`Juego ${gameId} no encontrado en la biblioteca de ${userId}`);
         }
         return FirestoreGameMapper.toDomain(snap.id, snap.data());
     }
 
-    async getOrCreateGameById(gameId: string, steamAppId?: number | null): Promise<Game> {
-        // 1. Intentar resolución directa por ID en la colección global /games
+    async getOrCreateGameById(userId: string, gameId: string, steamAppId?: number | null): Promise<Game> {
+        // 1. Buscar en la biblioteca del usuario en Firestore (caso más común: juego ya sincronizado)
         try {
-            return await this.getGameById(gameId);
-        } catch { /* no existe en /games — continuar */ }
+            return await this.getGameById(userId, gameId);
+        } catch { /* no está en la biblioteca — continuar */ }
 
-        // 2. Si el gameId parece un steamAppId numérico (juego que viene de la biblioteca
-        //    del usuario, cuyo doc ID en /users/{uid}/library/ es el steamAppId como string),
-        //    resolver vía ITAD usando el steamAppId para obtener el itadGameId y el título.
+        // 2. Si el gameId parece un steamAppId numérico, resolver vía ITAD
         const looksLikeSteamAppId = /^\d+$/.test(gameId);
         if (looksLikeSteamAppId) {
             const resolvedSteamAppId = steamAppId ?? parseInt(gameId, 10);
-            // Obtener el ITAD UUID a partir del steamAppId
             const itadId = await this.itadService.lookupGameIdBySteamAppId(gameId);
-            // Si tenemos el itadId, obtener título y cover desde ITAD
             const info = itadId ? await this.itadService.getGameInfo(itadId) : null;
 
             return new Game(
@@ -73,7 +71,7 @@ export class GameRepositoryImpl implements IGameRepository {
             );
         }
 
-        // 3. El gameId es un ITAD UUID u otro identificador externo: buscar en ITAD
+        // 3. El gameId es un ITAD UUID u otro identificador externo
         const info = await this.itadService.getGameInfo(gameId);
         if (!info) {
             throw new Error(`No se pudo obtener información del juego "${gameId}".`);
