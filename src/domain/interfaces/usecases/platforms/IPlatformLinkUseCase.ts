@@ -5,6 +5,11 @@ export interface IPlatformLinkUseCase {
     /** Construye la URL OpenID 2.0 de Steam para abrir en WebView. */
     getSteamLoginUrl(returnUrl: string): string;
     /**
+     * Devuelve la URL que el usuario debe abrir en el navegador para iniciar sesión
+     * en Epic Games y obtener el authorization code.
+     */
+    getEpicAuthUrl(): string;
+    /**
      * Completa el flujo OpenID 2.0 de Steam:
      *  1. verifyOpenIdResponse
      *  2. extractSteamIdFromCallback

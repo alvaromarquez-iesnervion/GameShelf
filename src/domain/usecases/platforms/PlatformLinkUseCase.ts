@@ -31,6 +31,10 @@ export class PlatformLinkUseCase implements IPlatformLinkUseCase {
         return this.steamService.getOpenIdLoginUrl(returnUrl);
     }
 
+    getEpicAuthUrl(): string {
+        return this.epicService.getAuthUrl();
+    }
+
     async linkSteam(
         userId: string,
         callbackUrl: string,

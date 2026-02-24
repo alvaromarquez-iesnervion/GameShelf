@@ -13,6 +13,7 @@ import {
     EPIC_ENTITLEMENTS_URL,
     EPIC_AUTH_CLIENT_ID,
     EPIC_AUTH_CLIENT_SECRET,
+    EPIC_AUTH_REDIRECT_URL,
 } from '../config/ApiConstants';
 import { TYPES } from '../../di/types';
 
@@ -56,10 +57,17 @@ export class EpicGamesApiServiceImpl implements IEpicGamesApiService {
     ) {}
 
     /**
+     * Devuelve la URL que el usuario debe abrir en el navegador para iniciar sesión
+     * en Epic Games y obtener el authorization code.
+     */
+    getAuthUrl(): string {
+        return EPIC_AUTH_REDIRECT_URL;
+    }
+
+    /**
      * Intercambia un authorization code por un access token de Epic.
      *
-     * El usuario obtiene el code abriendo en su navegador:
-     *   EPIC_AUTH_REDIRECT_URL
+     * El usuario obtiene el code abriendo en su navegador la URL de getAuthUrl().
      * Epic redirige a una página que muestra el code en texto plano.
      *
      * AVISO: el code expira en ~5 minutos.

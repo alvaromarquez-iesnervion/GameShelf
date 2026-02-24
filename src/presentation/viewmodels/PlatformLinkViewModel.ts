@@ -4,7 +4,6 @@ import { makeAutoObservable, runInAction } from 'mobx';
 import { IPlatformLinkUseCase } from '../../domain/interfaces/usecases/platforms/IPlatformLinkUseCase';
 import { LinkedPlatform } from '../../domain/entities/LinkedPlatform';
 import { Platform } from '../../domain/enums/Platform';
-import { EPIC_AUTH_REDIRECT_URL } from '../../data/config/ApiConstants';
 import { TYPES } from '../../di/types';
 
 /**
@@ -124,7 +123,7 @@ export class PlatformLinkViewModel {
      * y obtener el authorization code.
      */
     getEpicAuthUrl(): string {
-        return EPIC_AUTH_REDIRECT_URL;
+        return this.platformLinkUseCase.getEpicAuthUrl();
     }
 
     /**

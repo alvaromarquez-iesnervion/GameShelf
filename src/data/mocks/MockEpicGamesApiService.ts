@@ -17,6 +17,10 @@ import { MOCK_EPIC_GAMES, MOCK_SEARCH_RESULTS, simulateDelay } from './MockDataP
 @injectable()
 export class MockEpicGamesApiService implements IEpicGamesApiService {
 
+    getAuthUrl(): string {
+        return 'https://www.epicgames.com/id/api/redirect?clientId=mock&responseType=code';
+    }
+
     async exchangeAuthCode(code: string): Promise<EpicAuthToken> {
         await simulateDelay(600);
         if (!code.trim()) {

@@ -75,7 +75,7 @@ Abstraen APIs externas de terceros.
 | Interfaz | API real | Notas |
 |---|---|---|
 | `ISteamApiService` | Steam Web API + OpenID 2.0 | `getOpenIdLoginUrl`, `extractSteamIdFromCallback`, `verifyOpenIdResponse`, `getUserGames`, `getRecentlyPlayedGames`, `checkProfileVisibility` |
-| `IEpicGamesApiService` | API interna no oficial | `exchangeAuthCode` (intercambia auth code por token), `fetchLibrary` (obtiene entitlements con el token), `parseExportedLibrary` (JSON del export GDPR — fallback), `searchCatalog` (GraphQL no oficial) |
+| `IEpicGamesApiService` | API interna no oficial | `getAuthUrl()` (URL para abrir en navegador y obtener el code), `exchangeAuthCode` (intercambia auth code por token), `fetchLibrary` (obtiene entitlements con el token), `parseExportedLibrary` (JSON del export GDPR — fallback), `searchCatalog` (GraphQL no oficial) |
 | `IProtonDbService` | Endpoint JSON no oficial | `getCompatibilityRating(steamAppId)` → `ProtonDbRating \| null` |
 | `IHowLongToBeatService` | POST interno no oficial | `getGameDuration(gameTitle)` → `HltbResult \| null` |
 | `IIsThereAnyDealService` | API v2 oficial | `lookupGameId`, `lookupGameIdBySteamAppId`, `getPricesForGame`, `getHistoricalLow`, `searchGames` |
@@ -92,7 +92,7 @@ Contratos que los ViewModels consumen. Los ViewModels dependen de estas interfac
 | `IWishlistUseCase` | `getWishlist`, `addToWishlist`, `removeFromWishlist` |
 | `IGameDetailUseCase` | `getGameDetail(gameId, userId): Promise<GameDetailDTO>` |
 | `ISearchUseCase` | `searchGames(query, userId): Promise<SearchResult[]>` |
-| `IPlatformLinkUseCase` | `linkSteam`, `linkEpic`, `unlinkPlatform`, `getLinkedPlatforms`, `getSteamLoginUrl` |
+| `IPlatformLinkUseCase` | `getSteamLoginUrl`, `getEpicAuthUrl`, `linkSteam`, `linkSteamById`, `linkEpic`, `linkEpicByAuthCode`, `unlinkPlatform`, `getLinkedPlatforms` |
 | `ISettingsUseCase` | `getProfile(userId): Promise<UserProfileDTO>`, `updateNotificationPreferences` |
 | `IHomeUseCase` | `getRecentlyPlayed(userId)`, `getMostPlayed(userId, limit?)`, `searchGames(query, userId)` |
 

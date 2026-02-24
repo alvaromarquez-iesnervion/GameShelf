@@ -23,8 +23,14 @@ import { EpicAuthToken } from '../../dtos/EpicAuthToken';
  */
 export interface IEpicGamesApiService {
     /**
+     * Devuelve la URL que el usuario debe abrir en el navegador para iniciar sesión
+     * en Epic Games y obtener el authorization code.
+     */
+    getAuthUrl(): string;
+
+    /**
      * Intercambia un authorization code de Epic por un access token.
-     * El authorization code se obtiene abriendo EPIC_AUTH_REDIRECT_URL en el navegador.
+     * El authorization code se obtiene abriendo la URL de getAuthUrl() en el navegador.
      * AVISO: el code expira en ~5 minutos.
      */
     exchangeAuthCode(code: string): Promise<EpicAuthToken>;

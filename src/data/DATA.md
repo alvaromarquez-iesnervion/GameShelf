@@ -73,7 +73,8 @@ Implementan las interfaces de `domain/interfaces/services/`. Cada servicio encap
 Epic no tiene API pública de biblioteca. Se implementan dos flujos:
 
 **Flujo preferido — Authorization Code (API interna no oficial):**
-- `exchangeAuthCode(code)`: intercambia el code por un `EpicAuthToken` via POST a `account-public-service-prod.ol.epicgames.com/account/api/oauth/token`. Usa Basic Auth con credenciales del `launcherAppClient2` (cliente oficial del Epic Launcher). El code se obtiene abriendo `EPIC_AUTH_REDIRECT_URL` en el navegador.
+- `getAuthUrl()`: devuelve `EPIC_AUTH_REDIRECT_URL` — la URL que el usuario abre en el navegador para iniciar sesión en Epic y obtener el code. Expuesta a través de `IPlatformLinkUseCase.getEpicAuthUrl()` para que el ViewModel no necesite importar `ApiConstants` directamente.
+- `exchangeAuthCode(code)`: intercambia el code por un `EpicAuthToken` via POST a `account-public-service-prod.ol.epicgames.com/account/api/oauth/token`. Usa Basic Auth con credenciales del `launcherAppClient2` (cliente oficial del Epic Launcher). El code se obtiene abriendo la URL de `getAuthUrl()` en el navegador.
 - `fetchLibrary(accessToken, accountId)`: obtiene entitlements via GET a `entitlement-public-service-prod08.ol.epicgames.com/entitlement/api/account/{accountId}/entitlements?count=5000`. Filtra y mapea exactamente igual que el flujo GDPR.
 - **AVISO**: usa API interna no documentada de Epic. Puede cambiar o dejar de funcionar sin previo aviso.
 

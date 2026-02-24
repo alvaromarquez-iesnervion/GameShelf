@@ -4,6 +4,32 @@ Registro acumulativo de decisiones, cambios y contexto relevante por sesión.
 
 ---
 
+## Sesión 18 — Refactor 1.3: Eliminar import de data/ en PlatformLinkViewModel
+
+### Problema (MALAS_PRACTICAS.md §1.3 — ALTA)
+
+`PlatformLinkViewModel` importaba `EPIC_AUTH_REDIRECT_URL` directamente desde `src/data/config/ApiConstants`, violando la regla de dependencias de Clean Architecture: `presentation` no debe conocer `data`.
+
+### Solución
+
+**Cadena correcta:** `presentation` → `domain` ← `data`
+
+1. **`src/domain/interfaces/services/IEpicGamesApiService.ts`** — añadido `getAuthUrl(): string` como método de la interfaz del servicio.
+
+2. **`src/data/services/EpicGamesApiServiceImpl.ts`** — implementado `getAuthUrl()` devolviendo `EPIC_AUTH_REDIRECT_URL` desde `ApiConstants` (correcto: `data/` puede usar sus propias constantes).
+
+3. **`src/data/mocks/MockEpicGamesApiService.ts`** — implementado `getAuthUrl()` devolviendo una URL mock.
+
+4. **`src/domain/interfaces/usecases/platforms/IPlatformLinkUseCase.ts`** — añadido `getEpicAuthUrl(): string` a la interfaz del use case.
+
+5. **`src/domain/usecases/platforms/PlatformLinkUseCase.ts`** — implementado `getEpicAuthUrl()` delegando a `epicService.getAuthUrl()`.
+
+6. **`src/presentation/viewmodels/PlatformLinkViewModel.ts`** — eliminado `import { EPIC_AUTH_REDIRECT_URL } from '../../data/config/ApiConstants'`. `getEpicAuthUrl()` ahora delega a `platformLinkUseCase.getEpicAuthUrl()`.
+
+**TypeScript**: `npx tsc --noEmit` — ✅ 0 errores nuevos (error preexistente en `src/app/` scaffold ignorado)
+
+---
+
 ## Sesión 17 — Refactor 1.1: Eliminar imports de di/ de use cases del dominio
 
 ### Problema (MALAS_PRACTICAS.md §1.1 — CRITICA)
