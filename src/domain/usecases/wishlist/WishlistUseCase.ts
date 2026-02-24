@@ -1,10 +1,7 @@
-import 'reflect-metadata';
-import { injectable, inject } from 'inversify';
 import { IWishlistUseCase } from '../../interfaces/usecases/wishlist/IWishlistUseCase';
 import { IWishlistRepository } from '../../interfaces/repositories/IWishlistRepository';
 import { IIsThereAnyDealService } from '../../interfaces/services/IIsThereAnyDealService';
 import { WishlistItem } from '../../entities/WishlistItem';
-import { TYPES } from '../../../di/types';
 
 /**
  * Gestiona la wishlist del usuario.
@@ -13,13 +10,10 @@ import { TYPES } from '../../../di/types';
  * activo consultando ITAD. El enriquecimiento se hace en paralelo; si ITAD
  * falla para un item concreto, su bestDealPercentage queda como null.
  */
-@injectable()
 export class WishlistUseCase implements IWishlistUseCase {
 
     constructor(
-        @inject(TYPES.IWishlistRepository)
         private readonly wishlistRepository: IWishlistRepository,
-        @inject(TYPES.IIsThereAnyDealService)
         private readonly itadService: IIsThereAnyDealService,
     ) {}
 

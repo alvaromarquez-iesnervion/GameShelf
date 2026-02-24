@@ -49,14 +49,14 @@ Servicios externos (singleton)
   IHowLongToBeatService   → HowLongToBeatServiceImpl
   IIsThereAnyDealService  → IsThereAnyDealServiceImpl
 
-Casos de uso (singleton)
-  ILibraryUseCase         → LibraryUseCase
-  IWishlistUseCase        → WishlistUseCase
-  IGameDetailUseCase      → GameDetailUseCase
-  ISearchUseCase          → SearchUseCase
-  IPlatformLinkUseCase    → PlatformLinkUseCase
-  ISettingsUseCase        → SettingsUseCase
-  IHomeUseCase            → HomeUseCase
+Casos de uso (singleton, toDynamicValue + inSingletonScope)
+  ILibraryUseCase         → new LibraryUseCase(...)
+  IWishlistUseCase        → new WishlistUseCase(...)
+  IGameDetailUseCase      → new GameDetailUseCase(...)
+  ISearchUseCase          → new SearchUseCase(...)
+  IPlatformLinkUseCase    → new PlatformLinkUseCase(...)
+  ISettingsUseCase        → new SettingsUseCase(...)
+  IHomeUseCase            → new HomeUseCase(...)
 
 ViewModels (ver tabla singleton/transient más abajo)
 ```
@@ -107,6 +107,8 @@ export const TYPES = {
 | `SettingsViewModel` | **TRANSIENT** | Solo activo en la pantalla de ajustes |
 
 Todos los repositorios, servicios y use cases son **singleton**.
+
+> **Use cases**: usan `toDynamicValue(ctx => new UseCase(...)).inSingletonScope()` en lugar de `.to(UseCase)` porque son TypeScript puro sin decoradores Inversify. El scope singleton debe declararse explícitamente — `toDynamicValue` no hereda el `defaultScope: 'Singleton'` del contenedor.
 
 ---
 

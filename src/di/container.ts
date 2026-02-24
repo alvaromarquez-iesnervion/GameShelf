@@ -131,13 +131,44 @@ container.bind<IHowLongToBeatService>(TYPES.IHowLongToBeatService).to(HowLongToB
 container.bind<IIsThereAnyDealService>(TYPES.IIsThereAnyDealService).to(IsThereAnyDealServiceImpl);
 
 // ─── Casos de uso (singleton) ─────────────────────────────────────────────────
-container.bind<ILibraryUseCase>(TYPES.ILibraryUseCase).to(LibraryUseCase);
-container.bind<IWishlistUseCase>(TYPES.IWishlistUseCase).to(WishlistUseCase);
-container.bind<IGameDetailUseCase>(TYPES.IGameDetailUseCase).to(GameDetailUseCase);
-container.bind<ISearchUseCase>(TYPES.ISearchUseCase).to(SearchUseCase);
-container.bind<IPlatformLinkUseCase>(TYPES.IPlatformLinkUseCase).to(PlatformLinkUseCase);
-container.bind<ISettingsUseCase>(TYPES.ISettingsUseCase).to(SettingsUseCase);
-container.bind<IHomeUseCase>(TYPES.IHomeUseCase).to(HomeUseCase);
+// Los use cases son TypeScript puro (sin decoradores Inversify). Se construyen
+// manualmente con toDynamicValue para respetar la regla de que domain/ no
+// debe conocer ningún detalle de infraestructura (di/, inversify, reflect-metadata).
+container.bind<ILibraryUseCase>(TYPES.ILibraryUseCase).toDynamicValue(ctx => new LibraryUseCase(
+    ctx.get<IGameRepository>(TYPES.IGameRepository),
+)).inSingletonScope();
+container.bind<IWishlistUseCase>(TYPES.IWishlistUseCase).toDynamicValue(ctx => new WishlistUseCase(
+    ctx.get<IWishlistRepository>(TYPES.IWishlistRepository),
+    ctx.get<IIsThereAnyDealService>(TYPES.IIsThereAnyDealService),
+)).inSingletonScope();
+container.bind<IGameDetailUseCase>(TYPES.IGameDetailUseCase).toDynamicValue(ctx => new GameDetailUseCase(
+    ctx.get<IGameRepository>(TYPES.IGameRepository),
+    ctx.get<IWishlistRepository>(TYPES.IWishlistRepository),
+    ctx.get<IProtonDbService>(TYPES.IProtonDbService),
+    ctx.get<IHowLongToBeatService>(TYPES.IHowLongToBeatService),
+    ctx.get<IIsThereAnyDealService>(TYPES.IIsThereAnyDealService),
+)).inSingletonScope();
+container.bind<ISearchUseCase>(TYPES.ISearchUseCase).toDynamicValue(ctx => new SearchUseCase(
+    ctx.get<IGameRepository>(TYPES.IGameRepository),
+    ctx.get<IWishlistRepository>(TYPES.IWishlistRepository),
+)).inSingletonScope();
+container.bind<IPlatformLinkUseCase>(TYPES.IPlatformLinkUseCase).toDynamicValue(ctx => new PlatformLinkUseCase(
+    ctx.get<IPlatformRepository>(TYPES.IPlatformRepository),
+    ctx.get<IGameRepository>(TYPES.IGameRepository),
+    ctx.get<ISteamApiService>(TYPES.ISteamApiService),
+    ctx.get<IEpicGamesApiService>(TYPES.IEpicGamesApiService),
+)).inSingletonScope();
+container.bind<ISettingsUseCase>(TYPES.ISettingsUseCase).toDynamicValue(ctx => new SettingsUseCase(
+    ctx.get<IAuthRepository>(TYPES.IAuthRepository),
+    ctx.get<IPlatformRepository>(TYPES.IPlatformRepository),
+    ctx.get<INotificationRepository>(TYPES.INotificationRepository),
+)).inSingletonScope();
+container.bind<IHomeUseCase>(TYPES.IHomeUseCase).toDynamicValue(ctx => new HomeUseCase(
+    ctx.get<IGameRepository>(TYPES.IGameRepository),
+    ctx.get<IPlatformRepository>(TYPES.IPlatformRepository),
+    ctx.get<IWishlistRepository>(TYPES.IWishlistRepository),
+    ctx.get<ISteamApiService>(TYPES.ISteamApiService),
+)).inSingletonScope();
 
 // ─── ViewModels ───────────────────────────────────────────────────────────────
 

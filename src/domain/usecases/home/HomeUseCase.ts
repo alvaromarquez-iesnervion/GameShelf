@@ -1,5 +1,3 @@
-import 'reflect-metadata';
-import { injectable, inject } from 'inversify';
 import { IHomeUseCase } from '../../interfaces/usecases/home/IHomeUseCase';
 import { IGameRepository } from '../../interfaces/repositories/IGameRepository';
 import { IPlatformRepository } from '../../interfaces/repositories/IPlatformRepository';
@@ -8,19 +6,13 @@ import { ISteamApiService } from '../../interfaces/services/ISteamApiService';
 import { Game } from '../../entities/Game';
 import { SearchResult } from '../../entities/SearchResult';
 import { Platform } from '../../enums/Platform';
-import { TYPES } from '../../../di/types';
 
-@injectable()
 export class HomeUseCase implements IHomeUseCase {
 
     constructor(
-        @inject(TYPES.IGameRepository)
         private readonly gameRepository: IGameRepository,
-        @inject(TYPES.IPlatformRepository)
         private readonly platformRepository: IPlatformRepository,
-        @inject(TYPES.IWishlistRepository)
         private readonly wishlistRepository: IWishlistRepository,
-        @inject(TYPES.ISteamApiService)
         private readonly steamService: ISteamApiService,
     ) {}
 

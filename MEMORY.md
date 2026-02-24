@@ -4,6 +4,40 @@ Registro acumulativo de decisiones, cambios y contexto relevante por sesión.
 
 ---
 
+## Sesión 17 — Refactor 1.1: Eliminar imports de di/ de use cases del dominio
+
+### Problema (MALAS_PRACTICAS.md §1.1 — CRITICA)
+
+Los use cases del dominio importaban `TYPES` desde `../../di/types`, `injectable` e `inject` desde `inversify`, y `reflect-metadata`. Esto viola Clean Architecture: el dominio debe ser TypeScript puro, sin conocer infraestructura de DI.
+
+### Solución
+
+**7 use cases modificados** — eliminados todos los imports de `inversify`, `reflect-metadata` y `di/types`. Los constructores ahora reciben las dependencias como parámetros tipados simples sin decoradores:
+- `src/domain/usecases/home/HomeUseCase.ts`
+- `src/domain/usecases/games/GameDetailUseCase.ts`
+- `src/domain/usecases/games/SearchUseCase.ts`
+- `src/domain/usecases/platforms/PlatformLinkUseCase.ts`
+- `src/domain/usecases/settings/SettingsUseCase.ts`
+- `src/domain/usecases/library/LibraryUseCase.ts`
+- `src/domain/usecases/wishlist/WishlistUseCase.ts`
+
+**`src/di/container.ts`** — los bindings de use cases cambian de `.to(UseCase)` a `.toDynamicValue(ctx => new UseCase(...))`, construyendo cada instancia manualmente y resolviendo dependencias desde el contexto. Esto mantiene todo el conocimiento de DI en la capa `di/` donde corresponde.
+
+**Nota de API**: en esta versión de Inversify, el `ctx` de `toDynamicValue` expone directamente `ctx.get<T>()` (no `ctx.container.get<T>()`).
+
+**TypeScript**: `npx tsc --noEmit` — ✅ 0 errores nuevos (error preexistente en `src/app/` scaffold ignorado)
+
+### Sesión 17b — Añadido `.inSingletonScope()` explícito a los bindings de use cases
+
+`toDynamicValue` no hereda el `defaultScope: 'Singleton'` del contenedor — sin el scope explícito, cada resolución instanciaría un use case nuevo. Los use cases son stateless (solo referencias a repositorios/servicios singletons), por lo que singleton es correcto y consistente.
+
+**Archivo modificado (1):**
+- `src/di/container.ts` — añadido `.inSingletonScope()` a los 7 bindings de use cases
+
+**TypeScript**: `npx tsc --noEmit` — ✅ 0 errores nuevos
+
+---
+
 ## Sesión 16 — Fix "Tus más jugados" vacío con Steam vinculado
 
 ### Bug

@@ -1,5 +1,3 @@
-import 'reflect-metadata';
-import { injectable, inject } from 'inversify';
 import { IGameDetailUseCase } from '../../interfaces/usecases/games/IGameDetailUseCase';
 import { IGameRepository } from '../../interfaces/repositories/IGameRepository';
 import { IWishlistRepository } from '../../interfaces/repositories/IWishlistRepository';
@@ -9,7 +7,6 @@ import { IIsThereAnyDealService } from '../../interfaces/services/IIsThereAnyDea
 import { Game } from '../../entities/Game';
 import { GameDetail } from '../../entities/GameDetail';
 import { GameDetailDTO } from '../../dtos/GameDetailDTO';
-import { TYPES } from '../../../di/types';
 
 /**
  * Construye el detalle completo de un juego agregando datos de 4 fuentes externas.
@@ -18,19 +15,13 @@ import { TYPES } from '../../../di/types';
  * correspondiente queda null y el resto del detalle se muestra igualmente.
  * Solo IGameRepository (Firestore) es crítico: si falla, se propaga el error.
  */
-@injectable()
 export class GameDetailUseCase implements IGameDetailUseCase {
 
     constructor(
-        @inject(TYPES.IGameRepository)
         private readonly gameRepository: IGameRepository,
-        @inject(TYPES.IWishlistRepository)
         private readonly wishlistRepository: IWishlistRepository,
-        @inject(TYPES.IProtonDbService)
         private readonly protonDbService: IProtonDbService,
-        @inject(TYPES.IHowLongToBeatService)
         private readonly hltbService: IHowLongToBeatService,
-        @inject(TYPES.IIsThereAnyDealService)
         private readonly itadService: IIsThereAnyDealService,
     ) {}
 

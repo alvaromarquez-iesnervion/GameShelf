@@ -1,12 +1,9 @@
-import 'reflect-metadata';
-import { injectable, inject } from 'inversify';
 import { ISettingsUseCase } from '../../interfaces/usecases/settings/ISettingsUseCase';
 import { IAuthRepository } from '../../interfaces/repositories/IAuthRepository';
 import { IPlatformRepository } from '../../interfaces/repositories/IPlatformRepository';
 import { INotificationRepository } from '../../interfaces/repositories/INotificationRepository';
 import { NotificationPreferences } from '../../entities/NotificationPreferences';
 import { UserProfileDTO } from '../../dtos/UserProfileDTO';
-import { TYPES } from '../../../di/types';
 
 /**
  * Agrega los datos necesarios para la pantalla de ajustes.
@@ -17,15 +14,11 @@ import { TYPES } from '../../../di/types';
  * deleteAccount: eliminación irreversible. Elimina subcolecciones Firestore,
  * el documento del usuario y la cuenta Firebase Auth.
  */
-@injectable()
 export class SettingsUseCase implements ISettingsUseCase {
 
     constructor(
-        @inject(TYPES.IAuthRepository)
         private readonly authRepository: IAuthRepository,
-        @inject(TYPES.IPlatformRepository)
         private readonly platformRepository: IPlatformRepository,
-        @inject(TYPES.INotificationRepository)
         private readonly notificationRepository: INotificationRepository,
     ) {}
 

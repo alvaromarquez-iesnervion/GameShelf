@@ -1,5 +1,3 @@
-import 'reflect-metadata';
-import { injectable, inject } from 'inversify';
 import { IPlatformLinkUseCase } from '../../interfaces/usecases/platforms/IPlatformLinkUseCase';
 import { IPlatformRepository } from '../../interfaces/repositories/IPlatformRepository';
 import { IGameRepository } from '../../interfaces/repositories/IGameRepository';
@@ -7,7 +5,6 @@ import { ISteamApiService } from '../../interfaces/services/ISteamApiService';
 import { IEpicGamesApiService } from '../../interfaces/services/IEpicGamesApiService';
 import { LinkedPlatform } from '../../entities/LinkedPlatform';
 import { Platform } from '../../enums/Platform';
-import { TYPES } from '../../../di/types';
 
 /**
  * Orquesta la vinculación y desvinculación de plataformas externas.
@@ -21,17 +18,12 @@ import { TYPES } from '../../../di/types';
  *   1. linkEpic → parsea el JSON del export GDPR, almacena plataforma en Firestore.
  *      Los juegos parseados se guardan vía syncLibrary.
  */
-@injectable()
 export class PlatformLinkUseCase implements IPlatformLinkUseCase {
 
     constructor(
-        @inject(TYPES.IPlatformRepository)
         private readonly platformRepository: IPlatformRepository,
-        @inject(TYPES.IGameRepository)
         private readonly gameRepository: IGameRepository,
-        @inject(TYPES.ISteamApiService)
         private readonly steamService: ISteamApiService,
-        @inject(TYPES.IEpicGamesApiService)
         private readonly epicService: IEpicGamesApiService,
     ) {}
 

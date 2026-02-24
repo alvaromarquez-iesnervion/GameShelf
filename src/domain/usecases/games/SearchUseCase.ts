@@ -1,10 +1,7 @@
-import 'reflect-metadata';
-import { injectable, inject } from 'inversify';
 import { ISearchUseCase } from '../../interfaces/usecases/games/ISearchUseCase';
 import { IGameRepository } from '../../interfaces/repositories/IGameRepository';
 import { IWishlistRepository } from '../../interfaces/repositories/IWishlistRepository';
 import { SearchResult } from '../../entities/SearchResult';
-import { TYPES } from '../../../di/types';
 
 /**
  * Búsqueda en el catálogo global de ITAD.
@@ -13,13 +10,10 @@ import { TYPES } from '../../../di/types';
  * el flag isInWishlist en cada SearchResult. Las comprobaciones de wishlist
  * se ejecutan en paralelo para minimizar la latencia total.
  */
-@injectable()
 export class SearchUseCase implements ISearchUseCase {
 
     constructor(
-        @inject(TYPES.IGameRepository)
         private readonly gameRepository: IGameRepository,
-        @inject(TYPES.IWishlistRepository)
         private readonly wishlistRepository: IWishlistRepository,
     ) {}
 

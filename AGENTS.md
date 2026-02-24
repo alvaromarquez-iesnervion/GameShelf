@@ -90,7 +90,9 @@ src/
 
 ### Arquitectura
 - `domain/` no puede importar de `data/`, `di/` ni `presentation/`.
-- No instanciar repositorios o servicios manualmente. Siempre vía `useInjection(TYPES.X)`.
+- **Use cases son TypeScript puro**: no llevan `@injectable`, `@inject`, `TYPES` ni `reflect-metadata`. Reciben sus dependencias por constructor como interfaces tipadas simples. El motivo es que `@injectable`/`@inject` son decoradores de Inversify (infraestructura) y `TYPES` vive en `di/` — importarlos desde `domain/` rompe la regla fundamental de que el dominio no conoce nada externo a él. Todo el conocimiento de DI se centraliza en `di/container.ts`.
+- Los bindings de use cases en `container.ts` usan `toDynamicValue(ctx => new UseCase(...))` en lugar de `.to(UseCase)`, construyendo la instancia manualmente y resolviendo dependencias con `ctx.get<T>(TYPES.X)`.
+- No instanciar repositorios o servicios manualmente fuera de `container.ts`. Siempre vía `useInjection(TYPES.X)` en la capa de presentación.
 - No existe `AuthUseCase`. `AuthViewModel` depende directamente de `IAuthRepository`.
 
 ---
@@ -98,10 +100,21 @@ src/
 ## Dependency Injection
 
 Todo pasa por `src/di/container.ts`. Al añadir cualquier clase nueva:
+
+**Repositorios, servicios y ViewModels** (capas `data/` y `presentation/`):
 1. Decorar con `@injectable()`.
 2. Decorar parámetros del constructor con `@inject(TYPES.X)`.
 3. Añadir el símbolo en `src/di/types.ts`.
-4. Registrar el binding en `container.ts`.
+4. Registrar el binding en `container.ts` con `.to(Clase)`.
+
+**Use cases** (capa `domain/`):
+1. No añadir ningún decorador — constructor TypeScript puro con interfaces tipadas.
+2. Añadir el símbolo en `src/di/types.ts`.
+3. Registrar en `container.ts` con `toDynamicValue(ctx => new UseCase(ctx.get<IDep>(TYPES.IDep), ...)).inSingletonScope()`.
+
+La razón de este trato diferenciado: los use cases viven en `domain/`, que no puede conocer `inversify`, `reflect-metadata` ni `di/types`. Esas son dependencias de infraestructura. Al construirlos manualmente en `container.ts` (que sí es infraestructura), el dominio permanece puro e independiente del framework de DI.
+
+> **Nota sobre scope**: `toDynamicValue` no hereda el `defaultScope: 'Singleton'` del contenedor — el scope debe declararse explícitamente con `.inSingletonScope()`. Los use cases son stateless (sin campos mutables), por lo que el singleton es correcto: evita instanciar objetos nuevos en cada resolución sin ningún beneficio funcional.
 
 Repositorios, servicios y use cases → **SINGLETON**. ViewModels: `Auth`, `Library`, `Wishlist` → **SINGLETON**; `GameDetail`, `Search`, `PlatformLink`, `Settings` → **TRANSIENT**.
 
