@@ -50,7 +50,7 @@ Servicios externos (singleton)
   IIsThereAnyDealService  → IsThereAnyDealServiceImpl
 
 Casos de uso (singleton, toDynamicValue + inSingletonScope)
-  ILibraryUseCase         → new LibraryUseCase(...)
+  ILibraryUseCase         → new LibraryUseCase(IGameRepository, IPlatformRepository)
   IWishlistUseCase        → new WishlistUseCase(...)
   IGameDetailUseCase      → new GameDetailUseCase(...)
   ISearchUseCase          → new SearchUseCase(...)

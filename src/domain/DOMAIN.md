@@ -88,7 +88,7 @@ Contratos que los ViewModels consumen. Los ViewModels dependen de estas interfac
 
 | Interfaz | Métodos principales |
 |---|---|
-| `ILibraryUseCase` | `getLibrary`, `syncLibrary`, `searchInLibrary` |
+| `ILibraryUseCase` | `getLibrary`, `syncLibrary`, `searchInLibrary`, `getLinkedPlatforms` |
 | `IWishlistUseCase` | `getWishlist`, `addToWishlist`, `removeFromWishlist` |
 | `IGameDetailUseCase` | `getGameDetail(gameId, userId): Promise<GameDetailDTO>` |
 | `ISearchUseCase` | `searchGames(query, userId): Promise<SearchResult[]>` |
@@ -106,7 +106,7 @@ Contienen la lógica de negocio real. Orquestan repositorios y servicios.
 
 | Use Case | Lógica destacada |
 |---|---|
-| `LibraryUseCase` | `syncLibrary`: itera plataformas vinculadas y llama `gameRepository.syncLibrary()` para cada una |
+| `LibraryUseCase` | `syncLibrary`: itera plataformas vinculadas y llama `gameRepository.syncLibrary()` para cada una. `getLinkedPlatforms`: delega en `IPlatformRepository.getLinkedPlatforms()` — encapsula el acceso a plataformas dentro del use case para que `LibraryViewModel` no dependa directamente del repositorio (fix §1.4) |
 | `WishlistUseCase` | `getWishlist`: enriquece cada item con `getBestDeal()` de ITAD |
 | `GameDetailUseCase` | `getGameDetail`: consulta ProtonDB, HLTB, ITAD y wishlist en **paralelo** con `Promise.allSettled` — el fallo de una API no rompe las demás |
 | `SearchUseCase` | `searchGames`: busca via `IGameRepository` y cruza con `isInWishlist` para marcar el flag |

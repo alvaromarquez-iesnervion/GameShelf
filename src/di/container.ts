@@ -136,6 +136,7 @@ container.bind<IIsThereAnyDealService>(TYPES.IIsThereAnyDealService).to(IsThereA
 // debe conocer ningún detalle de infraestructura (di/, inversify, reflect-metadata).
 container.bind<ILibraryUseCase>(TYPES.ILibraryUseCase).toDynamicValue(ctx => new LibraryUseCase(
     ctx.get<IGameRepository>(TYPES.IGameRepository),
+    ctx.get<IPlatformRepository>(TYPES.IPlatformRepository),
 )).inSingletonScope();
 container.bind<IWishlistUseCase>(TYPES.IWishlistUseCase).toDynamicValue(ctx => new WishlistUseCase(
     ctx.get<IWishlistRepository>(TYPES.IWishlistRepository),

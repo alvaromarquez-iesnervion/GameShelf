@@ -2,7 +2,6 @@ import 'reflect-metadata';
 import { injectable, inject } from 'inversify';
 import { makeAutoObservable, runInAction } from 'mobx';
 import { ILibraryUseCase } from '../../domain/interfaces/usecases/library/ILibraryUseCase';
-import { IPlatformRepository } from '../../domain/interfaces/repositories/IPlatformRepository';
 import { Game } from '../../domain/entities/Game';
 import { LinkedPlatform } from '../../domain/entities/LinkedPlatform';
 import { Platform } from '../../domain/enums/Platform';
@@ -26,8 +25,6 @@ export class LibraryViewModel {
     constructor(
         @inject(TYPES.ILibraryUseCase)
         private readonly libraryUseCase: ILibraryUseCase,
-        @inject(TYPES.IPlatformRepository)
-        private readonly platformRepository: IPlatformRepository,
     ) {
         makeAutoObservable(this);
     }
@@ -75,7 +72,7 @@ export class LibraryViewModel {
         try {
             const [games, platforms] = await Promise.all([
                 this.libraryUseCase.getLibrary(userId),
-                this.platformRepository.getLinkedPlatforms(userId),
+                this.libraryUseCase.getLinkedPlatforms(userId),
             ]);
             
             runInAction(() => {

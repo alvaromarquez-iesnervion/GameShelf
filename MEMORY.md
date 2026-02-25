@@ -4,6 +4,34 @@ Registro acumulativo de decisiones, cambios y contexto relevante por sesión.
 
 ---
 
+## Sesión 19 — Refactor 1.4: LibraryViewModel deja de depender de IPlatformRepository
+
+### Problema (MALAS_PRACTICAS.md §1.4 — ALTA)
+
+`LibraryViewModel` tenía una dependencia directa de `IPlatformRepository` (vía `@inject`) para obtener las plataformas vinculadas. En MVVM + Clean Architecture, los ViewModels deben depender **solo de use cases**, no de repositorios directamente.
+
+### Solución
+
+Se encapsula `getLinkedPlatforms` dentro de `ILibraryUseCase` y su implementación, de modo que `LibraryViewModel` nunca necesita conocer el repositorio.
+
+1. **`src/domain/interfaces/usecases/library/ILibraryUseCase.ts`** — añadido método `getLinkedPlatforms(userId: string): Promise<LinkedPlatform[]>`.
+
+2. **`src/domain/usecases/library/LibraryUseCase.ts`** — añadido `IPlatformRepository` al constructor (como parámetro TypeScript puro, sin decoradores Inversify) e implementado `getLinkedPlatforms()` delegando en el repositorio.
+
+3. **`src/di/container.ts`** — el binding de `LibraryUseCase` en `toDynamicValue` ahora pasa también `ctx.get<IPlatformRepository>(TYPES.IPlatformRepository)`.
+
+4. **`src/presentation/viewmodels/LibraryViewModel.ts`** — eliminados `import { IPlatformRepository }` y el parámetro `@inject(TYPES.IPlatformRepository)` del constructor. `loadLibrary()` ahora llama a `libraryUseCase.getLinkedPlatforms(userId)` en lugar de `platformRepository.getLinkedPlatforms(userId)`.
+
+**Archivos modificados (4):**
+- `src/domain/interfaces/usecases/library/ILibraryUseCase.ts`
+- `src/domain/usecases/library/LibraryUseCase.ts`
+- `src/di/container.ts`
+- `src/presentation/viewmodels/LibraryViewModel.ts`
+
+**TypeScript**: `npx tsc --noEmit` — ✅ 0 errores nuevos
+
+---
+
 ## Sesión 18 — Refactor 1.3: Eliminar import de data/ en PlatformLinkViewModel
 
 ### Problema (MALAS_PRACTICAS.md §1.3 — ALTA)

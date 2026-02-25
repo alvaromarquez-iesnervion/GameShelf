@@ -39,7 +39,7 @@ class LibraryViewModel {
   isLoading = false;           // observable
   errorMessage: string | null = null;  // observable
 
-  constructor(@inject(TYPES.ILibraryUseCase) private useCase: ILibraryUseCase) {
+  constructor(@inject(TYPES.ILibraryUseCase) private readonly libraryUseCase: ILibraryUseCase) {
     makeAutoObservable(this);
   }
 
