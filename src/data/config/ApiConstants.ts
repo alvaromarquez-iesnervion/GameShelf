@@ -17,10 +17,11 @@ export const EPIC_GRAPHQL_URL = 'https://graphql.epicgames.com/graphql';
 
 // Epic Games — Auth API interna (no documentada — puede cambiar sin aviso)
 // Client: launcherAppClient2 (cliente oficial del Epic Games Launcher)
+// Las credenciales son públicas (EpicResearch) pero se mueven a .env por buenas prácticas
 export const EPIC_AUTH_TOKEN_URL = 'https://account-public-service-prod.ol.epicgames.com/account/api/oauth/token';
 export const EPIC_ENTITLEMENTS_URL = 'https://entitlement-public-service-prod08.ol.epicgames.com/entitlement/api/account';
-export const EPIC_AUTH_CLIENT_ID = '34a02cf8f4414e29b15921876da36f9a';
-export const EPIC_AUTH_CLIENT_SECRET = 'daafbccc737745039dffe53d94fc76cf';
+export const EPIC_AUTH_CLIENT_ID = process.env.EXPO_PUBLIC_EPIC_CLIENT_ID ?? '34a02cf8f4414e29b15921876da36f9a';
+export const EPIC_AUTH_CLIENT_SECRET = process.env.EXPO_PUBLIC_EPIC_CLIENT_SECRET ?? 'daafbccc737745039dffe53d94fc76cf';
 // URL que el usuario abre en el navegador para iniciar sesión en Epic y obtener el auth code
 export const EPIC_AUTH_REDIRECT_URL = `https://www.epicgames.com/id/api/redirect?clientId=${EPIC_AUTH_CLIENT_ID}&responseType=code`;
 
