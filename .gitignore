@@ -42,4 +42,6 @@ app-example
 # generated native folders
 /ios
 /android
-MALAS_PRACTICAS.md
+# Documentation — keep all .md files local only
+*.md
+!README.md
