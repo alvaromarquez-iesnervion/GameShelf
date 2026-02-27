@@ -14,13 +14,7 @@ interface WishlistGameCardProps {
     onRemove: () => void;
 }
 
-export const WishlistGameCard: React.FC<WishlistGameCardProps> = ({
-    coverUrl,
-    title,
-    discountPercentage,
-    onPress,
-    onRemove,
-}) => {
+export const WishlistGameCard = React.memo(({ coverUrl, title, discountPercentage, onPress, onRemove }: WishlistGameCardProps) => {
     const hasDiscount = discountPercentage && discountPercentage > 0;
 
     const handleRemove = () => {
@@ -67,7 +61,7 @@ export const WishlistGameCard: React.FC<WishlistGameCardProps> = ({
             </View>
         </TouchableOpacity>
     );
-};
+});
 
 const styles = StyleSheet.create({
     card: {

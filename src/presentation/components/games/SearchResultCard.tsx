@@ -14,13 +14,7 @@ interface SearchResultCardProps {
     onToggleWishlist: () => void;
 }
 
-export const SearchResultCard: React.FC<SearchResultCardProps> = ({
-    coverUrl,
-    title,
-    isInWishlist,
-    onPress,
-    onToggleWishlist,
-}) => {
+export const SearchResultCard = React.memo(({ coverUrl, title, isInWishlist, onPress, onToggleWishlist }: SearchResultCardProps) => {
     const handleWishlist = () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         onToggleWishlist();
@@ -50,7 +44,7 @@ export const SearchResultCard: React.FC<SearchResultCardProps> = ({
             </TouchableOpacity>
         </TouchableOpacity>
     );
-};
+});
 
 const styles = StyleSheet.create({
     card: {

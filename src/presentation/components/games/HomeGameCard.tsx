@@ -13,13 +13,7 @@ interface HomeGameCardProps {
     size?: 'small' | 'medium';
 }
 
-export const HomeGameCard: React.FC<HomeGameCardProps> = ({
-    coverUrl,
-    title,
-    subtitle,
-    onPress,
-    size = 'medium',
-}) => {
+export const HomeGameCard = React.memo(({ coverUrl, title, subtitle, onPress, size = 'medium' }: HomeGameCardProps) => {
     const handlePress = () => {
         Haptics.selectionAsync();
         onPress();
@@ -46,7 +40,7 @@ export const HomeGameCard: React.FC<HomeGameCardProps> = ({
             </View>
         </TouchableOpacity>
     );
-};
+});
 
 const styles = StyleSheet.create({
     card: {

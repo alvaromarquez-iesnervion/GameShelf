@@ -19,8 +19,10 @@ export const EPIC_GRAPHQL_URL = 'https://graphql.epicgames.com/graphql';
 // Client: launcherAppClient2 (cliente oficial del Epic Games Launcher)
 // Las credenciales son públicas (EpicResearch) pero se mueven a .env por buenas prácticas
 export const EPIC_AUTH_TOKEN_URL = 'https://account-public-service-prod.ol.epicgames.com/account/api/oauth/token';
-export const EPIC_ENTITLEMENTS_URL = 'https://entitlement-public-service-prod08.ol.epicgames.com/entitlement/api/account';
-// Catálogo de Epic — devuelve título e imágenes dado namespace + catalogItemId (requiere Bearer token)
+// Library service — devuelve los juegos reales comprados en la Epic Games Store (paginado con cursor)
+// GET /library/api/public/items?includeMetadata=true[&cursor=...]
+export const EPIC_LIBRARY_URL = 'https://library-service.live.use1a.on.epicgames.com';
+// Catálogo de Epic — enriquecimiento de título e imágenes dado namespace + catalogItemId (requiere Bearer token)
 // Soporta hasta 50 IDs por llamada (param ?id= repetido)
 export const EPIC_CATALOG_URL = 'https://catalog-public-service-prod06.ol.epicgames.com/catalog/api/shared/namespace';
 export const EPIC_AUTH_CLIENT_ID = process.env.EXPO_PUBLIC_EPIC_CLIENT_ID ?? '34a02cf8f4414e29b15921876da36f9a';

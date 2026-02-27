@@ -14,7 +14,7 @@ interface GameCardProps {
     onPress: () => void;
 }
 
-export const GameCard: React.FC<GameCardProps> = ({ coverUrl, title, platform, onPress }) => {
+export const GameCard = React.memo(({ coverUrl, title, platform, onPress }: GameCardProps) => {
     const handlePress = () => {
         if (Platform.OS !== 'web') {
             Haptics.selectionAsync();
@@ -41,7 +41,7 @@ export const GameCard: React.FC<GameCardProps> = ({ coverUrl, title, platform, o
                 <View style={styles.badgeContainer}>
                     <View style={[
                         styles.platformBadge,
-                        platform === GamePlatform.STEAM ? styles.steam : styles.epic
+                        platform === GamePlatform.STEAM ? styles.steam : styles.epic,
                     ]}>
                         <View style={styles.dot} />
                     </View>
@@ -52,7 +52,7 @@ export const GameCard: React.FC<GameCardProps> = ({ coverUrl, title, platform, o
             </View>
         </TouchableOpacity>
     );
-};
+});
 
 const styles = StyleSheet.create({
     card: {
