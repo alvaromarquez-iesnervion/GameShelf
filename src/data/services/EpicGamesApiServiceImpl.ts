@@ -74,9 +74,8 @@ export class EpicGamesApiServiceImpl implements IEpicGamesApiService {
      */
     async exchangeAuthCode(code: string): Promise<EpicAuthToken> {
         // Basic auth = Base64(clientId:clientSecret)
-        const credentials = Buffer.from(
-            `${EPIC_AUTH_CLIENT_ID}:${EPIC_AUTH_CLIENT_SECRET}`,
-        ).toString('base64');
+        // btoa() es la API estándar de JS — Buffer.from() es Node.js only y no existe en Hermes/JSC
+        const credentials = btoa(`${EPIC_AUTH_CLIENT_ID}:${EPIC_AUTH_CLIENT_SECRET}`);
 
         let response;
         try {
