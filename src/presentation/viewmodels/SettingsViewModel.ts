@@ -5,6 +5,7 @@ import { ISettingsUseCase } from '../../domain/interfaces/usecases/settings/ISet
 import { UserProfileDTO } from '../../domain/dtos/UserProfileDTO';
 import { NotificationPreferences } from '../../domain/entities/NotificationPreferences';
 import { TYPES } from '../../di/types';
+import { BaseViewModel } from './BaseViewModel';
 
 /**
  * ViewModel para ajustes y perfil.
@@ -12,7 +13,7 @@ import { TYPES } from '../../di/types';
  * Transient: solo activo durante la pantalla de ajustes.
  */
 @injectable()
-export class SettingsViewModel {
+export class SettingsViewModel extends BaseViewModel {
     private _profile: UserProfileDTO | null = null;
     private _isLoading: boolean = false;
     private _errorMessage: string | null = null;
@@ -21,6 +22,7 @@ export class SettingsViewModel {
         @inject(TYPES.ISettingsUseCase)
         private readonly settingsUseCase: ISettingsUseCase,
     ) {
+        super();
         makeAutoObservable(this);
     }
 
@@ -41,40 +43,22 @@ export class SettingsViewModel {
     }
 
     async loadProfile(userId: string): Promise<void> {
-        runInAction(() => {
-            this._isLoading = true;
-            this._errorMessage = null;
-        });
-
-        try {
+        await this.withLoading('_isLoading', '_errorMessage', async () => {
             const profile = await this.settingsUseCase.getProfile(userId);
             runInAction(() => {
                 this._profile = profile;
             });
-        } catch (error) {
-            runInAction(() => {
-                this._errorMessage = (error as Error).message;
-            });
-        } finally {
-            runInAction(() => {
-                this._isLoading = false;
-            });
-        }
+        });
     }
 
     async updateNotificationPreferences(
         userId: string,
         enabled: boolean,
     ): Promise<boolean> {
-        runInAction(() => {
-            this._isLoading = true;
-            this._errorMessage = null;
-        });
-
-        try {
+        const result = await this.withLoading('_isLoading', '_errorMessage', async () => {
             const preferences = new NotificationPreferences(enabled);
             await this.settingsUseCase.updateNotificationPreferences(userId, preferences);
-            
+
             // Actualizar el perfil local
             if (this._profile) {
                 runInAction(() => {
@@ -85,39 +69,17 @@ export class SettingsViewModel {
                     );
                 });
             }
-            
             return true;
-        } catch (error) {
-            runInAction(() => {
-                this._errorMessage = (error as Error).message;
-            });
-            return false;
-        } finally {
-            runInAction(() => {
-                this._isLoading = false;
-            });
-        }
+        });
+        return result ?? false;
     }
 
     async deleteAccount(): Promise<boolean> {
-        runInAction(() => {
-            this._isLoading = true;
-            this._errorMessage = null;
-        });
-
-        try {
+        const result = await this.withLoading('_isLoading', '_errorMessage', async () => {
             await this.settingsUseCase.deleteAccount();
             return true;
-        } catch (error) {
-            runInAction(() => {
-                this._errorMessage = (error as Error).message;
-            });
-            return false;
-        } finally {
-            runInAction(() => {
-                this._isLoading = false;
-            });
-        }
+        });
+        return result ?? false;
     }
 
     clearError(): void {

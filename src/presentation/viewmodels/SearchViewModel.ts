@@ -4,6 +4,7 @@ import { makeAutoObservable, runInAction } from 'mobx';
 import { ISearchUseCase } from '../../domain/interfaces/usecases/games/ISearchUseCase';
 import { SearchResult } from '../../domain/entities/SearchResult';
 import { TYPES } from '../../di/types';
+import { BaseViewModel } from './BaseViewModel';
 
 /**
  * ViewModel para búsqueda de juegos.
@@ -11,7 +12,7 @@ import { TYPES } from '../../di/types';
  * Transient: cada búsqueda es independiente.
  */
 @injectable()
-export class SearchViewModel {
+export class SearchViewModel extends BaseViewModel {
     private _results: SearchResult[] = [];
     private _query: string = '';
     private _isLoading: boolean = false;
@@ -21,6 +22,7 @@ export class SearchViewModel {
         @inject(TYPES.ISearchUseCase)
         private readonly searchUseCase: ISearchUseCase,
     ) {
+        super();
         makeAutoObservable(this);
     }
 
@@ -49,26 +51,14 @@ export class SearchViewModel {
             return;
         }
 
-        runInAction(() => {
-            this._isLoading = true;
-            this._query = query;
-            this._errorMessage = null;
-        });
+        runInAction(() => { this._query = query; });
 
-        try {
+        await this.withLoading('_isLoading', '_errorMessage', async () => {
             const results = await this.searchUseCase.searchGames(query, userId);
             runInAction(() => {
                 this._results = results;
             });
-        } catch (error) {
-            runInAction(() => {
-                this._errorMessage = (error as Error).message;
-            });
-        } finally {
-            runInAction(() => {
-                this._isLoading = false;
-            });
-        }
+        });
     }
 
     clearResults(): void {

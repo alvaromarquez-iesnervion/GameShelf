@@ -4,6 +4,7 @@ import { makeAutoObservable, runInAction } from 'mobx';
 import { IGameDetailUseCase } from '../../domain/interfaces/usecases/games/IGameDetailUseCase';
 import { GameDetailDTO } from '../../domain/dtos/GameDetailDTO';
 import { TYPES } from '../../di/types';
+import { BaseViewModel } from './BaseViewModel';
 
 /**
  * ViewModel para el detalle de un juego.
@@ -11,7 +12,7 @@ import { TYPES } from '../../di/types';
  * Transient: cada pantalla de detalle crea su propia instancia.
  */
 @injectable()
-export class GameDetailViewModel {
+export class GameDetailViewModel extends BaseViewModel {
     private _gameDetail: GameDetailDTO | null = null;
     private _isLoading: boolean = false;
     private _errorMessage: string | null = null;
@@ -20,6 +21,7 @@ export class GameDetailViewModel {
         @inject(TYPES.IGameDetailUseCase)
         private readonly gameDetailUseCase: IGameDetailUseCase,
     ) {
+        super();
         makeAutoObservable(this);
     }
 
@@ -36,25 +38,12 @@ export class GameDetailViewModel {
     }
 
     async loadGameDetail(gameId: string, userId: string, steamAppId?: number): Promise<void> {
-        runInAction(() => {
-            this._isLoading = true;
-            this._errorMessage = null;
-        });
-
-        try {
+        await this.withLoading('_isLoading', '_errorMessage', async () => {
             const detail = await this.gameDetailUseCase.getGameDetail(gameId, userId, steamAppId);
             runInAction(() => {
                 this._gameDetail = detail;
             });
-        } catch (error) {
-            runInAction(() => {
-                this._errorMessage = (error as Error).message;
-            });
-        } finally {
-            runInAction(() => {
-                this._isLoading = false;
-            });
-        }
+        });
     }
 
     clear(): void {

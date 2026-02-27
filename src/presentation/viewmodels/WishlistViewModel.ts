@@ -4,6 +4,7 @@ import { makeAutoObservable, runInAction } from 'mobx';
 import { IWishlistUseCase } from '../../domain/interfaces/usecases/wishlist/IWishlistUseCase';
 import { WishlistItem } from '../../domain/entities/WishlistItem';
 import { TYPES } from '../../di/types';
+import { BaseViewModel } from './BaseViewModel';
 
 /**
  * ViewModel para la wishlist.
@@ -11,7 +12,7 @@ import { TYPES } from '../../di/types';
  * Singleton: compartido entre SearchScreen y GameDetailScreen para mantener consistencia.
  */
 @injectable()
-export class WishlistViewModel {
+export class WishlistViewModel extends BaseViewModel {
     private _items: WishlistItem[] = [];
     private _isLoading: boolean = false;
     private _errorMessage: string | null = null;
@@ -20,6 +21,7 @@ export class WishlistViewModel {
         @inject(TYPES.IWishlistUseCase)
         private readonly wishlistUseCase: IWishlistUseCase,
     ) {
+        super();
         makeAutoObservable(this);
     }
 
@@ -36,73 +38,34 @@ export class WishlistViewModel {
     }
 
     async loadWishlist(userId: string): Promise<void> {
-        runInAction(() => {
-            this._isLoading = true;
-            this._errorMessage = null;
-        });
-
-        try {
+        await this.withLoading('_isLoading', '_errorMessage', async () => {
             const items = await this.wishlistUseCase.getWishlist(userId);
             runInAction(() => {
                 this._items = items;
             });
-        } catch (error) {
-            runInAction(() => {
-                this._errorMessage = (error as Error).message;
-            });
-        } finally {
-            runInAction(() => {
-                this._isLoading = false;
-            });
-        }
+        });
     }
 
     async addToWishlist(userId: string, item: WishlistItem): Promise<boolean> {
-        runInAction(() => {
-            this._isLoading = true;
-            this._errorMessage = null;
-        });
-
-        try {
+        const result = await this.withLoading('_isLoading', '_errorMessage', async () => {
             await this.wishlistUseCase.addToWishlist(userId, item);
             // Recargar la lista para obtener datos actualizados
             await this.loadWishlist(userId);
             return true;
-        } catch (error) {
-            runInAction(() => {
-                this._errorMessage = (error as Error).message;
-            });
-            return false;
-        } finally {
-            runInAction(() => {
-                this._isLoading = false;
-            });
-        }
+        });
+        return result ?? false;
     }
 
     async removeFromWishlist(userId: string, itemId: string): Promise<boolean> {
-        runInAction(() => {
-            this._isLoading = true;
-            this._errorMessage = null;
-        });
-
-        try {
+        const result = await this.withLoading('_isLoading', '_errorMessage', async () => {
             await this.wishlistUseCase.removeFromWishlist(userId, itemId);
             // Actualizar la lista local sin recargar
             runInAction(() => {
                 this._items = this._items.filter(item => item.getId() !== itemId);
             });
             return true;
-        } catch (error) {
-            runInAction(() => {
-                this._errorMessage = (error as Error).message;
-            });
-            return false;
-        } finally {
-            runInAction(() => {
-                this._isLoading = false;
-            });
-        }
+        });
+        return result ?? false;
     }
 
     isGameInWishlist(gameId: string): boolean {

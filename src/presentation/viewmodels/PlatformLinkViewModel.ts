@@ -5,6 +5,7 @@ import { IPlatformLinkUseCase } from '../../domain/interfaces/usecases/platforms
 import { LinkedPlatform } from '../../domain/entities/LinkedPlatform';
 import { Platform } from '../../domain/enums/Platform';
 import { TYPES } from '../../di/types';
+import { BaseViewModel } from './BaseViewModel';
 
 /**
  * ViewModel para vinculación de plataformas.
@@ -12,7 +13,7 @@ import { TYPES } from '../../di/types';
  * Transient: solo activo durante la pantalla de vinculación.
  */
 @injectable()
-export class PlatformLinkViewModel {
+export class PlatformLinkViewModel extends BaseViewModel {
     private _linkedPlatforms: LinkedPlatform[] = [];
     private _isLinking: boolean = false;
     private _errorMessage: string | null = null;
@@ -22,6 +23,7 @@ export class PlatformLinkViewModel {
         @inject(TYPES.IPlatformLinkUseCase)
         private readonly platformLinkUseCase: IPlatformLinkUseCase,
     ) {
+        super();
         makeAutoObservable(this);
     }
 
@@ -42,25 +44,12 @@ export class PlatformLinkViewModel {
     }
 
     async loadLinkedPlatforms(userId: string): Promise<void> {
-        runInAction(() => {
-            this._isLinking = true;
-            this._errorMessage = null;
-        });
-
-        try {
+        await this.withLoading('_isLinking', '_errorMessage', async () => {
             const platforms = await this.platformLinkUseCase.getLinkedPlatforms(userId);
             runInAction(() => {
                 this._linkedPlatforms = platforms;
             });
-        } catch (error) {
-            runInAction(() => {
-                this._errorMessage = (error as Error).message;
-            });
-        } finally {
-            runInAction(() => {
-                this._isLinking = false;
-            });
-        }
+        });
     }
 
     generateSteamLoginUrl(returnUrl: string): void {
@@ -71,25 +60,12 @@ export class PlatformLinkViewModel {
     }
 
     async linkSteamById(userId: string, profileUrlOrId: string): Promise<boolean> {
-        runInAction(() => {
-            this._isLinking = true;
-            this._errorMessage = null;
-        });
-
-        try {
+        const result = await this.withLoading('_isLinking', '_errorMessage', async () => {
             await this.platformLinkUseCase.linkSteamById(userId, profileUrlOrId);
             await this.loadLinkedPlatforms(userId);
             return true;
-        } catch (error) {
-            runInAction(() => {
-                this._errorMessage = (error as Error).message;
-            });
-            return false;
-        } finally {
-            runInAction(() => {
-                this._isLinking = false;
-            });
-        }
+        });
+        return result ?? false;
     }
 
     async linkSteam(
@@ -97,25 +73,12 @@ export class PlatformLinkViewModel {
         callbackUrl: string,
         params: Record<string, string>,
     ): Promise<boolean> {
-        runInAction(() => {
-            this._isLinking = true;
-            this._errorMessage = null;
-        });
-
-        try {
+        const result = await this.withLoading('_isLinking', '_errorMessage', async () => {
             await this.platformLinkUseCase.linkSteam(userId, callbackUrl, params);
             await this.loadLinkedPlatforms(userId);
             return true;
-        } catch (error) {
-            runInAction(() => {
-                this._errorMessage = (error as Error).message;
-            });
-            return false;
-        } finally {
-            runInAction(() => {
-                this._isLinking = false;
-            });
-        }
+        });
+        return result ?? false;
     }
 
     /**
@@ -131,69 +94,30 @@ export class PlatformLinkViewModel {
      * Flujo preferido — requiere que el usuario haya copiado el código de ~32 chars.
      */
     async linkEpicByAuthCode(userId: string, authCode: string): Promise<boolean> {
-        runInAction(() => {
-            this._isLinking = true;
-            this._errorMessage = null;
-        });
-
-        try {
+        const result = await this.withLoading('_isLinking', '_errorMessage', async () => {
             await this.platformLinkUseCase.linkEpicByAuthCode(userId, authCode);
             await this.loadLinkedPlatforms(userId);
             return true;
-        } catch (error) {
-            runInAction(() => {
-                this._errorMessage = (error as Error).message;
-            });
-            return false;
-        } finally {
-            runInAction(() => {
-                this._isLinking = false;
-            });
-        }
+        });
+        return result ?? false;
     }
 
     async linkEpic(userId: string, fileContent: string): Promise<boolean> {
-        runInAction(() => {
-            this._isLinking = true;
-            this._errorMessage = null;
-        });
-
-        try {
+        const result = await this.withLoading('_isLinking', '_errorMessage', async () => {
             await this.platformLinkUseCase.linkEpic(userId, fileContent);
             await this.loadLinkedPlatforms(userId);
             return true;
-        } catch (error) {
-            runInAction(() => {
-                this._errorMessage = (error as Error).message;
-            });
-            return false;
-        } finally {
-            runInAction(() => {
-                this._isLinking = false;
-            });
-        }
+        });
+        return result ?? false;
     }
 
     async unlinkPlatform(userId: string, platform: Platform): Promise<boolean> {
-        runInAction(() => {
-            this._isLinking = true;
-            this._errorMessage = null;
-        });
-
-        try {
+        const result = await this.withLoading('_isLinking', '_errorMessage', async () => {
             await this.platformLinkUseCase.unlinkPlatform(userId, platform);
             await this.loadLinkedPlatforms(userId);
             return true;
-        } catch (error) {
-            runInAction(() => {
-                this._errorMessage = (error as Error).message;
-            });
-            return false;
-        } finally {
-            runInAction(() => {
-                this._isLinking = false;
-            });
-        }
+        });
+        return result ?? false;
     }
 
     isPlatformLinked(platform: Platform): boolean {

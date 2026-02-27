@@ -5,9 +5,10 @@ import { IHomeUseCase } from '../../domain/interfaces/usecases/home/IHomeUseCase
 import { Game } from '../../domain/entities/Game';
 import { SearchResult } from '../../domain/entities/SearchResult';
 import { TYPES } from '../../di/types';
+import { BaseViewModel } from './BaseViewModel';
 
 @injectable()
-export class HomeViewModel {
+export class HomeViewModel extends BaseViewModel {
     private _popularGames: Game[] = [];
     private _recentlyPlayed: Game[] = [];
     private _mostPlayed: Game[] = [];
@@ -21,6 +22,7 @@ export class HomeViewModel {
         @inject(TYPES.IHomeUseCase)
         private readonly homeUseCase: IHomeUseCase,
     ) {
+        super();
         makeAutoObservable(this);
     }
 
@@ -34,12 +36,7 @@ export class HomeViewModel {
     get errorMessage(): string | null { return this._errorMessage; }
 
     async loadHomeData(userId: string): Promise<void> {
-        runInAction(() => {
-            this._isLoadingHome = true;
-            this._errorMessage = null;
-        });
-
-        try {
+        await this.withLoading('_isLoadingHome', '_errorMessage', async () => {
             const [popular, recent, mostPlayed] = await Promise.all([
                 this.homeUseCase.getPopularGames(10),
                 this.homeUseCase.getRecentlyPlayed(userId),
@@ -50,15 +47,7 @@ export class HomeViewModel {
                 this._recentlyPlayed = recent;
                 this._mostPlayed = mostPlayed;
             });
-        } catch (error) {
-            runInAction(() => {
-                this._errorMessage = (error as Error).message;
-            });
-        } finally {
-            runInAction(() => {
-                this._isLoadingHome = false;
-            });
-        }
+        });
     }
 
     async loadPopularGames(): Promise<void> {
@@ -81,26 +70,14 @@ export class HomeViewModel {
             return;
         }
 
-        runInAction(() => {
-            this._isSearching = true;
-            this._searchQuery = query;
-            this._errorMessage = null;
-        });
+        runInAction(() => { this._searchQuery = query; });
 
-        try {
+        await this.withLoading('_isSearching', '_errorMessage', async () => {
             const results = await this.homeUseCase.searchGames(query, userId);
             runInAction(() => {
                 this._searchResults = results;
             });
-        } catch (error) {
-            runInAction(() => {
-                this._errorMessage = (error as Error).message;
-            });
-        } finally {
-            runInAction(() => {
-                this._isSearching = false;
-            });
-        }
+        });
     }
 
     clearSearch(): void {

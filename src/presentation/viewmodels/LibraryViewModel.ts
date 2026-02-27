@@ -6,6 +6,7 @@ import { Game } from '../../domain/entities/Game';
 import { LinkedPlatform } from '../../domain/entities/LinkedPlatform';
 import { Platform } from '../../domain/enums/Platform';
 import { TYPES } from '../../di/types';
+import { BaseViewModel } from './BaseViewModel';
 
 /**
  * ViewModel para la biblioteca de juegos.
@@ -13,7 +14,7 @@ import { TYPES } from '../../di/types';
  * Singleton: compartido entre pantallas para evitar recargas innecesarias.
  */
 @injectable()
-export class LibraryViewModel {
+export class LibraryViewModel extends BaseViewModel {
     private _games: Game[] = [];
     private _linkedPlatforms: LinkedPlatform[] = [];
     private _isLoading: boolean = false;
@@ -26,6 +27,7 @@ export class LibraryViewModel {
         @inject(TYPES.ILibraryUseCase)
         private readonly libraryUseCase: ILibraryUseCase,
     ) {
+        super();
         makeAutoObservable(this);
     }
 
@@ -38,7 +40,7 @@ export class LibraryViewModel {
             return this._games;
         }
         const query = this._searchQuery.toLowerCase();
-        return this._games.filter(game => 
+        return this._games.filter(game =>
             game.getTitle().toLowerCase().includes(query)
         );
     }
@@ -64,52 +66,25 @@ export class LibraryViewModel {
     }
 
     async loadLibrary(userId: string): Promise<void> {
-        runInAction(() => {
-            this._isLoading = true;
-            this._errorMessage = null;
-        });
-
-        try {
+        await this.withLoading('_isLoading', '_errorMessage', async () => {
             const [games, platforms] = await Promise.all([
                 this.libraryUseCase.getLibrary(userId),
                 this.libraryUseCase.getLinkedPlatforms(userId),
             ]);
-            
             runInAction(() => {
                 this._games = games;
                 this._linkedPlatforms = platforms;
             });
-        } catch (error) {
-            runInAction(() => {
-                this._errorMessage = (error as Error).message;
-            });
-        } finally {
-            runInAction(() => {
-                this._isLoading = false;
-            });
-        }
+        });
     }
 
     async syncLibrary(userId: string, platform: Platform): Promise<void> {
-        runInAction(() => {
-            this._isSyncing = true;
-            this._errorMessage = null;
-        });
-
-        try {
+        await this.withLoading('_isSyncing', '_errorMessage', async () => {
             const games = await this.libraryUseCase.syncLibrary(userId, platform);
             runInAction(() => {
                 this._games = games;
             });
-        } catch (error) {
-            runInAction(() => {
-                this._errorMessage = (error as Error).message;
-            });
-        } finally {
-            runInAction(() => {
-                this._isSyncing = false;
-            });
-        }
+        });
     }
 
     setSearchQuery(query: string): void {
@@ -162,8 +137,9 @@ export class LibraryViewModel {
             }
         } catch (error) {
             // El error de sync no es crítico — la biblioteca en caché sigue disponible
+            const message = error instanceof Error ? error.message : String(error);
             runInAction(() => {
-                this._errorMessage = (error as Error).message;
+                this._errorMessage = message;
             });
         } finally {
             runInAction(() => {

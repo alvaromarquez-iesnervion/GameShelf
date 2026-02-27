@@ -4,6 +4,7 @@ import { makeAutoObservable, runInAction } from 'mobx';
 import { IAuthRepository } from '../../domain/interfaces/repositories/IAuthRepository';
 import { User } from '../../domain/entities/User';
 import { TYPES } from '../../di/types';
+import { BaseViewModel } from './BaseViewModel';
 
 /**
  * ViewModel para autenticación.
@@ -12,7 +13,7 @@ import { TYPES } from '../../di/types';
  * Depende directamente de IAuthRepository (sin use case intermedio).
  */
 @injectable()
-export class AuthViewModel {
+export class AuthViewModel extends BaseViewModel {
     private _currentUser: User | null = null;
     private _isLoading: boolean = false;
     private _errorMessage: string | null = null;
@@ -21,6 +22,7 @@ export class AuthViewModel {
         @inject(TYPES.IAuthRepository)
         private readonly authRepository: IAuthRepository,
     ) {
+        super();
         makeAutoObservable(this);
     }
 
@@ -41,87 +43,48 @@ export class AuthViewModel {
     }
 
     async login(email: string, password: string): Promise<boolean> {
-        runInAction(() => {
-            this._isLoading = true;
-            this._errorMessage = null;
-        });
-
-        try {
+        const result = await this.withLoading('_isLoading', '_errorMessage', async () => {
             const user = await this.authRepository.login(email, password);
             runInAction(() => {
                 this._currentUser = user;
             });
             return true;
-        } catch (error) {
-            runInAction(() => {
-                this._errorMessage = (error as Error).message;
-            });
-            return false;
-        } finally {
-            runInAction(() => {
-                this._isLoading = false;
-            });
-        }
+        });
+        return result ?? false;
     }
 
     async register(email: string, password: string): Promise<boolean> {
-        runInAction(() => {
-            this._isLoading = true;
-            this._errorMessage = null;
-        });
-
-        try {
+        const result = await this.withLoading('_isLoading', '_errorMessage', async () => {
             const user = await this.authRepository.register(email, password);
             runInAction(() => {
                 this._currentUser = user;
             });
             return true;
-        } catch (error) {
-            runInAction(() => {
-                this._errorMessage = (error as Error).message;
-            });
-            return false;
-        } finally {
-            runInAction(() => {
-                this._isLoading = false;
-            });
-        }
+        });
+        return result ?? false;
     }
 
     async logout(): Promise<void> {
-        runInAction(() => {
-            this._isLoading = true;
-            this._errorMessage = null;
-        });
-
-        try {
+        await this.withLoading('_isLoading', '_errorMessage', async () => {
             await this.authRepository.logout();
             runInAction(() => {
                 this._currentUser = null;
             });
-        } catch (error) {
-            runInAction(() => {
-                this._errorMessage = (error as Error).message;
-            });
-        } finally {
-            runInAction(() => {
-                this._isLoading = false;
-            });
-        }
+        });
     }
 
     async checkAuthState(): Promise<void> {
+        // Note: errors are silenced here — a failed auth check just leaves the user logged out.
         runInAction(() => {
             this._isLoading = true;
             this._errorMessage = null;
         });
-
         try {
             const user = await this.authRepository.getCurrentUser();
             runInAction(() => {
                 this._currentUser = user;
             });
-        } catch (error) {
+        } catch {
             runInAction(() => {
                 this._currentUser = null;
             });
@@ -133,47 +96,21 @@ export class AuthViewModel {
     }
 
     async deleteAccount(): Promise<void> {
-        runInAction(() => {
-            this._isLoading = true;
-            this._errorMessage = null;
-        });
-
-        try {
+        // rethrow=true so callers can react to the failure
+        await this.withLoading('_isLoading', '_errorMessage', async () => {
             await this.authRepository.deleteAccount();
             runInAction(() => {
                 this._currentUser = null;
             });
-        } catch (error) {
-            runInAction(() => {
-                this._errorMessage = (error as Error).message;
-            });
-            throw error;
-        } finally {
-            runInAction(() => {
-                this._isLoading = false;
-            });
-        }
+        }, true);
     }
 
     async resetPassword(email: string): Promise<boolean> {
-        runInAction(() => {
-            this._isLoading = true;
-            this._errorMessage = null;
-        });
-
-        try {
+        const result = await this.withLoading('_isLoading', '_errorMessage', async () => {
             await this.authRepository.resetPassword(email);
             return true;
-        } catch (error) {
-            runInAction(() => {
-                this._errorMessage = (error as Error).message;
-            });
-            return false;
-        } finally {
-            runInAction(() => {
-                this._isLoading = false;
-            });
-        }
+        });
+        return result ?? false;
     }
 
     clearError(): void {
