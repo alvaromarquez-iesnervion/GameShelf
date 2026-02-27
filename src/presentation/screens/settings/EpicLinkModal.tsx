@@ -30,6 +30,7 @@ export interface EpicLinkModalProps {
     errorMessage: string | null;
     onConfirmAuthCode: (code: string) => Promise<void>;
     onConfirmGdpr: (json: string) => Promise<void>;
+    onOpenLogin: () => void;
     onOpenBrowser: () => void;
     onClose: () => void;
 }
@@ -42,6 +43,7 @@ export const EpicLinkModal: React.FC<EpicLinkModalProps> = ({
     errorMessage,
     onConfirmAuthCode,
     onConfirmGdpr,
+    onOpenLogin,
     onOpenBrowser,
     onClose,
 }) => {
@@ -137,6 +139,7 @@ export const EpicLinkModal: React.FC<EpicLinkModalProps> = ({
                             isLinking={isLinking}
                             errorMessage={errorMessage}
                             isConfirmDisabled={isConfirmDisabled}
+                            onOpenLogin={onOpenLogin}
                             onOpenBrowser={onOpenBrowser}
                             onConfirm={handleConfirm}
                         />
@@ -164,6 +167,7 @@ interface AuthCodeFormProps {
     isLinking: boolean;
     errorMessage: string | null;
     isConfirmDisabled: boolean;
+    onOpenLogin: () => void;
     onOpenBrowser: () => void;
     onConfirm: () => void;
 }
@@ -174,25 +178,32 @@ const AuthCodeForm: React.FC<AuthCodeFormProps> = ({
     isLinking,
     errorMessage,
     isConfirmDisabled,
+    onOpenLogin,
     onOpenBrowser,
     onConfirm,
 }) => (
     <>
         <Text style={styles.modalInstruction}>
-            Inicia sesión en Epic y copia el código que aparece:
+            Inicia sesión en Epic Games y obtén tu código de autorización:
         </Text>
 
         <View style={styles.stepsBox}>
-            <LinkStep number={1} text="Pulsa el botón de abajo para abrir Epic Games en el navegador e inicia sesión con tu cuenta" />
-            <LinkStep number={2} text='Copia el código que aparece en pantalla (campo "code") y pégalo aquí' />
+            <LinkStep number={1} text='Pulsa "Iniciar sesión en Epic" e inicia sesión con tu cuenta' />
+            <LinkStep number={2} text='Pulsa "Obtener código". Verás un JSON — copia el valor de "authorizationCode"' />
+            <LinkStep number={3} text='Si "authorizationCode" aparece como null, vuelve al paso 1 e inicia sesión primero' />
         </View>
 
-        <TouchableOpacity style={styles.openBrowserBtn} onPress={onOpenBrowser} activeOpacity={0.8}>
-            <Feather name="external-link" size={15} color={colors.primary} />
-            <Text style={styles.openBrowserText}>Abrir Epic Games en el navegador</Text>
+        <TouchableOpacity style={styles.openBrowserBtn} onPress={onOpenLogin} activeOpacity={0.8}>
+            <Feather name="log-in" size={15} color={colors.primary} />
+            <Text style={styles.openBrowserText}>Iniciar sesión en Epic Games</Text>
         </TouchableOpacity>
 
-        <Text style={styles.modalLabel}>Pega el código aquí:</Text>
+        <TouchableOpacity style={[styles.openBrowserBtn, styles.openBrowserBtnSecondary]} onPress={onOpenBrowser} activeOpacity={0.8}>
+            <Feather name="external-link" size={15} color={colors.textSecondary} />
+            <Text style={[styles.openBrowserText, styles.openBrowserTextSecondary]}>Obtener código de autorización</Text>
+        </TouchableOpacity>
+
+        <Text style={styles.modalLabel}>Pega el valor de "authorizationCode" aquí:</Text>
         <TextInput
             style={formStyles.modalInput}
             placeholder="Ej: a1b2c3d4e5f6..."
@@ -418,6 +429,14 @@ const styles = StyleSheet.create({
         ...typography.body,
         color: colors.primary,
         fontWeight: '600',
+    },
+    openBrowserBtnSecondary: {
+        borderColor: colors.border,
+        marginTop: spacing.sm,
+    },
+    openBrowserTextSecondary: {
+        color: colors.textSecondary,
+        fontWeight: '500',
     },
     modalLabel: {
         ...typography.small,

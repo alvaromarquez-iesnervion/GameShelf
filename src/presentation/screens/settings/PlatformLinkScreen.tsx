@@ -76,6 +76,14 @@ export const PlatformLinkScreen: React.FC = observer(() => {
         vm.clearError();
     };
 
+    const handleOpenEpicLoginInBrowser = () => {
+        const { Linking } = require('react-native');
+        const url = 'https://www.epicgames.com/login';
+        Linking.openURL(url).catch(() => {
+            Alert.alert('Error', 'No se pudo abrir el navegador. Visita manualmente:\n\n' + url);
+        });
+    };
+
     const handleOpenEpicInBrowser = () => {
         const { Linking } = require('react-native');
         const url = vm.getEpicAuthUrl();
@@ -173,6 +181,7 @@ export const PlatformLinkScreen: React.FC = observer(() => {
                 errorMessage={vm.errorMessage}
                 onConfirmAuthCode={handleConfirmEpicAuthCode}
                 onConfirmGdpr={handleConfirmEpicGdpr}
+                onOpenLogin={handleOpenEpicLoginInBrowser}
                 onOpenBrowser={handleOpenEpicInBrowser}
                 onClose={handleCloseEpicModal}
             />
