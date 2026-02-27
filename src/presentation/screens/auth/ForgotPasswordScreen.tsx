@@ -4,7 +4,6 @@ import {
     Text,
     TextInput,
     TouchableOpacity,
-    StyleSheet,
     KeyboardAvoidingView,
     Platform,
     StatusBar,
@@ -20,8 +19,8 @@ import { AuthViewModel } from '../../viewmodels/AuthViewModel';
 import { TYPES } from '../../../di/types';
 import { AuthStackParamList } from '../../../core/navigation/navigationTypes';
 import { colors } from '../../theme/colors';
-import { typography } from '../../theme/typography';
-import { spacing, radius } from '../../theme/spacing';
+import { formStyles, authBgGradientPrimary, primaryGradientColors } from '../../styles/forms';
+import { styles } from './ForgotPasswordScreen.styles';
 
 type Nav = NativeStackNavigationProp<AuthStackParamList, 'ForgotPassword'>;
 
@@ -56,8 +55,8 @@ export const ForgotPasswordScreen: React.FC = observer(() => {
 
             {/* Background gradient top accent */}
             <LinearGradient
-                colors={['rgba(10, 132, 255, 0.12)', 'transparent']}
-                style={styles.topGradient}
+                colors={authBgGradientPrimary}
+                style={formStyles.topGradient}
                 pointerEvents="none"
             />
 
@@ -83,11 +82,11 @@ export const ForgotPasswordScreen: React.FC = observer(() => {
                             Revisa tu bandeja de entrada y sigue las instrucciones. Si no lo ves, comprueba la carpeta de spam.
                         </Text>
                         <TouchableOpacity
-                            style={styles.secondaryBtn}
+                            style={[formStyles.secondaryBtn, { marginTop: 32 }]}
                             onPress={handleBack}
                             activeOpacity={0.8}
                         >
-                            <Text style={styles.secondaryBtnText}>Volver al inicio de sesión</Text>
+                            <Text style={formStyles.secondaryBtnText}>Volver al inicio de sesión</Text>
                         </TouchableOpacity>
                     </View>
                 ) : (
@@ -105,23 +104,23 @@ export const ForgotPasswordScreen: React.FC = observer(() => {
 
                         {/* Error */}
                         {authVm.errorMessage ? (
-                            <View style={styles.errorBanner}>
+                            <View style={formStyles.errorBanner}>
                                 <Feather name="alert-circle" size={15} color={colors.error} />
-                                <Text style={styles.errorText}>{authVm.errorMessage}</Text>
+                                <Text style={formStyles.errorText}>{authVm.errorMessage}</Text>
                             </View>
                         ) : null}
 
                         {/* Form */}
                         <View style={styles.form}>
-                            <View style={[styles.inputWrap, focusedField === 'email' && styles.inputFocused]}>
+                            <View style={[formStyles.inputWrap, focusedField === 'email' && formStyles.inputFocused]}>
                                 <Feather
                                     name="mail"
                                     size={18}
                                     color={focusedField === 'email' ? colors.primary : colors.textTertiary}
-                                    style={styles.inputIcon}
+                                    style={formStyles.inputIcon}
                                 />
                                 <TextInput
-                                    style={styles.input}
+                                    style={formStyles.input}
                                     placeholder="Correo electrónico"
                                     placeholderTextColor={colors.textDisabled}
                                     value={email}
@@ -136,20 +135,20 @@ export const ForgotPasswordScreen: React.FC = observer(() => {
                             </View>
 
                             <TouchableOpacity
-                                style={[styles.primaryBtn, (authVm.isLoading || !email.trim()) && styles.primaryBtnDisabled]}
+                                style={[formStyles.primaryBtn, (authVm.isLoading || !email.trim()) && formStyles.primaryBtnDisabled]}
                                 onPress={handleReset}
                                 disabled={authVm.isLoading || !email.trim()}
                                 activeOpacity={0.85}
                             >
                                 <LinearGradient
-                                    colors={['#1A91FF', '#0A84FF']}
-                                    style={styles.primaryBtnGradient}
+                                    colors={primaryGradientColors}
+                                    style={formStyles.primaryBtnGradient}
                                 >
                                     {authVm.isLoading ? (
-                                        <Text style={styles.primaryBtnText}>Enviando...</Text>
+                                        <Text style={formStyles.primaryBtnText}>Enviando...</Text>
                                     ) : (
                                         <>
-                                            <Text style={styles.primaryBtnText}>Enviar enlace</Text>
+                                            <Text style={formStyles.primaryBtnText}>Enviar enlace</Text>
                                             <Feather name="send" size={17} color={colors.onPrimary} />
                                         </>
                                     )}
@@ -161,170 +160,4 @@ export const ForgotPasswordScreen: React.FC = observer(() => {
             </View>
         </KeyboardAvoidingView>
     );
-});
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: colors.background,
-    },
-    topGradient: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        height: 300,
-    },
-    content: {
-        flex: 1,
-        paddingHorizontal: spacing.xxl,
-        paddingTop: 60,
-    },
-    backBtn: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: spacing.xs,
-        marginBottom: spacing.xxl,
-        alignSelf: 'flex-start',
-    },
-    backText: {
-        ...typography.body,
-        color: colors.textSecondary,
-    },
-    headerSection: {
-        alignItems: 'center',
-        marginBottom: 36,
-    },
-    iconWrap: {
-        width: 72,
-        height: 72,
-        borderRadius: radius.xxl,
-        backgroundColor: colors.surface,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginBottom: spacing.lg,
-        borderWidth: 1,
-        borderColor: colors.borderLight,
-    },
-    title: {
-        fontSize: 26,
-        fontWeight: '700',
-        color: colors.textPrimary,
-        fontFamily: Platform.OS === 'ios' ? 'System' : 'Roboto',
-        letterSpacing: 0.3,
-        marginBottom: spacing.sm,
-        textAlign: 'center',
-    },
-    subtitle: {
-        ...typography.bodySecondary,
-        color: colors.textSecondary,
-        textAlign: 'center',
-        lineHeight: 22,
-    },
-    errorBanner: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: colors.errorBackground,
-        borderWidth: 1,
-        borderColor: colors.errorBorder,
-        borderRadius: radius.md,
-        paddingHorizontal: spacing.md,
-        paddingVertical: 10,
-        marginBottom: spacing.lg,
-        gap: spacing.sm,
-    },
-    errorText: {
-        ...typography.small,
-        color: colors.error,
-        flex: 1,
-    },
-    form: {
-        gap: spacing.md,
-    },
-    inputWrap: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: colors.surface,
-        borderRadius: radius.md,
-        borderWidth: 1,
-        borderColor: colors.border,
-        height: 52,
-    },
-    inputFocused: {
-        borderColor: colors.primary,
-    },
-    inputIcon: {
-        paddingLeft: 16,
-        paddingRight: 4,
-    },
-    input: {
-        flex: 1,
-        color: colors.textPrimary,
-        fontSize: 16,
-        fontFamily: Platform.OS === 'ios' ? 'System' : 'Roboto',
-        paddingVertical: 0,
-        paddingRight: spacing.md,
-    },
-    primaryBtn: {
-        marginTop: spacing.sm,
-        borderRadius: radius.md,
-        overflow: 'hidden',
-    },
-    primaryBtnDisabled: {
-        opacity: 0.45,
-    },
-    primaryBtnGradient: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        height: 52,
-        gap: spacing.sm,
-    },
-    primaryBtnText: {
-        ...typography.button,
-        color: colors.onPrimary,
-    },
-    // ── Estado éxito ──
-    successContainer: {
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingBottom: 80,
-    },
-    successIcon: {
-        width: 80,
-        height: 80,
-        borderRadius: radius.xxl,
-        backgroundColor: colors.successBackground,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginBottom: spacing.xl,
-        borderWidth: 1,
-        borderColor: colors.success,
-    },
-    emailHighlight: {
-        color: colors.primary,
-        fontWeight: '600',
-    },
-    hintText: {
-        ...typography.small,
-        color: colors.textTertiary,
-        textAlign: 'center',
-        marginTop: spacing.md,
-        lineHeight: 20,
-        paddingHorizontal: spacing.md,
-    },
-    secondaryBtn: {
-        marginTop: spacing.xxl,
-        paddingVertical: 14,
-        paddingHorizontal: spacing.xl,
-        borderRadius: radius.md,
-        borderWidth: 1,
-        borderColor: colors.border,
-        backgroundColor: colors.surface,
-    },
-    secondaryBtnText: {
-        ...typography.button,
-        color: colors.textPrimary,
-    },
 });

@@ -12,6 +12,18 @@ export const spacing = {
 };
 
 /**
+ * Constantes de layout compartidas entre screens
+ */
+export const layout = {
+    /** Clearance inferior para la tab bar nativa */
+    tabBarClearance: 100,
+    /** Padding superior para screens con header custom (sin navigation bar nativa) */
+    safeAreaPaddingTop: { ios: 100, android: 64 },
+    /** Padding superior para modales y screens de auth con back button flotante */
+    authHeaderTop: { ios: 60, android: 24 },
+};
+
+/**
  * Bordes redondeados
  */
 export const radius = {

@@ -68,4 +68,9 @@ export const colors = {
 
     shadow: 'rgba(0, 0, 0, 0.5)',
     shadowLight: 'rgba(0, 0, 0, 0.2)',
+
+    // Colores del sistema iOS usados en iconos de settings
+    iosRed: '#FF3B30',      // Notificaciones, acciones destructivas secundarias
+    iosPurple: '#5856D6',   // Ayuda, soporte
+    iosGreen: '#34C759',    // Privacidad, estados positivos
 };

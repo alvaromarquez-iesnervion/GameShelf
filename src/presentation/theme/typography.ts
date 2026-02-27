@@ -106,4 +106,12 @@ export const typography = {
         fontWeight: '600',
         color: colors.textPrimary,
     } as TextStyle,
+
+    /** Texto de campo de entrada (TextInput). Usa siempre la fuente nativa. */
+    input: {
+        fontFamily: sansFont,
+        fontSize: 16,
+        fontWeight: '400',
+        color: colors.textPrimary,
+    } as TextStyle,
 };

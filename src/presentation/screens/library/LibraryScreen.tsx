@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, FlatList, TextInput, TouchableOpacity, Text, StyleSheet, RefreshControl, Platform } from 'react-native';
+import { View, FlatList, TextInput, TouchableOpacity, Text, RefreshControl, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { observer } from 'mobx-react-lite';
@@ -16,8 +16,7 @@ import { ErrorMessage } from '../../components/common/ErrorMessage';
 import { EmptyState } from '../../components/common/EmptyState';
 import { LibrarySkeleton } from '../../components/common/LibrarySkeleton';
 import { colors } from '../../theme/colors';
-import { typography } from '../../theme/typography';
-import { spacing, radius } from '../../theme/spacing';
+import { styles } from './LibraryScreen.styles';
 
 type Nav = NativeStackNavigationProp<LibraryStackParamList, 'Library'>;
 
@@ -36,8 +35,8 @@ export const LibraryScreen: React.FC = observer(() => {
         navigation.setOptions({
             headerRight: () => (
                 <View style={styles.headerActions}>
-                    <TouchableOpacity 
-                        style={styles.actionCircle} 
+                    <TouchableOpacity
+                        style={styles.actionCircle}
                         onPress={() => {
                             if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                             vm.loadLibrary(userId);
@@ -45,8 +44,8 @@ export const LibraryScreen: React.FC = observer(() => {
                     >
                         <Feather name="rotate-cw" size={18} color={colors.primary} />
                     </TouchableOpacity>
-                    <TouchableOpacity 
-                        style={styles.actionCircle} 
+                    <TouchableOpacity
+                        style={styles.actionCircle}
                         onPress={() => (navigation as any).navigate('WishlistStack')}
                     >
                         <Feather name="heart" size={18} color={colors.primary} />
@@ -85,9 +84,9 @@ export const LibraryScreen: React.FC = observer(() => {
                     </View>
                 }
                 refreshControl={
-                    <RefreshControl 
-                        refreshing={vm.isLoading} 
-                        onRefresh={() => vm.loadLibrary(userId)} 
+                    <RefreshControl
+                        refreshing={vm.isLoading}
+                        onRefresh={() => vm.loadLibrary(userId)}
                         tintColor={colors.primary}
                     />
                 }
@@ -101,67 +100,13 @@ export const LibraryScreen: React.FC = observer(() => {
                 )}
                 ListEmptyComponent={
                     <View style={styles.emptyContainer}>
-                        <EmptyState 
-                            message="Tu colección está esperando. Vincula una plataforma para importar tus juegos." 
-                            icon="plus-circle" 
+                        <EmptyState
+                            message="Tu colección está esperando. Vincula una plataforma para importar tus juegos."
+                            icon="plus-circle"
                         />
                     </View>
                 }
             />
         </View>
     );
-});
-
-const styles = StyleSheet.create({
-    container: { 
-        flex: 1, 
-        backgroundColor: colors.background 
-    },
-    headerActions: {
-        flexDirection: 'row',
-        gap: spacing.sm,
-    },
-    actionCircle: {
-        width: 32,
-        height: 32,
-        borderRadius: 16,
-        backgroundColor: colors.surfaceElevated,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    header: {
-        paddingHorizontal: spacing.lg,
-        paddingBottom: spacing.md,
-    },
-    largeTitle: {
-        ...typography.hero,
-        color: colors.textPrimary,
-        marginBottom: spacing.lg,
-    },
-    searchContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: colors.surface,
-        borderRadius: radius.md,
-        paddingHorizontal: spacing.md,
-        height: 40,
-        borderWidth: 0,
-    },
-    searchInput: { 
-        flex: 1,
-        color: colors.textPrimary, 
-        marginLeft: spacing.sm,
-        fontSize: 16,
-    },
-    list: { 
-        paddingBottom: 100,
-    },
-    row: { 
-        justifyContent: 'flex-start',
-        gap: spacing.sm,
-        paddingHorizontal: spacing.lg,
-    },
-    emptyContainer: {
-        marginTop: 60,
-    }
 });

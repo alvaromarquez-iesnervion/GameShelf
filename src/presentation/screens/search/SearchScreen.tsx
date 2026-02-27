@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { View, FlatList, TextInput, StyleSheet, Platform, Text, ScrollView, TouchableOpacity } from 'react-native';
+import { View, FlatList, TextInput, Platform, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { observer } from 'mobx-react-lite';
@@ -18,10 +18,8 @@ import { ErrorMessage } from '../../components/common/ErrorMessage';
 import { EmptyState } from '../../components/common/EmptyState';
 import { ListSkeleton } from '../../components/common/ListItemSkeleton';
 import { WishlistItem } from '../../../domain/entities/WishlistItem';
-import { Game } from '../../../domain/entities/Game';
 import { colors } from '../../theme/colors';
-import { typography } from '../../theme/typography';
-import { spacing, radius } from '../../theme/spacing';
+import { styles } from './SearchScreen.styles';
 
 type Nav = NativeStackNavigationProp<SearchStackParamList, 'Search'>;
 
@@ -50,14 +48,14 @@ export const SearchScreen: React.FC = observer(() => {
 
     const handleSearch = useCallback((text: string) => {
         setInputText(text);
-        
+
         if (debounceRef.current) clearTimeout(debounceRef.current);
-        
+
         if (!text.trim()) {
             vm.clearSearch();
             return;
         }
-        
+
         debounceRef.current = setTimeout(() => {
             if (Platform.OS !== 'web' && text.length > 2) {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -68,7 +66,7 @@ export const SearchScreen: React.FC = observer(() => {
 
     const toggleWishlist = async (result: { getId: () => string; getTitle: () => string; getCoverUrl: () => string }) => {
         if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        
+
         const inWishlist = wishlistVm.isGameInWishlist(result.getId());
         if (inWishlist) {
             const item = wishlistVm.items.find(i => i.getGameId() === result.getId());
@@ -83,16 +81,16 @@ export const SearchScreen: React.FC = observer(() => {
     };
 
     const renderHomeContent = () => (
-        <ScrollView 
-            style={styles.scrollView} 
+        <ScrollView
+            style={styles.scrollView}
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
         >
             {vm.popularGames.length > 0 && (
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>Populares ahora</Text>
-                    <ScrollView 
-                        horizontal 
+                    <ScrollView
+                        horizontal
                         showsHorizontalScrollIndicator={false}
                         contentContainerStyle={styles.horizontalList}
                     >
@@ -111,8 +109,8 @@ export const SearchScreen: React.FC = observer(() => {
             {vm.recentlyPlayed.length > 0 ? (
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>Continúa jugando</Text>
-                    <ScrollView 
-                        horizontal 
+                    <ScrollView
+                        horizontal
                         showsHorizontalScrollIndicator={false}
                         contentContainerStyle={styles.horizontalList}
                     >
@@ -140,8 +138,8 @@ export const SearchScreen: React.FC = observer(() => {
             {vm.mostPlayed.length > 0 ? (
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>Tus más jugados</Text>
-                    <ScrollView 
-                        horizontal 
+                    <ScrollView
+                        horizontal
                         showsHorizontalScrollIndicator={false}
                         contentContainerStyle={styles.horizontalList}
                     >
@@ -169,7 +167,7 @@ export const SearchScreen: React.FC = observer(() => {
 
             {vm.recentlyPlayed.length === 0 && vm.mostPlayed.length === 0 && (
                 <View style={styles.emptyHome}>
-                    <TouchableOpacity 
+                    <TouchableOpacity
                         style={styles.linkButton}
                         onPress={() => navigation.getParent()?.navigate('SettingsTab' as never)}
                     >
@@ -192,9 +190,9 @@ export const SearchScreen: React.FC = observer(() => {
                     coverUrl={item.getCoverUrl()}
                     title={item.getTitle()}
                     isInWishlist={wishlistVm.isGameInWishlist(item.getId())}
-                    onPress={() => navigation.navigate('GameDetail', { 
-                        gameId: item.getId(), 
-                        steamAppId: item.getSteamAppId() ?? undefined 
+                    onPress={() => navigation.navigate('GameDetail', {
+                        gameId: item.getId(),
+                        steamAppId: item.getSteamAppId() ?? undefined,
                     })}
                     onToggleWishlist={() => toggleWishlist(item)}
                 />
@@ -238,93 +236,4 @@ export const SearchScreen: React.FC = observer(() => {
             )}
         </View>
     );
-});
-
-const styles = StyleSheet.create({
-    container: { 
-        flex: 1, 
-        backgroundColor: colors.background 
-    },
-    searchHeader: {
-        paddingHorizontal: spacing.lg,
-        paddingBottom: spacing.md,
-        backgroundColor: colors.background,
-    },
-    title: {
-        ...typography.hero,
-        color: colors.textPrimary,
-        marginBottom: spacing.lg,
-    },
-    searchBar: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: colors.surface,
-        borderRadius: radius.lg,
-        paddingHorizontal: spacing.md,
-        height: 48,
-    },
-    searchInput: { 
-        flex: 1,
-        color: colors.textPrimary, 
-        marginLeft: spacing.sm,
-        fontSize: 17,
-    },
-    scrollView: {
-        flex: 1,
-    },
-    scrollContent: {
-        paddingBottom: 100,
-    },
-    section: {
-        marginTop: spacing.lg,
-    },
-    sectionTitle: {
-        ...typography.subheading,
-        color: colors.textPrimary,
-        marginBottom: spacing.md,
-        marginHorizontal: spacing.lg,
-    },
-    horizontalList: {
-        paddingHorizontal: spacing.lg,
-        gap: spacing.sm,
-    },
-    list: { 
-        paddingBottom: 100,
-    },
-    emptyContainer: {
-        marginTop: 100,
-    },
-    emptySection: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: colors.surface,
-        marginHorizontal: spacing.lg,
-        padding: spacing.md,
-        borderRadius: radius.lg,
-        gap: spacing.sm,
-    },
-    emptySectionText: {
-        ...typography.bodySecondary,
-        color: colors.textTertiary,
-        flex: 1,
-    },
-    emptyHome: {
-        marginTop: 60,
-        paddingHorizontal: spacing.lg,
-        alignItems: 'center',
-    },
-    linkButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: colors.primary,
-        paddingHorizontal: spacing.lg,
-        paddingVertical: spacing.md,
-        borderRadius: radius.lg,
-        marginTop: spacing.lg,
-        gap: spacing.sm,
-    },
-    linkButtonText: {
-        ...typography.button,
-        color: colors.textPrimary,
-    },
 });

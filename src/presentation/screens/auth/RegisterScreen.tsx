@@ -4,7 +4,6 @@ import {
     Text,
     TextInput,
     TouchableOpacity,
-    StyleSheet,
     KeyboardAvoidingView,
     Platform,
     StatusBar,
@@ -21,8 +20,8 @@ import { AuthViewModel } from '../../viewmodels/AuthViewModel';
 import { TYPES } from '../../../di/types';
 import { AuthStackParamList } from '../../../core/navigation/navigationTypes';
 import { colors } from '../../theme/colors';
-import { typography } from '../../theme/typography';
-import { spacing, radius } from '../../theme/spacing';
+import { formStyles, authBgGradientSecondary, secondaryGradientColors } from '../../styles/forms';
+import { styles } from './RegisterScreen.styles';
 
 type Nav = NativeStackNavigationProp<AuthStackParamList, 'Register'>;
 
@@ -74,8 +73,8 @@ export const RegisterScreen: React.FC = observer(() => {
             <StatusBar barStyle="light-content" />
 
             <LinearGradient
-                colors={['rgba(94, 92, 230, 0.1)', 'transparent']}
-                style={styles.topGradient}
+                colors={authBgGradientSecondary}
+                style={formStyles.topGradient}
                 pointerEvents="none"
             />
 
@@ -95,22 +94,22 @@ export const RegisterScreen: React.FC = observer(() => {
                 </View>
 
                 {displayError ? (
-                    <View style={styles.errorBanner}>
+                    <View style={formStyles.errorBanner}>
                         <Feather name="alert-circle" size={15} color={colors.error} />
-                        <Text style={styles.errorText}>{displayError}</Text>
+                        <Text style={formStyles.errorText}>{displayError}</Text>
                     </View>
                 ) : null}
 
                 <View style={styles.form}>
-                    <View style={[styles.inputWrap, focusedField === 'email' && styles.inputFocused]}>
+                    <View style={[formStyles.inputWrap, focusedField === 'email' && formStyles.inputFocused]}>
                         <Feather
                             name="mail"
                             size={18}
                             color={focusedField === 'email' ? colors.primary : colors.textTertiary}
-                            style={styles.inputIcon}
+                            style={formStyles.inputIcon}
                         />
                         <TextInput
-                            style={styles.input}
+                            style={formStyles.input}
                             placeholder="Correo electrónico"
                             placeholderTextColor={colors.textDisabled}
                             value={email}
@@ -124,15 +123,15 @@ export const RegisterScreen: React.FC = observer(() => {
                         />
                     </View>
 
-                    <View style={[styles.inputWrap, focusedField === 'password' && styles.inputFocused]}>
+                    <View style={[formStyles.inputWrap, focusedField === 'password' && formStyles.inputFocused]}>
                         <Feather
                             name="lock"
                             size={18}
                             color={focusedField === 'password' ? colors.primary : colors.textTertiary}
-                            style={styles.inputIcon}
+                            style={formStyles.inputIcon}
                         />
                         <TextInput
-                            style={styles.input}
+                            style={formStyles.input}
                             placeholder="Contraseña"
                             placeholderTextColor={colors.textDisabled}
                             value={password}
@@ -143,7 +142,7 @@ export const RegisterScreen: React.FC = observer(() => {
                             onBlur={() => setFocusedField(null)}
                         />
                         <TouchableOpacity
-                            style={styles.eyeBtn}
+                            style={formStyles.eyeBtn}
                             onPress={() => setShowPassword(!showPassword)}
                             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                         >
@@ -151,15 +150,15 @@ export const RegisterScreen: React.FC = observer(() => {
                         </TouchableOpacity>
                     </View>
 
-                    <View style={[styles.inputWrap, focusedField === 'confirm' && styles.inputFocused]}>
+                    <View style={[formStyles.inputWrap, focusedField === 'confirm' && formStyles.inputFocused]}>
                         <Feather
                             name="lock"
                             size={18}
                             color={focusedField === 'confirm' ? colors.primary : colors.textTertiary}
-                            style={styles.inputIcon}
+                            style={formStyles.inputIcon}
                         />
                         <TextInput
-                            style={styles.input}
+                            style={formStyles.input}
                             placeholder="Confirmar contraseña"
                             placeholderTextColor={colors.textDisabled}
                             value={confirmPassword}
@@ -170,7 +169,7 @@ export const RegisterScreen: React.FC = observer(() => {
                             onBlur={() => setFocusedField(null)}
                         />
                         <TouchableOpacity
-                            style={styles.eyeBtn}
+                            style={formStyles.eyeBtn}
                             onPress={() => setShowConfirmPassword(!showConfirmPassword)}
                             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                         >
@@ -179,20 +178,20 @@ export const RegisterScreen: React.FC = observer(() => {
                     </View>
 
                     <TouchableOpacity
-                        style={[styles.primaryBtn, authVm.isLoading && styles.primaryBtnDisabled]}
+                        style={[formStyles.primaryBtn, authVm.isLoading && formStyles.primaryBtnDisabled]}
                         onPress={handleRegister}
                         disabled={authVm.isLoading}
                         activeOpacity={0.85}
                     >
                         <LinearGradient
-                            colors={['#6B69F0', '#5E5CE6']}
-                            style={styles.primaryBtnGradient}
+                            colors={secondaryGradientColors}
+                            style={formStyles.primaryBtnGradient}
                         >
                             {authVm.isLoading ? (
-                                <Text style={styles.primaryBtnText}>Registrando...</Text>
+                                <Text style={formStyles.primaryBtnText}>Registrando...</Text>
                             ) : (
                                 <>
-                                    <Text style={styles.primaryBtnText}>Crear cuenta</Text>
+                                    <Text style={formStyles.primaryBtnText}>Crear cuenta</Text>
                                     <Feather name="user-plus" size={17} color={colors.onPrimary} />
                                 </>
                             )}
@@ -200,144 +199,11 @@ export const RegisterScreen: React.FC = observer(() => {
                     </TouchableOpacity>
                 </View>
 
-                <TouchableOpacity style={styles.footerLink} onPress={handleGoBack} activeOpacity={0.7}>
-                    <Text style={styles.footerText}>¿Ya tienes cuenta? </Text>
-                    <Text style={styles.footerTextBold}>Inicia sesión</Text>
+                <TouchableOpacity style={formStyles.footerLink} onPress={handleGoBack} activeOpacity={0.7}>
+                    <Text style={formStyles.footerText}>¿Ya tienes cuenta? </Text>
+                    <Text style={formStyles.footerTextBold}>Inicia sesión</Text>
                 </TouchableOpacity>
             </ScrollView>
         </KeyboardAvoidingView>
     );
-});
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: colors.background,
-    },
-    topGradient: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        height: 280,
-    },
-    backBtn: {
-        position: 'absolute',
-        top: Platform.OS === 'ios' ? 60 : 24,
-        left: spacing.lg,
-        zIndex: 10,
-        width: 40,
-        height: 40,
-        borderRadius: radius.full,
-        backgroundColor: colors.surface,
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderWidth: 1,
-        borderColor: colors.border,
-    },
-    scrollContent: {
-        flexGrow: 1,
-        justifyContent: 'center',
-        paddingHorizontal: spacing.xxl,
-        paddingTop: Platform.OS === 'ios' ? 120 : 80,
-        paddingBottom: spacing.xxl,
-    },
-    headingSection: {
-        marginBottom: 36,
-    },
-    title: {
-        fontSize: 34,
-        fontWeight: '700',
-        color: colors.textPrimary,
-        fontFamily: Platform.OS === 'ios' ? 'System' : 'Roboto',
-        letterSpacing: 0.37,
-        marginBottom: spacing.xs,
-    },
-    subtitle: {
-        ...typography.body,
-        color: colors.textSecondary,
-    },
-    errorBanner: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: colors.errorBackground,
-        borderWidth: 1,
-        borderColor: colors.errorBorder,
-        borderRadius: radius.md,
-        paddingHorizontal: spacing.md,
-        paddingVertical: 10,
-        marginBottom: spacing.lg,
-        gap: spacing.sm,
-    },
-    errorText: {
-        ...typography.small,
-        color: colors.error,
-        flex: 1,
-    },
-    form: {
-        gap: spacing.md,
-    },
-    inputWrap: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: colors.surface,
-        borderRadius: radius.md,
-        borderWidth: 1,
-        borderColor: colors.border,
-        height: 52,
-    },
-    inputFocused: {
-        borderColor: colors.primary,
-    },
-    inputIcon: {
-        paddingLeft: 16,
-        paddingRight: 4,
-    },
-    input: {
-        flex: 1,
-        color: colors.textPrimary,
-        fontSize: 16,
-        fontFamily: Platform.OS === 'ios' ? 'System' : 'Roboto',
-        paddingVertical: 0,
-        paddingRight: spacing.md,
-    },
-    eyeBtn: {
-        paddingRight: 16,
-        paddingLeft: 8,
-    },
-    primaryBtn: {
-        marginTop: spacing.sm,
-        borderRadius: radius.md,
-        overflow: 'hidden',
-    },
-    primaryBtnDisabled: {
-        opacity: 0.55,
-    },
-    primaryBtnGradient: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        height: 52,
-        gap: spacing.sm,
-    },
-    primaryBtnText: {
-        ...typography.button,
-        color: colors.onPrimary,
-    },
-    footerLink: {
-        flexDirection: 'row',
-        justifyContent: 'center',
-        marginTop: spacing.xxl,
-    },
-    footerText: {
-        ...typography.body,
-        fontSize: 15,
-        color: colors.textSecondary,
-    },
-    footerTextBold: {
-        ...typography.body,
-        fontSize: 15,
-        fontWeight: '600',
-        color: colors.primary,
-    },
 });

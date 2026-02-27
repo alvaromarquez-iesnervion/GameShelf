@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, ScrollView, Text, TouchableOpacity, StyleSheet, Dimensions, Platform } from 'react-native';
+import { View, ScrollView, Text, TouchableOpacity, Platform } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { observer } from 'mobx-react-lite';
 import { useRoute, RouteProp } from '@react-navigation/native';
@@ -20,11 +20,7 @@ import { ErrorMessage } from '../../components/common/ErrorMessage';
 import { DetailSkeleton } from '../../components/common/DetailSkeleton';
 import { WishlistItem } from '../../../domain/entities/WishlistItem';
 import { colors } from '../../theme/colors';
-import { typography } from '../../theme/typography';
-import { spacing, radius } from '../../theme/spacing';
-
-const { width } = Dimensions.get('window');
-const COVER_HEIGHT = 450;
+import { styles, COVER_HEIGHT } from './GameDetailScreen.styles';
 
 type Route = RouteProp<LibraryStackParamList, 'GameDetail'>;
 
@@ -53,7 +49,7 @@ export const GameDetailScreen: React.FC = observer(() => {
         if (Platform.OS !== 'web') {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         }
-        
+
         if (isInWishlist) {
             const item = wishlistVm.items.find(i => i.getGameId() === game.getId());
             if (item) await wishlistVm.removeFromWishlist(userId, item.getId());
@@ -68,16 +64,16 @@ export const GameDetailScreen: React.FC = observer(() => {
 
     return (
         <View style={styles.container}>
-            <ScrollView 
-                style={styles.scrollView} 
+            <ScrollView
+                style={styles.scrollView}
                 showsVerticalScrollIndicator={false}
                 contentInsetAdjustmentBehavior="never"
             >
                 {/* Header Image with Gradient Overlay */}
                 <View style={styles.coverContainer}>
-                    <Image 
-                        source={{ uri: game.getCoverUrl() }} 
-                        style={styles.cover} 
+                    <Image
+                        source={{ uri: game.getCoverUrl() }}
+                        style={styles.cover}
                         contentFit="cover"
                         transition={500}
                     />
@@ -90,7 +86,7 @@ export const GameDetailScreen: React.FC = observer(() => {
                 {/* Content */}
                 <View style={styles.content}>
                     <Text style={styles.title}>{game.getTitle()}</Text>
-                    
+
                     <View style={styles.metaRow}>
                         <PlatformBadge platform={game.getPlatform()} />
                         <ProtonDbBadge rating={detail.getProtonDbRating()} />
@@ -101,15 +97,15 @@ export const GameDetailScreen: React.FC = observer(() => {
                     </Text>
 
                     <View style={styles.actionRow}>
-                        <TouchableOpacity 
-                            style={[styles.wishlistBtn, isInWishlist && styles.wishlistBtnActive]} 
+                        <TouchableOpacity
+                            style={[styles.wishlistBtn, isInWishlist && styles.wishlistBtnActive]}
                             onPress={toggleWishlist}
                             activeOpacity={0.7}
                         >
-                            <Feather 
-                                name={isInWishlist ? 'heart' : 'heart'} 
-                                size={20} 
-                                color={isInWishlist ? colors.error : colors.onPrimary} 
+                            <Feather
+                                name="heart"
+                                size={20}
+                                color={isInWishlist ? colors.error : colors.onPrimary}
                             />
                             <Text style={[styles.wishlistBtnText, isInWishlist && styles.wishlistBtnTextActive]}>
                                 {isInWishlist ? 'En Wishlist' : 'Añadir a Wishlist'}
@@ -147,89 +143,4 @@ export const GameDetailScreen: React.FC = observer(() => {
             </ScrollView>
         </View>
     );
-});
-
-const styles = StyleSheet.create({
-    container: { 
-        flex: 1, 
-        backgroundColor: colors.background,
-    },
-    scrollView: {
-        flex: 1,
-    },
-    coverContainer: {
-        width: width,
-        height: COVER_HEIGHT,
-        position: 'relative',
-    },
-    cover: { 
-        width: '100%', 
-        height: '100%',
-    },
-    gradient: {
-        position: 'absolute',
-        left: 0,
-        right: 0,
-        bottom: 0,
-        height: COVER_HEIGHT * 0.7,
-    },
-    content: { 
-        paddingHorizontal: spacing.lg,
-        marginTop: -COVER_HEIGHT * 0.15,
-        paddingBottom: 100,
-    },
-    title: { 
-        ...typography.heading, 
-        color: colors.textPrimary,
-        marginBottom: spacing.sm,
-    },
-    metaRow: { 
-        flexDirection: 'row', 
-        gap: spacing.sm, 
-        marginBottom: spacing.lg,
-        alignItems: 'center',
-    },
-    description: { 
-        ...typography.bodySecondary, 
-        marginBottom: spacing.xl,
-        lineHeight: 24,
-    },
-    actionRow: {
-        marginBottom: spacing.xl,
-    },
-    wishlistBtn: { 
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: colors.primary, 
-        paddingVertical: spacing.md, 
-        borderRadius: radius.lg, 
-        gap: spacing.sm,
-    },
-    wishlistBtnActive: { 
-        backgroundColor: colors.surfaceVariant,
-    },
-    wishlistBtnText: { 
-        color: colors.onPrimary, 
-        ...typography.button,
-    },
-    wishlistBtnTextActive: {
-        color: colors.textPrimary,
-    },
-    section: {
-        marginBottom: spacing.xl,
-    },
-    dealsSection: { 
-        marginTop: spacing.md,
-    },
-    sectionHeader: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        marginBottom: spacing.md,
-    },
-    sectionTitle: { 
-        ...typography.title,
-        color: colors.textPrimary,
-    },
 });

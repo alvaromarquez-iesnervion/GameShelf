@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, FlatList, StyleSheet, RefreshControl, Platform } from 'react-native';
+import { View, Text, FlatList, RefreshControl } from 'react-native';
 import { observer } from 'mobx-react-lite';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -13,12 +13,9 @@ import { ErrorMessage } from '../../components/common/ErrorMessage';
 import { EmptyState } from '../../components/common/EmptyState';
 import { ListSkeleton } from '../../components/common/ListItemSkeleton';
 import { colors } from '../../theme/colors';
-import { typography } from '../../theme/typography';
-import { spacing } from '../../theme/spacing';
+import { styles } from './WishlistScreen.styles';
 
 type Nav = NativeStackNavigationProp<WishlistStackParamList, 'Wishlist'>;
-
-const HEADER_TOP = Platform.OS === 'ios' ? 100 : 64;
 
 export const WishlistScreen: React.FC = observer(() => {
     const authVm = useInjection<AuthViewModel>(TYPES.AuthViewModel);
@@ -74,32 +71,4 @@ export const WishlistScreen: React.FC = observer(() => {
             />
         </View>
     );
-});
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: colors.background,
-    },
-    listContent: {
-        paddingTop: HEADER_TOP,
-        paddingBottom: 100,
-    },
-    header: {
-        paddingHorizontal: spacing.lg,
-        paddingBottom: spacing.md,
-        marginBottom: spacing.sm,
-    },
-    title: {
-        fontSize: 34,
-        fontWeight: '700',
-        color: colors.textPrimary,
-        fontFamily: Platform.OS === 'ios' ? 'System' : 'Roboto',
-        letterSpacing: 0.37,
-    },
-    count: {
-        ...typography.bodySecondary,
-        color: colors.textSecondary,
-        marginTop: spacing.xs,
-    },
 });
