@@ -25,6 +25,18 @@ interface EpicEntitlement {
     itemType: string;
 }
 
+// itemTypes que definitivamente no son juegos — se excluyen en el filtro.
+// Usar lista negra en lugar de lista blanca porque Epic añade nuevos tipos sin avisar.
+const EPIC_NON_GAME_TYPES = new Set([
+    'CONSUMABLE',
+    'VIRTUAL_CURRENCY',
+    'SEASON_PASS',
+    'BUNDLE',
+    'ADD_ON',
+    'DLC',
+    'UNLOCKABLE',
+]);
+
 // Respuesta raw del endpoint de token de Epic
 interface EpicTokenResponse {
     access_token: string;
@@ -138,7 +150,7 @@ export class EpicGamesApiServiceImpl implements IEpicGamesApiService {
         }
 
         const gameEntitlements = entitlements.filter(
-            e => e.itemType === 'EXECUTABLE' || e.itemType === 'DURABLE_ENTITLEMENT',
+            e => !EPIC_NON_GAME_TYPES.has(e.itemType),
         );
 
         const results = await Promise.allSettled(
@@ -162,9 +174,9 @@ export class EpicGamesApiServiceImpl implements IEpicGamesApiService {
             throw new Error('El archivo no es un JSON válido de Epic Games');
         }
 
-        // Filtrar solo juegos (itemType === 'EXECUTABLE' o 'DURABLE_ENTITLEMENT')
+        // Excluir tipos que claramente no son juegos (lista negra — más permisivo que lista blanca)
         const gameEntitlements = entitlements.filter(
-            e => e.itemType === 'EXECUTABLE' || e.itemType === 'DURABLE_ENTITLEMENT',
+            e => !EPIC_NON_GAME_TYPES.has(e.itemType),
         );
 
         // Mapear a Game y enriquecer con datos de ITAD (portadas e itadGameId)
