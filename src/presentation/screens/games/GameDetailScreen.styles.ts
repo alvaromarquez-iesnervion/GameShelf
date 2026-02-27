@@ -5,16 +5,9 @@ import { spacing, radius, layout } from '../../theme/spacing';
 
 const { width } = Dimensions.get('window');
 
-// Carousel slide dimensions
-export const SLIDE_WIDTH = width;
-// Steam header.jpg is 460×215 — preserve that aspect ratio so the image
-// is shown full-width without any cropping.
-const HEADER_ASPECT_RATIO = 460 / 215;
-export const COVER_HEIGHT = Math.round(SLIDE_WIDTH / HEADER_ASPECT_RATIO);
-
-// Screenshot thumbnails in the carousel use a 16:9 ratio
-const SCREENSHOT_ASPECT_RATIO = 16 / 9;
-export const SCREENSHOT_HEIGHT = Math.round(SLIDE_WIDTH / SCREENSHOT_ASPECT_RATIO);
+// Hero image dimensions — portrait ratio (2:3) for games that have portraitCoverUrl,
+// falls back to landscape. We use a fixed height that works for both.
+export const HERO_HEIGHT = Math.round(width * 0.6);
 
 export const styles = StyleSheet.create({
     container: {
@@ -25,54 +18,28 @@ export const styles = StyleSheet.create({
         flex: 1,
     },
 
-    // ─── Carousel ────────────────────────────────────────────────────────────
-    carouselContainer: {
+    // ─── Hero image ──────────────────────────────────────────────────────────
+    heroContainer: {
+        width: '100%',
+        height: HERO_HEIGHT,
         position: 'relative',
     },
-    slide: {
-        width: SLIDE_WIDTH,
-        overflow: 'hidden',
-    },
-    coverSlide: {
-        height: COVER_HEIGHT,
-    },
-    screenshotSlide: {
-        height: SCREENSHOT_HEIGHT,
-    },
-    slideImage: {
+    heroImage: {
         width: '100%',
         height: '100%',
     },
-    carouselGradient: {
+    heroGradient: {
         position: 'absolute',
         left: 0,
         right: 0,
         bottom: 0,
-        height: COVER_HEIGHT * 0.7,
-    },
-    paginationRow: {
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
-        gap: 5,
-        paddingTop: spacing.sm,
-        paddingBottom: spacing.xs,
-    },
-    dot: {
-        width: 6,
-        height: 6,
-        borderRadius: 3,
-        backgroundColor: colors.textSecondary,
-    },
-    dotActive: {
-        backgroundColor: colors.primary,
-        width: 16,
+        height: HERO_HEIGHT * 0.65,
     },
 
     // ─── Main content ─────────────────────────────────────────────────────────
     content: {
         paddingHorizontal: spacing.lg,
-        marginTop: -(COVER_HEIGHT * 0.1),
+        marginTop: -(HERO_HEIGHT * 0.08),
         paddingBottom: layout.tabBarClearance,
     },
     title: {

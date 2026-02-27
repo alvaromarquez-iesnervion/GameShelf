@@ -1,7 +1,7 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect } from 'react';
 import {
-    View, ScrollView, FlatList, Text, TouchableOpacity,
-    Platform, NativeSyntheticEvent, NativeScrollEvent, ViewToken,
+    View, ScrollView, Text, TouchableOpacity,
+    Platform,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { observer } from 'mobx-react-lite';
@@ -26,9 +26,7 @@ import { WishlistItem } from '../../../domain/entities/WishlistItem';
 import { SteamGameMetadata } from '../../../domain/dtos/SteamGameMetadata';
 import { colors } from '../../theme/colors';
 import { spacing } from '../../theme/spacing';
-import {
-    styles, SLIDE_WIDTH, COVER_HEIGHT, SCREENSHOT_HEIGHT,
-} from './GameDetailScreen.styles';
+import { styles } from './GameDetailScreen.styles';
 
 type Route = RouteProp<LibraryStackParamList, 'GameDetail'>;
 
@@ -64,62 +62,25 @@ function metacriticColor(score: number): string {
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-interface CarouselProps {
+interface HeroImageProps {
     coverUrl: string;
-    screenshots: string[];
+    portraitCoverUrl?: string;
 }
 
-const MediaCarousel = React.memo(({ coverUrl, screenshots }: CarouselProps) => {
-    const [activeIndex, setActiveIndex] = useState(0);
-    const slides = [coverUrl, ...screenshots.slice(0, 9)];
-    const isCover = activeIndex === 0;
-    const slideHeight = isCover ? COVER_HEIGHT : SCREENSHOT_HEIGHT;
-
-    const onViewableItemsChanged = useRef(
-        ({ viewableItems }: { viewableItems: ViewToken[] }) => {
-            if (viewableItems.length > 0 && viewableItems[0].index !== null) {
-                setActiveIndex(viewableItems[0].index);
-            }
-        },
-    ).current;
-
+const HeroImage = React.memo(({ coverUrl, portraitCoverUrl }: HeroImageProps) => {
+    const imageUri = portraitCoverUrl && portraitCoverUrl !== '' ? portraitCoverUrl : coverUrl;
     return (
-        <View style={styles.carouselContainer}>
-            <FlatList
-                data={slides}
-                horizontal
-                pagingEnabled
-                showsHorizontalScrollIndicator={false}
-                keyExtractor={(_, i) => String(i)}
-                onViewableItemsChanged={onViewableItemsChanged}
-                viewabilityConfig={{ itemVisiblePercentThreshold: 50 }}
-                renderItem={({ item, index }) => (
-                    <View style={[styles.slide, index === 0 ? styles.coverSlide : styles.screenshotSlide]}>
-                        <Image
-                            source={{ uri: item }}
-                            style={[styles.slideImage, { height: index === 0 ? COVER_HEIGHT : SCREENSHOT_HEIGHT }]}
-                            contentFit={index === 0 ? 'fill' : 'cover'}
-                            transition={300}
-                        />
-                    </View>
-                )}
+        <View style={styles.heroContainer}>
+            <Image
+                source={{ uri: imageUri }}
+                style={styles.heroImage}
+                contentFit="cover"
+                transition={300}
             />
-            {isCover && (
-                <LinearGradient
-                    colors={['transparent', 'rgba(0,0,0,0.5)', colors.background]}
-                    style={styles.carouselGradient}
-                />
-            )}
-            {slides.length > 1 && (
-                <View style={styles.paginationRow}>
-                    {slides.map((_, i) => (
-                        <View
-                            key={i}
-                            style={[styles.dot, i === activeIndex && styles.dotActive]}
-                        />
-                    ))}
-                </View>
-            )}
+            <LinearGradient
+                colors={['transparent', 'rgba(0,0,0,0.45)', colors.background]}
+                style={styles.heroGradient}
+            />
         </View>
     );
 });
@@ -189,10 +150,10 @@ export const GameDetailScreen: React.FC = observer(() => {
                 showsVerticalScrollIndicator={false}
                 contentInsetAdjustmentBehavior="never"
             >
-                {/* ── Carousel: cover + screenshots ── */}
-                <MediaCarousel
+                {/* ── Hero image ── */}
+                <HeroImage
                     coverUrl={game.getCoverUrl()}
-                    screenshots={steamMeta?.screenshots ?? []}
+                    portraitCoverUrl={game.getPortraitCoverUrl()}
                 />
 
                 {/* ── Main content ── */}

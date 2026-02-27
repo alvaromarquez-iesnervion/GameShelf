@@ -49,6 +49,7 @@ export class Game {
     getLastPlayed(): Date | null { return this.lastPlayed; }
 
     setItadGameId(id: string): void { this.itadGameId = id; }
+    setSteamAppId(id: number): void { this.steamAppId = id; }
     setPlaytime(minutes: number): void { this.playtime = minutes; }
     setLastPlayed(date: Date | null): void { this.lastPlayed = date; }
 }

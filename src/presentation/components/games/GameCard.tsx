@@ -7,6 +7,7 @@ import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { spacing, radius } from '../../theme/spacing';
 import { Platform as GamePlatform } from '../../../domain/enums/Platform';
+import { PlatformIcon } from '../platforms/PlatformIcon';
 
 interface GameCardProps {
     coverUrl: string;
@@ -42,14 +43,11 @@ export const GameCard = React.memo(({ coverUrl, portraitCoverUrl, title, platfor
                     colors={['transparent', 'rgba(0,0,0,0.7)']}
                     style={styles.gradient}
                 />
-                <View style={styles.badgeContainer}>
-                    <View style={[
-                        styles.platformBadge,
-                        platform === GamePlatform.STEAM ? styles.steam : styles.epic,
-                    ]}>
-                        <View style={styles.dot} />
+                {platform !== undefined && platform !== GamePlatform.UNKNOWN && (
+                    <View style={styles.badgeContainer}>
+                        <PlatformIcon platform={platform} size={16} />
                     </View>
-                </View>
+                )}
             </View>
             <View style={styles.info}>
                 <Text style={styles.title} numberOfLines={1}>{title}</Text>
@@ -84,22 +82,6 @@ const styles = StyleSheet.create({
         position: 'absolute',
         top: 6,
         right: 6,
-    },
-    platformBadge: {
-        width: 8,
-        height: 8,
-        borderRadius: 4,
-        borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.3)',
-    },
-    dot: {
-        flex: 1,
-    },
-    steam: {
-        backgroundColor: colors.steamAccent,
-    },
-    epic: {
-        backgroundColor: colors.epic,
     },
     info: {
         marginTop: spacing.xs,

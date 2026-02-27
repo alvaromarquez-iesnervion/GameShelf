@@ -19,4 +19,11 @@ export interface IGameRepository {
     searchGames(query: string): Promise<SearchResult[]>;
     /** Almacena juegos parseados de Epic en memoria (uso interno del use case). */
     storeEpicGames(userId: string, games: Game[]): Promise<void>;
+    /**
+     * Persists a resolved Steam App ID for an Epic Games library entry.
+     * The platform field remains EPIC_GAMES; steamAppId is an auxiliary field
+     * used exclusively to enrich the game detail with Steam metadata (ProtonDB,
+     * screenshots, Metacritic, etc.).
+     */
+    updateSteamAppId(userId: string, gameId: string, steamAppId: number): Promise<void>;
 }

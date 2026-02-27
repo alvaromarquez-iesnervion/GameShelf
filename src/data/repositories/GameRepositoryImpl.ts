@@ -7,6 +7,7 @@ import {
     getDoc,
     getDocs,
     writeBatch,
+    updateDoc,
 } from 'firebase/firestore';
 import { IGameRepository } from '../../domain/interfaces/repositories/IGameRepository';
 import { ISteamApiService } from '../../domain/interfaces/services/ISteamApiService';
@@ -165,5 +166,10 @@ export class GameRepositoryImpl implements IGameRepository {
             }
             await batch.commit();
         }
+    }
+
+    async updateSteamAppId(userId: string, gameId: string, steamAppId: number): Promise<void> {
+        const ref = doc(this.firestore, 'users', userId, 'library', gameId);
+        await updateDoc(ref, { steamAppId });
     }
 }

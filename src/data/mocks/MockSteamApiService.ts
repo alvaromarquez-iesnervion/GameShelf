@@ -75,4 +75,9 @@ export class MockSteamApiService implements ISteamApiService {
             recommendationCount: 12000,
         };
     }
+
+    async searchSteamAppId(_title: string): Promise<number | null> {
+        await simulateDelay(300);
+        return null;
+    }
 }

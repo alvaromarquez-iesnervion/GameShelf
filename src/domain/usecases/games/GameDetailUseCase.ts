@@ -8,6 +8,7 @@ import { ISteamApiService } from '../../interfaces/services/ISteamApiService';
 import { Game } from '../../entities/Game';
 import { GameDetail } from '../../entities/GameDetail';
 import { GameDetailDTO } from '../../dtos/GameDetailDTO';
+import { Platform } from '../../enums/Platform';
 
 /**
  * Constructs the full detail of a game by aggregating data from 5 external sources.
@@ -15,6 +16,14 @@ import { GameDetailDTO } from '../../dtos/GameDetailDTO';
  * Strategy: Promise.allSettled — if ProtonDB, HLTB, ITAD or Steam Store fail,
  * the corresponding field is null and the rest of the detail is still shown.
  * Only IGameRepository (Firestore) is critical: its errors propagate.
+ *
+ * Phase 0 (Epic Games only): If the game is an Epic Games library entry without a
+ * known steamAppId, attempt to resolve one so that ProtonDB, Steam screenshots,
+ * Metacritic, and other Steam-based data become available. Strategy:
+ *   1. If itadGameId is available, ask ITAD for the associated Steam App ID.
+ *   2. Fall back to Steam Store Search API (title-based fuzzy match).
+ * If a Steam App ID is found, it is persisted in Firestore via updateSteamAppId()
+ * so subsequent opens skip this resolution step.
  */
 export class GameDetailUseCase implements IGameDetailUseCase {
 
@@ -29,6 +38,20 @@ export class GameDetailUseCase implements IGameDetailUseCase {
 
     async getGameDetail(gameId: string, userId: string, providedSteamAppId?: number): Promise<GameDetailDTO> {
         const game = await this.gameRepository.getOrCreateGameById(userId, gameId, providedSteamAppId);
+
+        // ── Phase 0: Steam App ID resolution for Epic Games entries ───────────
+        if (game.getPlatform() === Platform.EPIC_GAMES && game.getSteamAppId() === null) {
+            const resolvedId = await this._resolveEpicSteamAppId(game);
+            if (resolvedId !== null) {
+                game.setSteamAppId(resolvedId);
+                // Persist so next open skips this lookup
+                try {
+                    await this.gameRepository.updateSteamAppId(userId, game.getId(), resolvedId);
+                } catch {
+                    // Non-critical: detail still loads with the resolved id in memory
+                }
+            }
+        }
 
         const steamAppId = game.getSteamAppId();
 
@@ -64,6 +87,35 @@ export class GameDetailUseCase implements IGameDetailUseCase {
         );
 
         return new GameDetailDTO(detail, isInWishlist);
+    }
+
+    /**
+     * Attempts to find a Steam App ID for an Epic Games library entry.
+     * Strategy 1: ITAD lookup via getGameInfo (uses itadGameId if already resolved).
+     * Strategy 2: Steam Store Search API fuzzy title match.
+     */
+    private async _resolveEpicSteamAppId(game: Game): Promise<number | null> {
+        // Strategy 1: ask ITAD (reliable when the game is on both platforms)
+        try {
+            let itadId = game.getItadGameId();
+            if (!itadId) {
+                itadId = await this.itadService.lookupGameId(game.getTitle());
+                if (itadId) game.setItadGameId(itadId);
+            }
+            if (itadId) {
+                const info = await this.itadService.getGameInfo(itadId);
+                if (info?.steamAppId) return info.steamAppId;
+            }
+        } catch {
+            // Fall through to strategy 2
+        }
+
+        // Strategy 2: Steam Store Search (fuzzy title match)
+        try {
+            return await this.steamApiService.searchSteamAppId(game.getTitle());
+        } catch {
+            return null;
+        }
     }
 
     /** Resolves the itadGameId (from cache or lookup) and fetches prices. */

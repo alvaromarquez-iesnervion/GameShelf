@@ -156,4 +156,11 @@ export class SteamSyncMemoryGameRepository implements IGameRepository {
         if (!query.trim()) return [];
         return this.itadService.searchGames(query);
     }
+
+    async updateSteamAppId(_userId: string, _gameId: string, _steamAppId: number): Promise<void> {
+        // In-memory repository: update the game object directly if present
+        const games = this.gamesByUser.get(_userId) ?? [];
+        const game = games.find(g => g.getId() === _gameId);
+        if (game) game.setSteamAppId(_steamAppId);
+    }
 }

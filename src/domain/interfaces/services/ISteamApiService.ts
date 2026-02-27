@@ -44,4 +44,11 @@ export interface ISteamApiService {
      * Returns null if the request fails or the game is not found in the Steam store.
      */
     getSteamAppDetails(appId: number): Promise<SteamGameMetadata | null>;
+    /**
+     * GET store.steampowered.com/api/storesearch/?term={title}
+     * Searches the Steam Store for a game by title and returns the best-matching
+     * Steam App ID, or null if no confident match is found.
+     * Used to enrich Epic Games library entries with Steam metadata.
+     */
+    searchSteamAppId(title: string): Promise<number | null>;
 }

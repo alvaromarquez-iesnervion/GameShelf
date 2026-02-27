@@ -92,4 +92,8 @@ export class MockGameRepository implements IGameRepository {
         // En mocks, no necesitamos hacer nada especial
         await simulateDelay(100);
     }
+
+    async updateSteamAppId(_userId: string, _gameId: string, _steamAppId: number): Promise<void> {
+        // No-op in mocks
+    }
 }

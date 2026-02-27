@@ -235,6 +235,48 @@ export class SteamApiServiceImpl implements ISteamApiService {
         return result.steamid as string;
     }
 
+    async searchSteamAppId(title: string): Promise<number | null> {
+        try {
+            const response = await axios.get(
+                'https://store.steampowered.com/api/storesearch/',
+                { params: { term: title, cc: 'us', l: 'en' } },
+            );
+            const items: { id: number; name: string }[] = response.data?.items ?? [];
+            if (items.length === 0) return null;
+
+            // Normalize helper: lowercase, remove punctuation & extra spaces
+            const normalize = (s: string) =>
+                s.toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ').trim();
+
+            const needle = normalize(title);
+
+            // 1. Exact match after normalization
+            const exact = items.find(i => normalize(i.name) === needle);
+            if (exact) return exact.id;
+
+            // 2. First result whose normalized name contains the full needle
+            const contains = items.find(i => normalize(i.name).includes(needle));
+            if (contains) return contains.id;
+
+            // 3. Needle contains the first result's name (handles subtitle trimming)
+            const firstNorm = normalize(items[0].name);
+            if (needle.includes(firstNorm) || firstNorm.includes(needle)) {
+                return items[0].id;
+            }
+
+            // 4. Word-overlap ratio ≥ 0.7 on the top result
+            const needleWords = new Set(needle.split(' '));
+            const candidateWords = firstNorm.split(' ');
+            const overlap = candidateWords.filter(w => needleWords.has(w)).length;
+            const ratio = overlap / Math.max(needleWords.size, candidateWords.length);
+            if (ratio >= 0.7) return items[0].id;
+
+            return null;
+        } catch {
+            return null;
+        }
+    }
+
     async getSteamAppDetails(appId: number): Promise<SteamGameMetadata | null> {
         const response = await axios.get(
             'https://store.steampowered.com/api/appdetails',
