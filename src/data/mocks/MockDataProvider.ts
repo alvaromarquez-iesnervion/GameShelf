@@ -484,50 +484,58 @@ export const MOCK_NOTIFICATION_PREFERENCES = new NotificationPreferences(true);
 export const MOCK_GAME_DETAIL_MAP: Record<string, GameDetail> = {
     '1245620': new GameDetail(
         MOCK_STEAM_GAMES[0],
-        'platinum', 'platinum',
+        'platinum', 'platinum', 312,
         58.5, 91.5, 131.0,
         MOCK_DEALS_ELDEN_RING,
+        null,
     ),
     '1091500': new GameDetail(
         MOCK_STEAM_GAMES[1],
-        'gold', 'gold',
+        'gold', 'gold', 1540,
         25.0, 58.0, 99.0,
         MOCK_DEALS_CYBERPUNK,
+        null,
     ),
     '1145360': new GameDetail(
         MOCK_STEAM_GAMES[2],
-        'platinum', 'platinum',
+        'platinum', 'platinum', 890,
         20.0, 57.0, 90.0,
         MOCK_DEALS_HADES,
+        null,
     ),
     '1086940': new GameDetail(
         MOCK_STEAM_GAMES[3],
-        'gold', 'platinum',
+        'gold', 'platinum', 2100,
         100.0, 180.0, 296.0,
         MOCK_DEALS_BG3,
+        null,
     ),
     '367520': new GameDetail(
         MOCK_STEAM_GAMES[4],
-        'platinum', 'platinum',
+        'platinum', 'platinum', 476,
         40.0, 55.0, 63.0,
         MOCK_DEALS_HOLLOW_KNIGHT,
+        null,
     ),
     '413150': new GameDetail(
         MOCK_STEAM_GAMES[5],
-        'platinum', 'platinum',
+        'platinum', 'platinum', 650,
         53.0, 112.0, 182.0,
         MOCK_DEALS_STARDEW,
+        null,
     ),
     'epic-death-stranding': new GameDetail(
         MOCK_EPIC_GAMES[0],
-        null, null,  // ProtonDB no aplica a juegos de Epic
+        null, null, null,  // ProtonDB no aplica a juegos de Epic
         40.0, 61.0, 79.0,
         [],
+        null,
     ),
     'epic-alan-wake-2': new GameDetail(
         MOCK_EPIC_GAMES[1],
-        null, null,
+        null, null, null,
         14.5, 20.0, 27.0,
         [],
+        null,
     ),
 };

@@ -4,6 +4,7 @@ import axios from 'axios';
 import { ISteamApiService } from '../../domain/interfaces/services/ISteamApiService';
 import { Game } from '../../domain/entities/Game';
 import { Platform } from '../../domain/enums/Platform';
+import { SteamGameMetadata } from '../../domain/dtos/SteamGameMetadata';
 import { STEAM_API_BASE_URL, STEAM_OPENID_URL, STEAM_CDN_BASE, STEAM_API_KEY } from '../config/ApiConstants';
 
 interface SteamOwnedGame {
@@ -36,6 +37,13 @@ interface SteamAppDetails {
         name: string;
         header_image: string;
         short_description: string;
+        genres?: { id: string; description: string }[];
+        developers?: string[];
+        publishers?: string[];
+        release_date?: { coming_soon: boolean; date: string };
+        metacritic?: { score: number; url: string };
+        screenshots?: { id: number; path_thumbnail: string; path_full: string }[];
+        recommendations?: { total: number };
     };
 }
 
@@ -225,6 +233,27 @@ export class SteamApiServiceImpl implements ISteamApiService {
             );
         }
         return result.steamid as string;
+    }
+
+    async getSteamAppDetails(appId: number): Promise<SteamGameMetadata | null> {
+        const response = await axios.get(
+            'https://store.steampowered.com/api/appdetails',
+            { params: { appids: appId } },
+        );
+        const entry: SteamAppDetails = response.data?.[appId];
+        if (!entry?.success || !entry.data) return null;
+
+        const d = entry.data;
+        return {
+            genres:              (d.genres  ?? []).map(g => g.description),
+            developers:          d.developers  ?? [],
+            publishers:          d.publishers  ?? [],
+            releaseDate:         d.release_date?.coming_soon ? null : (d.release_date?.date ?? null),
+            metacriticScore:     d.metacritic?.score  ?? null,
+            metacriticUrl:       d.metacritic?.url    ?? null,
+            screenshots:         (d.screenshots ?? []).map(s => s.path_full),
+            recommendationCount: d.recommendations?.total ?? null,
+        };
     }
 
     // Mapper interno: SteamOwnedGame → Game de dominio

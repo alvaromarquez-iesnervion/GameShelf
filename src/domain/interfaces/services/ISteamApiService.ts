@@ -1,4 +1,5 @@
 import { Game } from '../../entities/Game';
+import { SteamGameMetadata } from '../../dtos/SteamGameMetadata';
 
 /**
  * Steam usa OpenID 2.0 (NO OAuth2). No hay token que almacenar.
@@ -36,4 +37,11 @@ export interface ISteamApiService {
      * Lanza un error si el identificador no es válido.
      */
     resolveSteamId(profileUrlOrId: string): Promise<string>;
+    /**
+     * GET store.steampowered.com/api/appdetails?appids={appId}
+     * Returns enriched game metadata (genres, developers, publishers, release date,
+     * Metacritic score, screenshots, recommendation count).
+     * Returns null if the request fails or the game is not found in the Steam store.
+     */
+    getSteamAppDetails(appId: number): Promise<SteamGameMetadata | null>;
 }

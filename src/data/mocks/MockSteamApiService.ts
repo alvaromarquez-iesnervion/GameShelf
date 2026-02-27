@@ -2,6 +2,7 @@ import 'reflect-metadata';
 import { injectable } from 'inversify';
 import { ISteamApiService } from '../../domain/interfaces/services/ISteamApiService';
 import { Game } from '../../domain/entities/Game';
+import { SteamGameMetadata } from '../../domain/dtos/SteamGameMetadata';
 import { MOCK_STEAM_GAMES, MOCK_RECENTLY_PLAYED, MOCK_POPULAR_GAMES, simulateDelay } from './MockDataProvider';
 
 /**
@@ -59,5 +60,19 @@ export class MockSteamApiService implements ISteamApiService {
         const profilesMatch = input.match(/\/profiles\/(\d{17})/);
         if (profilesMatch) return profilesMatch[1];
         return '76561198000000001';
+    }
+
+    async getSteamAppDetails(_appId: number): Promise<SteamGameMetadata | null> {
+        await simulateDelay(500);
+        return {
+            genres: ['Action', 'Adventure'],
+            developers: ['Mock Developer'],
+            publishers: ['Mock Publisher'],
+            releaseDate: '1 Jan, 2020',
+            metacriticScore: 85,
+            metacriticUrl: null,
+            screenshots: [],
+            recommendationCount: 12000,
+        };
     }
 }

@@ -148,6 +148,7 @@ container.bind<IGameDetailUseCase>(TYPES.IGameDetailUseCase).toDynamicValue(ctx 
     ctx.get<IProtonDbService>(TYPES.IProtonDbService),
     ctx.get<IHowLongToBeatService>(TYPES.IHowLongToBeatService),
     ctx.get<IIsThereAnyDealService>(TYPES.IIsThereAnyDealService),
+    ctx.get<ISteamApiService>(TYPES.ISteamApiService),
 )).inSingletonScope();
 container.bind<ISearchUseCase>(TYPES.ISearchUseCase).toDynamicValue(ctx => new SearchUseCase(
     ctx.get<IGameRepository>(TYPES.IGameRepository),
