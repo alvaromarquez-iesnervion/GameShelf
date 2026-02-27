@@ -11,11 +11,14 @@ import {
     EPIC_GRAPHQL_URL,
     EPIC_AUTH_TOKEN_URL,
     EPIC_ENTITLEMENTS_URL,
+    EPIC_CATALOG_URL,
     EPIC_AUTH_CLIENT_ID,
     EPIC_AUTH_CLIENT_SECRET,
     EPIC_AUTH_REDIRECT_URL,
 } from '../config/ApiConstants';
 import { TYPES } from '../../di/types';
+
+// ─── Tipos internos ────────────────────────────────────────────────────────────
 
 // Estructura del JSON de entitlements (GDPR export y API de entitlements comparten el mismo shape)
 interface EpicEntitlement {
@@ -23,6 +26,20 @@ interface EpicEntitlement {
     catalogNamespace: string;
     entitlementName: string;
     itemType: string;
+}
+
+// Respuesta del endpoint de catálogo por cada item
+interface EpicCatalogItem {
+    title: string;
+    keyImages: { type: string; url: string }[];
+}
+
+// Respuesta raw del endpoint de token de Epic
+interface EpicTokenResponse {
+    access_token: string;
+    account_id: string;
+    displayName: string;
+    expires_at: string; // ISO 8601
 }
 
 // itemTypes que definitivamente no son juegos — se excluyen en el filtro.
@@ -37,13 +54,14 @@ const EPIC_NON_GAME_TYPES = new Set([
     'UNLOCKABLE',
 ]);
 
-// Respuesta raw del endpoint de token de Epic
-interface EpicTokenResponse {
-    access_token: string;
-    account_id: string;
-    displayName: string;
-    expires_at: string; // ISO 8601
-}
+// Tipos de imagen preferidos del catálogo de Epic (orden de prioridad)
+const EPIC_COVER_IMAGE_TYPES = [
+    'OfferImageTall',
+    'DieselGameBoxTall',
+    'DieselStoreFrontTall',
+    'OfferImageWide',
+    'DieselStoreFrontWide',
+];
 
 /**
  * Flujo preferido (authorization code — API interna no oficial):
@@ -124,8 +142,8 @@ export class EpicGamesApiServiceImpl implements IEpicGamesApiService {
 
     /**
      * Obtiene la biblioteca de entitlements del usuario autenticado.
-     * Filtra los mismos itemType que parseExportedLibrary (EXECUTABLE / DURABLE_ENTITLEMENT)
-     * y enriquece con ITAD exactamente igual que el flujo GDPR.
+     * Enriquece con títulos e imágenes desde el catálogo oficial de Epic (requiere accessToken).
+     * Usa ITAD como fallback para portadas si el catálogo no tiene imagen.
      */
     async fetchLibrary(accessToken: string, accountId: string): Promise<Game[]> {
         let entitlements: EpicEntitlement[] = [];
@@ -153,8 +171,11 @@ export class EpicGamesApiServiceImpl implements IEpicGamesApiService {
             e => !EPIC_NON_GAME_TYPES.has(e.itemType),
         );
 
+        // Obtener títulos e imágenes reales desde el catálogo de Epic (bulk, agrupado por namespace)
+        const catalogMap = await this.fetchCatalogData(gameEntitlements, accessToken);
+
         const results = await Promise.allSettled(
-            gameEntitlements.map(e => this.mapEpicEntitlementToDomain(e)),
+            gameEntitlements.map(e => this.mapEpicEntitlementToDomain(e, catalogMap.get(e.catalogItemId))),
         );
 
         return results
@@ -179,8 +200,8 @@ export class EpicGamesApiServiceImpl implements IEpicGamesApiService {
             e => !EPIC_NON_GAME_TYPES.has(e.itemType),
         );
 
-        // Mapear a Game y enriquecer con datos de ITAD (portadas e itadGameId)
-        // Usar Promise.allSettled para que si una API falla, las demás sigan funcionando
+        // En el flujo GDPR no hay accessToken, así que no se puede consultar el catálogo.
+        // ITAD es la única fuente de portada en este flujo.
         const gamePromises = gameEntitlements.map(e => this.mapEpicEntitlementToDomain(e));
         const results = await Promise.allSettled(gamePromises);
 
@@ -228,41 +249,146 @@ export class EpicGamesApiServiceImpl implements IEpicGamesApiService {
         }
     }
 
+    // ─── Helpers privados ──────────────────────────────────────────────────────
+
+    /**
+     * Consulta el catálogo oficial de Epic en bulk (hasta 50 IDs por llamada, agrupado por namespace).
+     * Devuelve un mapa catalogItemId → EpicCatalogItem con título e imágenes reales.
+     * Si el catálogo no está disponible, devuelve un mapa vacío (fallback a entitlementName).
+     */
+    private async fetchCatalogData(
+        entitlements: EpicEntitlement[],
+        accessToken: string,
+    ): Promise<Map<string, EpicCatalogItem>> {
+        const result = new Map<string, EpicCatalogItem>();
+
+        // Agrupar IDs por namespace (el endpoint de catálogo es por namespace)
+        const byNamespace = new Map<string, string[]>();
+        for (const e of entitlements) {
+            if (!byNamespace.has(e.catalogNamespace)) {
+                byNamespace.set(e.catalogNamespace, []);
+            }
+            byNamespace.get(e.catalogNamespace)!.push(e.catalogItemId);
+        }
+
+        // Procesar cada namespace en lotes de 50
+        const BATCH_SIZE = 50;
+        const namespaceRequests: Promise<void>[] = [];
+
+        for (const [namespace, ids] of byNamespace) {
+            for (let i = 0; i < ids.length; i += BATCH_SIZE) {
+                const batch = ids.slice(i, i + BATCH_SIZE);
+                namespaceRequests.push(
+                    this.fetchCatalogBatch(namespace, batch, accessToken, result),
+                );
+            }
+        }
+
+        // Ejecutar todas las peticiones en paralelo — si alguna falla, se ignora
+        await Promise.allSettled(namespaceRequests);
+
+        return result;
+    }
+
+    /**
+     * Obtiene un lote de items del catálogo para un namespace específico.
+     * Escribe los resultados directamente en el mapa compartido `result`.
+     */
+    private async fetchCatalogBatch(
+        namespace: string,
+        ids: string[],
+        accessToken: string,
+        result: Map<string, EpicCatalogItem>,
+    ): Promise<void> {
+        // El endpoint acepta múltiples ?id= en la query string
+        const params = new URLSearchParams();
+        for (const id of ids) {
+            params.append('id', id);
+        }
+        params.append('country', 'US');
+        params.append('locale', 'es-ES');
+
+        const response = await axios.get<Record<string, EpicCatalogItem>>(
+            `${EPIC_CATALOG_URL}/${namespace}/bulk/items`,
+            {
+                params,
+                headers: { Authorization: `Bearer ${accessToken}` },
+            },
+        );
+
+        const data = response.data ?? {};
+        for (const [catalogItemId, item] of Object.entries(data)) {
+            if (item?.title) {
+                result.set(catalogItemId, item);
+            }
+        }
+    }
+
+    /**
+     * Extrae la mejor URL de portada disponible de los keyImages del catálogo.
+     * Prioriza imágenes verticales (formato 2:3) sobre horizontales.
+     */
+    private extractCoverUrl(keyImages: { type: string; url: string }[]): string {
+        for (const preferredType of EPIC_COVER_IMAGE_TYPES) {
+            const image = keyImages.find(img => img.type === preferredType);
+            if (image?.url) return image.url;
+        }
+        // Fallback: primera imagen disponible
+        return keyImages[0]?.url ?? '';
+    }
+
     /**
      * Mapper interno: EpicEntitlement → Game de dominio.
-     * Enriquece con portada e itadGameId desde ITAD.
-     * Si las búsquedas fallan, devuelve Game con datos básicos.
+     *
+     * Fuentes de datos en orden de prioridad:
+     *   1. Catálogo de Epic (título real + portada) — solo disponible en flujo auth code
+     *   2. ITAD (portada) — fallback si el catálogo no tiene imagen o no está disponible
+     *   3. entitlementName — fallback de título si el catálogo no está disponible
      */
-    private async mapEpicEntitlementToDomain(entitlement: EpicEntitlement): Promise<Game> {
-        let coverUrl = '';
+    private async mapEpicEntitlementToDomain(
+        entitlement: EpicEntitlement,
+        catalogItem?: EpicCatalogItem,
+    ): Promise<Game> {
+        // Título: usar el del catálogo si está disponible, si no entitlementName
+        const title = catalogItem?.title ?? entitlement.entitlementName;
+
+        // Portada: intentar catálogo primero, luego ITAD
+        let coverUrl = catalogItem ? this.extractCoverUrl(catalogItem.keyImages) : '';
         let itadGameId: string | null = null;
 
-        try {
-            // Intentar obtener portada y itadGameId desde ITAD usando el título
-            // Usar esta API como fallback si la búsqueda directa falla
-            const itadId = await this.itadService.lookupGameId(entitlement.entitlementName);
-            if (itadId) {
-                itadGameId = itadId;
-                // Intentar obtener la URL de portada desde ITAD
-                try {
-                    const gameInfo = await this.itadService.getGameInfo(itadId);
-                    if (gameInfo?.coverUrl) {
-                        coverUrl = gameInfo.coverUrl;
+        // Si el catálogo no tiene imagen (o no estaba disponible), intentar ITAD
+        if (!coverUrl) {
+            try {
+                const itadId = await this.itadService.lookupGameId(title);
+                if (itadId) {
+                    itadGameId = itadId;
+                    try {
+                        const gameInfo = await this.itadService.getGameInfo(itadId);
+                        if (gameInfo?.coverUrl) {
+                            coverUrl = gameInfo.coverUrl;
+                        }
+                    } catch {
+                        // Si getGameInfo falla, mantener itadGameId igual y coverUrl vacío
                     }
-                } catch {
-                    // Si getGameInfo falla, mantener itadGameId igual y coverUrl vacío
                 }
+            } catch {
+                // Si ITAD está indisponible, crear el Game sin estos datos
             }
-        } catch {
-            // Si ITAD está indisponible, crear el Game sin estos datos
-            // Es preferible tener el juego sin portada que perder la sincronización
+        } else {
+            // El catálogo tiene imagen — buscar itadGameId en paralelo sin bloquear
+            try {
+                const itadId = await this.itadService.lookupGameId(title);
+                if (itadId) itadGameId = itadId;
+            } catch {
+                // itadGameId queda null — no es crítico para mostrar el juego
+            }
         }
 
         return new Game(
             entitlement.catalogItemId,
-            entitlement.entitlementName,
+            title,
             '',
-            coverUrl, // URL de portada desde ITAD, si está disponible
+            coverUrl,
             Platform.EPIC_GAMES,
             null, // No hay Steam AppID para juegos de Epic
             itadGameId,
