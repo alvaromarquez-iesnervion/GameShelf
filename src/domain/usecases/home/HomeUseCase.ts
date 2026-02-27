@@ -63,6 +63,24 @@ export class HomeUseCase implements IHomeUseCase {
         const results = await this.gameRepository.searchGames(query);
         if (results.length === 0) return results;
 
+        // Cargar biblioteca para cruzar ownership
+        let libraryGames: Game[] = [];
+        try {
+            libraryGames = await this.gameRepository.getLibraryGames(userId);
+        } catch {
+            // Si falla, continuamos sin ownership info
+        }
+
+        // Construir mapa de identificadores owned → plataforma para búsqueda O(1)
+        const ownedBySteamAppId = new Map<number, Platform>(
+            libraryGames
+                .filter(g => g.getSteamAppId() !== null)
+                .map(g => [g.getSteamAppId() as number, g.getPlatform()]),
+        );
+        const ownedByGameId = new Map<string, Platform>(
+            libraryGames.map(g => [g.getId(), g.getPlatform()]),
+        );
+
         await Promise.allSettled(
             results.map(async result => {
                 try {
@@ -72,6 +90,20 @@ export class HomeUseCase implements IHomeUseCase {
                     );
                     result.setIsInWishlist(inWishlist);
                 } catch {
+                }
+
+                // Marcar como owned si el steamAppId o el id coincide con la biblioteca
+                const steamAppId = result.getSteamAppId();
+                let ownedPlatform: Platform | undefined;
+                if (steamAppId !== null) {
+                    ownedPlatform = ownedBySteamAppId.get(steamAppId);
+                }
+                if (!ownedPlatform) {
+                    ownedPlatform = ownedByGameId.get(result.getId());
+                }
+                if (ownedPlatform) {
+                    result.setIsOwned(true);
+                    result.setOwnedPlatform(ownedPlatform);
                 }
             }),
         );

@@ -5,16 +5,20 @@ import * as Haptics from 'expo-haptics';
 import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { spacing, radius } from '../../theme/spacing';
+import { PlatformBadge } from '../platforms/PlatformBadge';
+import { Platform } from '../../../domain/enums/Platform';
 
 interface SearchResultCardProps {
     coverUrl: string;
     title: string;
     isInWishlist: boolean;
+    isOwned?: boolean;
+    ownedPlatform?: Platform;
     onPress: () => void;
     onToggleWishlist: () => void;
 }
 
-export const SearchResultCard = React.memo(({ coverUrl, title, isInWishlist, onPress, onToggleWishlist }: SearchResultCardProps) => {
+export const SearchResultCard = React.memo(({ coverUrl, title, isInWishlist, isOwned, ownedPlatform, onPress, onToggleWishlist }: SearchResultCardProps) => {
     const handleWishlist = () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         onToggleWishlist();
@@ -31,17 +35,23 @@ export const SearchResultCard = React.memo(({ coverUrl, title, isInWishlist, onP
             <View style={styles.info}>
                 <Text style={styles.title} numberOfLines={2}>{title}</Text>
             </View>
-            <TouchableOpacity
-                style={[styles.wishlistBtn, isInWishlist && styles.wishlistBtnActive]}
-                onPress={handleWishlist}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-                <Feather
-                    name="heart"
-                    size={20}
-                    color={isInWishlist ? colors.error : colors.textTertiary}
-                />
-            </TouchableOpacity>
+            {isOwned ? (
+                <View style={styles.ownedBadgeContainer}>
+                    <PlatformBadge platform={ownedPlatform ?? Platform.STEAM} />
+                </View>
+            ) : (
+                <TouchableOpacity
+                    style={[styles.wishlistBtn, isInWishlist && styles.wishlistBtnActive]}
+                    onPress={handleWishlist}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                    <Feather
+                        name="heart"
+                        size={20}
+                        color={isInWishlist ? colors.error : colors.textTertiary}
+                    />
+                </TouchableOpacity>
+            )}
         </TouchableOpacity>
     );
 });
@@ -85,5 +95,10 @@ const styles = StyleSheet.create({
     },
     wishlistBtnActive: {
         backgroundColor: colors.errorBackground,
+    },
+    ownedBadgeContainer: {
+        paddingHorizontal: spacing.sm,
+        justifyContent: 'center',
+        alignItems: 'flex-end',
     },
 });

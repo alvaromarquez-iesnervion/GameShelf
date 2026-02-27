@@ -48,10 +48,17 @@ export class SteamSyncMemoryGameRepository implements IGameRepository {
     }
 
     async getOrCreateGameById(userId: string, gameId: string, steamAppId?: number | null): Promise<Game> {
-        // 1. Buscar en la biblioteca en memoria del usuario (caso más común)
+        // 1a. Buscar en la biblioteca en memoria por gameId directo
         try {
             return await this.getGameById(userId, gameId);
-        } catch { /* no está en memoria — continuar */ }
+        } catch { /* no está por ese id — continuar */ }
+
+        // 1b. Si viene steamAppId, buscar en la biblioteca por ese ID
+        if (steamAppId != null) {
+            const games = this.gamesByUser.get(userId) ?? [];
+            const bySteamId = games.find(g => g.getSteamAppId() === steamAppId);
+            if (bySteamId) return bySteamId;
+        }
 
         // 2. Si el gameId parece un steamAppId numérico, resolver vía ITAD
         const looksLikeSteamAppId = /^\d+$/.test(gameId);
@@ -65,7 +72,7 @@ export class SteamSyncMemoryGameRepository implements IGameRepository {
                 info?.title ?? '',
                 '',
                 info?.coverUrl ?? '',
-                Platform.STEAM,
+                Platform.UNKNOWN,
                 resolvedSteamAppId,
                 itadId ?? null,
                 0,
@@ -73,19 +80,28 @@ export class SteamSyncMemoryGameRepository implements IGameRepository {
             );
         }
 
-        // 3. El gameId es un ITAD UUID u otro identificador externo
+        // 3. El gameId es un ITAD UUID — obtener info y buscar en biblioteca por steamAppId
         const info = await this.itadService.getGameInfo(gameId);
         if (!info) {
             throw new Error(`No se pudo obtener información del juego "${gameId}".`);
         }
 
+        const resolvedSteamAppId = info.steamAppId ?? steamAppId ?? null;
+
+        // 3b. Si ITAD nos da el steamAppId, intentar buscar en la biblioteca una última vez
+        if (resolvedSteamAppId != null) {
+            const games = this.gamesByUser.get(userId) ?? [];
+            const bySteamId = games.find(g => g.getSteamAppId() === resolvedSteamAppId);
+            if (bySteamId) return bySteamId;
+        }
+
         return new Game(
-            steamAppId?.toString() ?? gameId,
+            gameId,
             info.title,
             '',
             info.coverUrl,
-            Platform.STEAM,
-            info.steamAppId ?? steamAppId ?? null,
+            Platform.UNKNOWN,
+            resolvedSteamAppId,
             gameId,
             0,
             null,

@@ -46,15 +46,28 @@ export class GameRepositoryImpl implements IGameRepository {
     }
 
     async getOrCreateGameById(userId: string, gameId: string, steamAppId?: number | null): Promise<Game> {
-        // 1. Buscar en la biblioteca del usuario en Firestore (caso más común: juego ya sincronizado)
+        // 1a. Buscar en la biblioteca del usuario por gameId directo (juego ya sincronizado)
         try {
             return await this.getGameById(userId, gameId);
-        } catch { /* no está en la biblioteca — continuar */ }
+        } catch { /* no está por ese id — continuar */ }
 
-        // 2. Si el gameId parece un steamAppId numérico, resolver vía ITAD
+        // 1b. Si viene steamAppId, buscar en la biblioteca por ese ID
+        //     (los juegos Steam se guardan con el steamAppId como documento ID)
+        if (steamAppId != null) {
+            try {
+                return await this.getGameById(userId, String(steamAppId));
+            } catch { /* tampoco — continuar */ }
+        }
+
+        // 2. Si el gameId parece un steamAppId numérico, buscar también por ese valor
         const looksLikeSteamAppId = /^\d+$/.test(gameId);
         if (looksLikeSteamAppId) {
             const resolvedSteamAppId = steamAppId ?? parseInt(gameId, 10);
+            // Intentar biblioteca una vez más con el valor numérico como string
+            try {
+                return await this.getGameById(userId, gameId);
+            } catch { /* no en biblioteca */ }
+
             const itadId = await this.itadService.lookupGameIdBySteamAppId(gameId);
             const info = itadId ? await this.itadService.getGameInfo(itadId) : null;
 
@@ -63,7 +76,7 @@ export class GameRepositoryImpl implements IGameRepository {
                 info?.title ?? '',
                 '',
                 info?.coverUrl ?? '',
-                Platform.STEAM,
+                Platform.UNKNOWN,
                 resolvedSteamAppId,
                 itadId ?? null,
                 0,
@@ -71,19 +84,28 @@ export class GameRepositoryImpl implements IGameRepository {
             );
         }
 
-        // 3. El gameId es un ITAD UUID u otro identificador externo
+        // 3. El gameId es un ITAD UUID — buscar también por steamAppId si la info lo devuelve
         const info = await this.itadService.getGameInfo(gameId);
         if (!info) {
             throw new Error(`No se pudo obtener información del juego "${gameId}".`);
         }
 
+        const resolvedSteamAppId = info.steamAppId ?? steamAppId ?? null;
+
+        // 3b. Si ITAD nos da el steamAppId, intentar buscar en la biblioteca una última vez
+        if (resolvedSteamAppId != null) {
+            try {
+                return await this.getGameById(userId, String(resolvedSteamAppId));
+            } catch { /* no en biblioteca */ }
+        }
+
         return new Game(
-            steamAppId?.toString() ?? gameId,
+            gameId,
             info.title,
             '',
             info.coverUrl,
-            Platform.STEAM,
-            info.steamAppId ?? steamAppId ?? null,
+            Platform.UNKNOWN,
+            resolvedSteamAppId,
             gameId,
             0,
             null,

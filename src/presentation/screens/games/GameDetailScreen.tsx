@@ -16,6 +16,7 @@ import { ProtonDbBadge } from '../../components/games/ProtonDbBadge';
 import { HltbInfo } from '../../components/games/HltbInfo';
 import { DealCard } from '../../components/games/DealCard';
 import { PlatformBadge } from '../../components/platforms/PlatformBadge';
+import { Platform as GamePlatform } from '../../../domain/enums/Platform';
 import { ErrorMessage } from '../../components/common/ErrorMessage';
 import { DetailSkeleton } from '../../components/common/DetailSkeleton';
 import { WishlistItem } from '../../../domain/entities/WishlistItem';
@@ -43,6 +44,7 @@ export const GameDetailScreen: React.FC = observer(() => {
 
     const detail = vm.gameDetail.detail;
     const game = detail.getGame();
+    const isOwned = game.getPlatform() !== GamePlatform.UNKNOWN;
     const isInWishlist = wishlistVm.isGameInWishlist(game.getId());
 
     const toggleWishlist = async () => {
@@ -87,31 +89,35 @@ export const GameDetailScreen: React.FC = observer(() => {
                 <View style={styles.content}>
                     <Text style={styles.title}>{game.getTitle()}</Text>
 
-                    <View style={styles.metaRow}>
-                        <PlatformBadge platform={game.getPlatform()} />
-                        <ProtonDbBadge rating={detail.getProtonDbRating()} />
-                    </View>
+                    {(isOwned || detail.getProtonDbRating() !== null) && (
+                        <View style={styles.metaRow}>
+                            <PlatformBadge platform={game.getPlatform()} />
+                            <ProtonDbBadge rating={detail.getProtonDbRating()} />
+                        </View>
+                    )}
 
                     <Text style={styles.description} numberOfLines={5}>
                         {game.getDescription()}
                     </Text>
 
-                    <View style={styles.actionRow}>
-                        <TouchableOpacity
-                            style={[styles.wishlistBtn, isInWishlist && styles.wishlistBtnActive]}
-                            onPress={toggleWishlist}
-                            activeOpacity={0.7}
-                        >
-                            <Feather
-                                name="heart"
-                                size={20}
-                                color={isInWishlist ? colors.error : colors.onPrimary}
-                            />
-                            <Text style={[styles.wishlistBtnText, isInWishlist && styles.wishlistBtnTextActive]}>
-                                {isInWishlist ? 'En Wishlist' : 'Añadir a Wishlist'}
-                            </Text>
-                        </TouchableOpacity>
-                    </View>
+                    {!isOwned && (
+                        <View style={styles.actionRow}>
+                            <TouchableOpacity
+                                style={[styles.wishlistBtn, isInWishlist && styles.wishlistBtnActive]}
+                                onPress={toggleWishlist}
+                                activeOpacity={0.7}
+                            >
+                                <Feather
+                                    name="heart"
+                                    size={20}
+                                    color={isInWishlist ? colors.error : colors.onPrimary}
+                                />
+                                <Text style={[styles.wishlistBtnText, isInWishlist && styles.wishlistBtnTextActive]}>
+                                    {isInWishlist ? 'En Wishlist' : 'Añadir a Wishlist'}
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+                    )}
 
                     <View style={styles.section}>
                         <HltbInfo
@@ -121,7 +127,7 @@ export const GameDetailScreen: React.FC = observer(() => {
                         />
                     </View>
 
-                    {detail.getDeals().length > 0 && (
+                    {!isOwned && detail.getDeals().length > 0 && (
                         <View style={styles.dealsSection}>
                             <View style={styles.sectionHeader}>
                                 <Text style={styles.sectionTitle}>Mejores Ofertas</Text>

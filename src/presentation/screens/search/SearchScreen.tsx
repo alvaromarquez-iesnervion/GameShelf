@@ -64,7 +64,10 @@ export const SearchScreen: React.FC = observer(() => {
         }, 400);
     }, [userId, vm]);
 
-    const toggleWishlist = async (result: { getId: () => string; getTitle: () => string; getCoverUrl: () => string }) => {
+    const toggleWishlist = async (result: { getId: () => string; getTitle: () => string; getCoverUrl: () => string; getIsOwned: () => boolean }) => {
+        // No permitir modificar wishlist de juegos ya poseídos
+        if (result.getIsOwned()) return;
+
         if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
         const inWishlist = wishlistVm.isGameInWishlist(result.getId());
@@ -190,6 +193,8 @@ export const SearchScreen: React.FC = observer(() => {
                     coverUrl={item.getCoverUrl()}
                     title={item.getTitle()}
                     isInWishlist={wishlistVm.isGameInWishlist(item.getId())}
+                    isOwned={item.getIsOwned()}
+                    ownedPlatform={item.getOwnedPlatform()}
                     onPress={() => navigation.navigate('GameDetail', {
                         gameId: item.getId(),
                         steamAppId: item.getSteamAppId() ?? undefined,

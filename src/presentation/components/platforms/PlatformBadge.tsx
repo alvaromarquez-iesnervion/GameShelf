@@ -11,6 +11,8 @@ interface PlatformBadgeProps {
 }
 
 export const PlatformBadge: React.FC<PlatformBadgeProps> = ({ platform }) => {
+    if (platform === Platform.UNKNOWN) return null;
+
     const isSteam = platform === Platform.STEAM;
 
     return (
