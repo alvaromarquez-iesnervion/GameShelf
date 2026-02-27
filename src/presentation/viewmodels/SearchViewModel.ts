@@ -4,15 +4,15 @@ import { makeAutoObservable, runInAction } from 'mobx';
 import { ISearchUseCase } from '../../domain/interfaces/usecases/games/ISearchUseCase';
 import { SearchResult } from '../../domain/entities/SearchResult';
 import { TYPES } from '../../di/types';
-import { BaseViewModel } from './BaseViewModel';
+import { withLoading } from './BaseViewModel';
 
 /**
  * ViewModel para búsqueda de juegos.
- * 
+ *
  * Transient: cada búsqueda es independiente.
  */
 @injectable()
-export class SearchViewModel extends BaseViewModel {
+export class SearchViewModel {
     private _results: SearchResult[] = [];
     private _query: string = '';
     private _isLoading: boolean = false;
@@ -22,7 +22,6 @@ export class SearchViewModel extends BaseViewModel {
         @inject(TYPES.ISearchUseCase)
         private readonly searchUseCase: ISearchUseCase,
     ) {
-        super();
         makeAutoObservable(this);
     }
 
@@ -53,7 +52,7 @@ export class SearchViewModel extends BaseViewModel {
 
         runInAction(() => { this._query = query; });
 
-        await this.withLoading('_isLoading', '_errorMessage', async () => {
+        await withLoading(this, '_isLoading', '_errorMessage', async () => {
             const results = await this.searchUseCase.searchGames(query, userId);
             runInAction(() => {
                 this._results = results;

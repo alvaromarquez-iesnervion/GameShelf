@@ -1,60 +1,54 @@
 import { runInAction } from 'mobx';
 
 /**
- * Base class for all ViewModels.
+ * Generic async helper that eliminates the repetitive try/catch/runInAction
+ * boilerplate present in every ViewModel async method.
  *
- * Provides `withLoading`, a generic async helper that eliminates the
- * repetitive try/catch/runInAction boilerplate present in every async method:
+ * NOTE: implemented as a standalone function (not a base class) because
+ * MobX's `makeAutoObservable` cannot be used on classes that have a superclass.
  *
+ * Usage:
  * ```ts
- * // Before
- * runInAction(() => { this._isLoading = true; this._errorMessage = null; });
- * try {
- *   const result = await this._useCase.doSomething();
- *   runInAction(() => { this._items = result; });
- * } catch (e) {
- *   runInAction(() => { this._errorMessage = e instanceof Error ? e.message : 'Error'; });
- * } finally {
- *   runInAction(() => { this._isLoading = false; });
+ * async loadItems(): Promise<void> {
+ *   await withLoading(this, '_isLoading', '_errorMessage', async () => {
+ *     const result = await this._useCase.getItems();
+ *     runInAction(() => { this._items = result; });
+ *   });
  * }
- *
- * // After
- * await this.withLoading('_isLoading', '_errorMessage', async () => {
- *   const result = await this._useCase.doSomething();
- *   runInAction(() => { this._items = result; });
- * });
  * ```
  *
- * @param loadingKey   Name of the boolean loading flag on `this` (e.g. `'_isLoading'`).
- * @param errorKey     Name of the `string | null` error field on `this` (e.g. `'_errorMessage'`).
- * @param action       Async callback that performs the work.
- * @param rethrow      When `true`, re-throws the caught error after recording it (default: false).
+ * @param vm         The ViewModel instance (`this`).
+ * @param loadingKey Name of the boolean loading flag (e.g. `'_isLoading'`).
+ * @param errorKey   Name of the `string | null` error field (e.g. `'_errorMessage'`).
+ * @param action     Async callback that performs the work.
+ * @param rethrow    When `true`, re-throws the caught error after recording it (default: false).
  */
-export abstract class BaseViewModel {
-    protected async withLoading<T>(
-        loadingKey: string,
-        errorKey: string,
-        action: () => Promise<T>,
-        rethrow = false,
-    ): Promise<T | undefined> {
-        runInAction(() => {
-            (this as Record<string, unknown>)[loadingKey] = true;
-            (this as Record<string, unknown>)[errorKey] = null;
-        });
+export async function withLoading<T>(
+    vm: object,
+    loadingKey: string,
+    errorKey: string,
+    action: () => Promise<T>,
+    rethrow = false,
+): Promise<T | undefined> {
+    const target = vm as Record<string, unknown>;
 
-        try {
-            return await action();
-        } catch (e) {
-            const message = e instanceof Error ? e.message : String(e);
-            runInAction(() => {
-                (this as Record<string, unknown>)[errorKey] = message;
-            });
-            if (rethrow) throw e;
-            return undefined;
-        } finally {
-            runInAction(() => {
-                (this as Record<string, unknown>)[loadingKey] = false;
-            });
-        }
+    runInAction(() => {
+        target[loadingKey] = true;
+        target[errorKey] = null;
+    });
+
+    try {
+        return await action();
+    } catch (e) {
+        const message = e instanceof Error ? e.message : String(e);
+        runInAction(() => {
+            target[errorKey] = message;
+        });
+        if (rethrow) throw e;
+        return undefined;
+    } finally {
+        runInAction(() => {
+            target[loadingKey] = false;
+        });
     }
 }

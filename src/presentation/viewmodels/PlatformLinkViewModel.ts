@@ -5,15 +5,15 @@ import { IPlatformLinkUseCase } from '../../domain/interfaces/usecases/platforms
 import { LinkedPlatform } from '../../domain/entities/LinkedPlatform';
 import { Platform } from '../../domain/enums/Platform';
 import { TYPES } from '../../di/types';
-import { BaseViewModel } from './BaseViewModel';
+import { withLoading } from './BaseViewModel';
 
 /**
  * ViewModel para vinculación de plataformas.
- * 
+ *
  * Transient: solo activo durante la pantalla de vinculación.
  */
 @injectable()
-export class PlatformLinkViewModel extends BaseViewModel {
+export class PlatformLinkViewModel {
     private _linkedPlatforms: LinkedPlatform[] = [];
     private _isLinking: boolean = false;
     private _errorMessage: string | null = null;
@@ -23,7 +23,6 @@ export class PlatformLinkViewModel extends BaseViewModel {
         @inject(TYPES.IPlatformLinkUseCase)
         private readonly platformLinkUseCase: IPlatformLinkUseCase,
     ) {
-        super();
         makeAutoObservable(this);
     }
 
@@ -44,7 +43,7 @@ export class PlatformLinkViewModel extends BaseViewModel {
     }
 
     async loadLinkedPlatforms(userId: string): Promise<void> {
-        await this.withLoading('_isLinking', '_errorMessage', async () => {
+        await withLoading(this, '_isLinking', '_errorMessage', async () => {
             const platforms = await this.platformLinkUseCase.getLinkedPlatforms(userId);
             runInAction(() => {
                 this._linkedPlatforms = platforms;
@@ -60,7 +59,7 @@ export class PlatformLinkViewModel extends BaseViewModel {
     }
 
     async linkSteamById(userId: string, profileUrlOrId: string): Promise<boolean> {
-        const result = await this.withLoading('_isLinking', '_errorMessage', async () => {
+        const result = await withLoading(this, '_isLinking', '_errorMessage', async () => {
             await this.platformLinkUseCase.linkSteamById(userId, profileUrlOrId);
             await this.loadLinkedPlatforms(userId);
             return true;
@@ -73,7 +72,7 @@ export class PlatformLinkViewModel extends BaseViewModel {
         callbackUrl: string,
         params: Record<string, string>,
     ): Promise<boolean> {
-        const result = await this.withLoading('_isLinking', '_errorMessage', async () => {
+        const result = await withLoading(this, '_isLinking', '_errorMessage', async () => {
             await this.platformLinkUseCase.linkSteam(userId, callbackUrl, params);
             await this.loadLinkedPlatforms(userId);
             return true;
@@ -94,7 +93,7 @@ export class PlatformLinkViewModel extends BaseViewModel {
      * Flujo preferido — requiere que el usuario haya copiado el código de ~32 chars.
      */
     async linkEpicByAuthCode(userId: string, authCode: string): Promise<boolean> {
-        const result = await this.withLoading('_isLinking', '_errorMessage', async () => {
+        const result = await withLoading(this, '_isLinking', '_errorMessage', async () => {
             await this.platformLinkUseCase.linkEpicByAuthCode(userId, authCode);
             await this.loadLinkedPlatforms(userId);
             return true;
@@ -103,7 +102,7 @@ export class PlatformLinkViewModel extends BaseViewModel {
     }
 
     async linkEpic(userId: string, fileContent: string): Promise<boolean> {
-        const result = await this.withLoading('_isLinking', '_errorMessage', async () => {
+        const result = await withLoading(this, '_isLinking', '_errorMessage', async () => {
             await this.platformLinkUseCase.linkEpic(userId, fileContent);
             await this.loadLinkedPlatforms(userId);
             return true;
@@ -112,7 +111,7 @@ export class PlatformLinkViewModel extends BaseViewModel {
     }
 
     async unlinkPlatform(userId: string, platform: Platform): Promise<boolean> {
-        const result = await this.withLoading('_isLinking', '_errorMessage', async () => {
+        const result = await withLoading(this, '_isLinking', '_errorMessage', async () => {
             await this.platformLinkUseCase.unlinkPlatform(userId, platform);
             await this.loadLinkedPlatforms(userId);
             return true;

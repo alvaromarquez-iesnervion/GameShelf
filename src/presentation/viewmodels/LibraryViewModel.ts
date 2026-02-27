@@ -6,15 +6,15 @@ import { Game } from '../../domain/entities/Game';
 import { LinkedPlatform } from '../../domain/entities/LinkedPlatform';
 import { Platform } from '../../domain/enums/Platform';
 import { TYPES } from '../../di/types';
-import { BaseViewModel } from './BaseViewModel';
+import { withLoading } from './BaseViewModel';
 
 /**
  * ViewModel para la biblioteca de juegos.
- * 
+ *
  * Singleton: compartido entre pantallas para evitar recargas innecesarias.
  */
 @injectable()
-export class LibraryViewModel extends BaseViewModel {
+export class LibraryViewModel {
     private _games: Game[] = [];
     private _linkedPlatforms: LinkedPlatform[] = [];
     private _isLoading: boolean = false;
@@ -27,7 +27,6 @@ export class LibraryViewModel extends BaseViewModel {
         @inject(TYPES.ILibraryUseCase)
         private readonly libraryUseCase: ILibraryUseCase,
     ) {
-        super();
         makeAutoObservable(this);
     }
 
@@ -66,7 +65,7 @@ export class LibraryViewModel extends BaseViewModel {
     }
 
     async loadLibrary(userId: string): Promise<void> {
-        await this.withLoading('_isLoading', '_errorMessage', async () => {
+        await withLoading(this, '_isLoading', '_errorMessage', async () => {
             const [games, platforms] = await Promise.all([
                 this.libraryUseCase.getLibrary(userId),
                 this.libraryUseCase.getLinkedPlatforms(userId),
@@ -79,7 +78,7 @@ export class LibraryViewModel extends BaseViewModel {
     }
 
     async syncLibrary(userId: string, platform: Platform): Promise<void> {
-        await this.withLoading('_isSyncing', '_errorMessage', async () => {
+        await withLoading(this, '_isSyncing', '_errorMessage', async () => {
             const games = await this.libraryUseCase.syncLibrary(userId, platform);
             runInAction(() => {
                 this._games = games;

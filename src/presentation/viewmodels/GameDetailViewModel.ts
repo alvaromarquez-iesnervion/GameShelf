@@ -4,15 +4,15 @@ import { makeAutoObservable, runInAction } from 'mobx';
 import { IGameDetailUseCase } from '../../domain/interfaces/usecases/games/IGameDetailUseCase';
 import { GameDetailDTO } from '../../domain/dtos/GameDetailDTO';
 import { TYPES } from '../../di/types';
-import { BaseViewModel } from './BaseViewModel';
+import { withLoading } from './BaseViewModel';
 
 /**
  * ViewModel para el detalle de un juego.
- * 
+ *
  * Transient: cada pantalla de detalle crea su propia instancia.
  */
 @injectable()
-export class GameDetailViewModel extends BaseViewModel {
+export class GameDetailViewModel {
     private _gameDetail: GameDetailDTO | null = null;
     private _isLoading: boolean = false;
     private _errorMessage: string | null = null;
@@ -21,7 +21,6 @@ export class GameDetailViewModel extends BaseViewModel {
         @inject(TYPES.IGameDetailUseCase)
         private readonly gameDetailUseCase: IGameDetailUseCase,
     ) {
-        super();
         makeAutoObservable(this);
     }
 
@@ -38,7 +37,7 @@ export class GameDetailViewModel extends BaseViewModel {
     }
 
     async loadGameDetail(gameId: string, userId: string, steamAppId?: number): Promise<void> {
-        await this.withLoading('_isLoading', '_errorMessage', async () => {
+        await withLoading(this, '_isLoading', '_errorMessage', async () => {
             const detail = await this.gameDetailUseCase.getGameDetail(gameId, userId, steamAppId);
             runInAction(() => {
                 this._gameDetail = detail;

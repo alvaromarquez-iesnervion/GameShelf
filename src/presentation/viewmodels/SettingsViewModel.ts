@@ -5,15 +5,15 @@ import { ISettingsUseCase } from '../../domain/interfaces/usecases/settings/ISet
 import { UserProfileDTO } from '../../domain/dtos/UserProfileDTO';
 import { NotificationPreferences } from '../../domain/entities/NotificationPreferences';
 import { TYPES } from '../../di/types';
-import { BaseViewModel } from './BaseViewModel';
+import { withLoading } from './BaseViewModel';
 
 /**
  * ViewModel para ajustes y perfil.
- * 
+ *
  * Transient: solo activo durante la pantalla de ajustes.
  */
 @injectable()
-export class SettingsViewModel extends BaseViewModel {
+export class SettingsViewModel {
     private _profile: UserProfileDTO | null = null;
     private _isLoading: boolean = false;
     private _errorMessage: string | null = null;
@@ -22,7 +22,6 @@ export class SettingsViewModel extends BaseViewModel {
         @inject(TYPES.ISettingsUseCase)
         private readonly settingsUseCase: ISettingsUseCase,
     ) {
-        super();
         makeAutoObservable(this);
     }
 
@@ -43,7 +42,7 @@ export class SettingsViewModel extends BaseViewModel {
     }
 
     async loadProfile(userId: string): Promise<void> {
-        await this.withLoading('_isLoading', '_errorMessage', async () => {
+        await withLoading(this, '_isLoading', '_errorMessage', async () => {
             const profile = await this.settingsUseCase.getProfile(userId);
             runInAction(() => {
                 this._profile = profile;
@@ -55,7 +54,7 @@ export class SettingsViewModel extends BaseViewModel {
         userId: string,
         enabled: boolean,
     ): Promise<boolean> {
-        const result = await this.withLoading('_isLoading', '_errorMessage', async () => {
+        const result = await withLoading(this, '_isLoading', '_errorMessage', async () => {
             const preferences = new NotificationPreferences(enabled);
             await this.settingsUseCase.updateNotificationPreferences(userId, preferences);
 
@@ -75,7 +74,7 @@ export class SettingsViewModel extends BaseViewModel {
     }
 
     async deleteAccount(): Promise<boolean> {
-        const result = await this.withLoading('_isLoading', '_errorMessage', async () => {
+        const result = await withLoading(this, '_isLoading', '_errorMessage', async () => {
             await this.settingsUseCase.deleteAccount();
             return true;
         });

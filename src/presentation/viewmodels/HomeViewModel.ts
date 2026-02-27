@@ -5,10 +5,10 @@ import { IHomeUseCase } from '../../domain/interfaces/usecases/home/IHomeUseCase
 import { Game } from '../../domain/entities/Game';
 import { SearchResult } from '../../domain/entities/SearchResult';
 import { TYPES } from '../../di/types';
-import { BaseViewModel } from './BaseViewModel';
+import { withLoading } from './BaseViewModel';
 
 @injectable()
-export class HomeViewModel extends BaseViewModel {
+export class HomeViewModel {
     private _popularGames: Game[] = [];
     private _recentlyPlayed: Game[] = [];
     private _mostPlayed: Game[] = [];
@@ -22,7 +22,6 @@ export class HomeViewModel extends BaseViewModel {
         @inject(TYPES.IHomeUseCase)
         private readonly homeUseCase: IHomeUseCase,
     ) {
-        super();
         makeAutoObservable(this);
     }
 
@@ -36,7 +35,7 @@ export class HomeViewModel extends BaseViewModel {
     get errorMessage(): string | null { return this._errorMessage; }
 
     async loadHomeData(userId: string): Promise<void> {
-        await this.withLoading('_isLoadingHome', '_errorMessage', async () => {
+        await withLoading(this, '_isLoadingHome', '_errorMessage', async () => {
             const [popular, recent, mostPlayed] = await Promise.all([
                 this.homeUseCase.getPopularGames(10),
                 this.homeUseCase.getRecentlyPlayed(userId),
@@ -72,7 +71,7 @@ export class HomeViewModel extends BaseViewModel {
 
         runInAction(() => { this._searchQuery = query; });
 
-        await this.withLoading('_isSearching', '_errorMessage', async () => {
+        await withLoading(this, '_isSearching', '_errorMessage', async () => {
             const results = await this.homeUseCase.searchGames(query, userId);
             runInAction(() => {
                 this._searchResults = results;

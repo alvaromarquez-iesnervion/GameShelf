@@ -4,15 +4,15 @@ import { makeAutoObservable, runInAction } from 'mobx';
 import { IWishlistUseCase } from '../../domain/interfaces/usecases/wishlist/IWishlistUseCase';
 import { WishlistItem } from '../../domain/entities/WishlistItem';
 import { TYPES } from '../../di/types';
-import { BaseViewModel } from './BaseViewModel';
+import { withLoading } from './BaseViewModel';
 
 /**
  * ViewModel para la wishlist.
- * 
+ *
  * Singleton: compartido entre SearchScreen y GameDetailScreen para mantener consistencia.
  */
 @injectable()
-export class WishlistViewModel extends BaseViewModel {
+export class WishlistViewModel {
     private _items: WishlistItem[] = [];
     private _isLoading: boolean = false;
     private _errorMessage: string | null = null;
@@ -21,7 +21,6 @@ export class WishlistViewModel extends BaseViewModel {
         @inject(TYPES.IWishlistUseCase)
         private readonly wishlistUseCase: IWishlistUseCase,
     ) {
-        super();
         makeAutoObservable(this);
     }
 
@@ -38,7 +37,7 @@ export class WishlistViewModel extends BaseViewModel {
     }
 
     async loadWishlist(userId: string): Promise<void> {
-        await this.withLoading('_isLoading', '_errorMessage', async () => {
+        await withLoading(this, '_isLoading', '_errorMessage', async () => {
             const items = await this.wishlistUseCase.getWishlist(userId);
             runInAction(() => {
                 this._items = items;
@@ -47,7 +46,7 @@ export class WishlistViewModel extends BaseViewModel {
     }
 
     async addToWishlist(userId: string, item: WishlistItem): Promise<boolean> {
-        const result = await this.withLoading('_isLoading', '_errorMessage', async () => {
+        const result = await withLoading(this, '_isLoading', '_errorMessage', async () => {
             await this.wishlistUseCase.addToWishlist(userId, item);
             // Recargar la lista para obtener datos actualizados
             await this.loadWishlist(userId);
@@ -57,7 +56,7 @@ export class WishlistViewModel extends BaseViewModel {
     }
 
     async removeFromWishlist(userId: string, itemId: string): Promise<boolean> {
-        const result = await this.withLoading('_isLoading', '_errorMessage', async () => {
+        const result = await withLoading(this, '_isLoading', '_errorMessage', async () => {
             await this.wishlistUseCase.removeFromWishlist(userId, itemId);
             // Actualizar la lista local sin recargar
             runInAction(() => {
