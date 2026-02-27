@@ -163,6 +163,7 @@ export class SteamApiServiceImpl implements ISteamApiService {
                     null,
                     0,
                     null,
+                    `${STEAM_CDN_BASE}/${chart.appid}/library_600x900.jpg`,
                 );
             } catch {
                 return new Game(
@@ -175,6 +176,7 @@ export class SteamApiServiceImpl implements ISteamApiService {
                     null,
                     0,
                     null,
+                    `${STEAM_CDN_BASE}/${chart.appid}/library_600x900.jpg`,
                 );
             }
         });
@@ -241,6 +243,7 @@ export class SteamApiServiceImpl implements ISteamApiService {
             null,
             steamGame.playtime_forever,
             lastPlayed,
+            `${STEAM_CDN_BASE}/${appId}/library_600x900.jpg`,
         );
     }
 
@@ -258,6 +261,7 @@ export class SteamApiServiceImpl implements ISteamApiService {
             null,
             steamGame.playtime_forever,
             lastPlayed,
+            `${STEAM_CDN_BASE}/${appId}/library_600x900.jpg`,
         );
     }
 }

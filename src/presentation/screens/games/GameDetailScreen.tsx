@@ -76,7 +76,7 @@ export const GameDetailScreen: React.FC = observer(() => {
                     <Image
                         source={{ uri: game.getCoverUrl() }}
                         style={styles.cover}
-                        contentFit="cover"
+                        contentFit="fill"
                         transition={500}
                     />
                     <LinearGradient

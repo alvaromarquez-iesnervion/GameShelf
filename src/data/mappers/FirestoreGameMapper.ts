@@ -11,6 +11,7 @@ import { Platform } from '../../domain/enums/Platform';
  *   title: string,
  *   description: string,
  *   coverUrl: string,
+ *   portraitCoverUrl: string,
  *   platform: 'STEAM' | 'EPIC_GAMES',
  *   steamAppId: number | null,
  *   itadGameId: string | null,
@@ -29,6 +30,7 @@ export class FirestoreGameMapper {
             data.itadGameId ?? null,
             data.playtime ?? 0,
             data.lastPlayed?.toDate() ?? null,
+            data.portraitCoverUrl ?? '',
         );
     }
 
@@ -37,6 +39,7 @@ export class FirestoreGameMapper {
             title: game.getTitle(),
             description: game.getDescription(),
             coverUrl: game.getCoverUrl(),
+            portraitCoverUrl: game.getPortraitCoverUrl(),
             platform: game.getPlatform(),
             steamAppId: game.getSteamAppId(),
             itadGameId: game.getItadGameId(),

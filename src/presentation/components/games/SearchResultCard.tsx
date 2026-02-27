@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Image, TouchableOpacity, StyleSheet, Text } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, Text } from 'react-native';
+import { Image } from 'expo-image';
 import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { colors } from '../../theme/colors';
@@ -31,7 +32,7 @@ export const SearchResultCard = React.memo(({ coverUrl, title, isInWishlist, isO
 
     return (
         <TouchableOpacity style={styles.card} onPress={handlePress} activeOpacity={0.75}>
-            <Image source={{ uri: coverUrl }} style={styles.cover} resizeMode="cover" />
+            <Image source={{ uri: coverUrl }} style={styles.cover} contentFit="cover" transition={200} />
             <View style={styles.info}>
                 <Text style={styles.title} numberOfLines={2}>{title}</Text>
             </View>

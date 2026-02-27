@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Image, TouchableOpacity, StyleSheet, Text } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, Text } from 'react-native';
+import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
 import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
@@ -32,7 +33,8 @@ export const HomeGameCard = React.memo(({ coverUrl, title, subtitle, onPress, si
             <Image 
                 source={{ uri: coverUrl }} 
                 style={[styles.cover, { width: dimensions.coverWidth, height: dimensions.coverHeight }]} 
-                resizeMode="cover" 
+                contentFit="cover"
+                transition={200}
             />
             <View style={styles.info}>
                 <Text style={styles.title} numberOfLines={2}>{title}</Text>

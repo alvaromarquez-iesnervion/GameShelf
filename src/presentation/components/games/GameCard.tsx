@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Image, TouchableOpacity, StyleSheet, Text, Platform } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, Text, Platform } from 'react-native';
+import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { colors } from '../../theme/colors';
@@ -9,12 +10,14 @@ import { Platform as GamePlatform } from '../../../domain/enums/Platform';
 
 interface GameCardProps {
     coverUrl: string;
+    portraitCoverUrl?: string;
     title: string;
     platform?: GamePlatform;
     onPress: () => void;
 }
 
-export const GameCard = React.memo(({ coverUrl, title, platform, onPress }: GameCardProps) => {
+export const GameCard = React.memo(({ coverUrl, portraitCoverUrl, title, platform, onPress }: GameCardProps) => {
+    const imageSource = portraitCoverUrl || coverUrl;
     const handlePress = () => {
         if (Platform.OS !== 'web') {
             Haptics.selectionAsync();
@@ -30,9 +33,10 @@ export const GameCard = React.memo(({ coverUrl, title, platform, onPress }: Game
         >
             <View style={styles.imageContainer}>
                 <Image 
-                    source={{ uri: coverUrl }} 
+                    source={{ uri: imageSource }} 
                     style={styles.cover} 
-                    resizeMode="cover" 
+                    contentFit="cover"
+                    transition={200}
                 />
                 <LinearGradient
                     colors={['transparent', 'rgba(0,0,0,0.7)']}

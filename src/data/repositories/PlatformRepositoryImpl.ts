@@ -15,8 +15,8 @@ import { LinkedPlatform } from '../../domain/entities/LinkedPlatform';
 import { Platform } from '../../domain/enums/Platform';
 import { TYPES } from '../../di/types';
 
-// Mapa de enum a nombre de documento en Firestore
-const PLATFORM_DOC_ID: Record<Platform, string> = {
+// Mapa de enum a nombre de documento en Firestore (solo plataformas vinculables)
+const PLATFORM_DOC_ID: Record<Exclude<Platform, Platform.UNKNOWN>, string> = {
     [Platform.STEAM]: 'steam',
     [Platform.EPIC_GAMES]: 'epic_games',
 };
@@ -54,7 +54,8 @@ export class PlatformRepositoryImpl implements IPlatformRepository {
     }
 
     async unlinkPlatform(userId: string, platform: Platform): Promise<void> {
-        const docId = PLATFORM_DOC_ID[platform];
+        if (platform === Platform.UNKNOWN) return;
+        const docId = PLATFORM_DOC_ID[platform as Exclude<Platform, Platform.UNKNOWN>];
 
         // 1. Eliminar vinculación de plataforma
         await deleteDoc(doc(this.firestore, 'users', userId, 'platforms', docId));

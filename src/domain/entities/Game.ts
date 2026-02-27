@@ -6,6 +6,7 @@ export class Game {
     private title: string;
     private description: string;
     private coverUrl: string;
+    private portraitCoverUrl: string;
     private platform: Platform;
     private steamAppId: number | null;
     private itadGameId: string | null;
@@ -22,11 +23,13 @@ export class Game {
         itadGameId: string | null,
         playtime: number = 0,
         lastPlayed: Date | null = null,
+        portraitCoverUrl: string = '',
     ) {
         this.id = id;
         this.title = title;
         this.description = description;
         this.coverUrl = coverUrl;
+        this.portraitCoverUrl = portraitCoverUrl;
         this.platform = platform;
         this.steamAppId = steamAppId;
         this.itadGameId = itadGameId;
@@ -38,6 +41,7 @@ export class Game {
     getTitle(): string { return this.title; }
     getDescription(): string { return this.description; }
     getCoverUrl(): string { return this.coverUrl; }
+    getPortraitCoverUrl(): string { return this.portraitCoverUrl; }
     getPlatform(): Platform { return this.platform; }
     getSteamAppId(): number | null { return this.steamAppId; }
     getItadGameId(): string | null { return this.itadGameId; }

@@ -462,16 +462,17 @@ export const MOCK_INITIAL_WISHLIST: WishlistItem[] = [
 // Incluye juegos no presentes en la biblioteca para simular catálogo externo.
 
 export const MOCK_SEARCH_RESULTS: SearchResult[] = [
-    new SearchResult('itad-elden-ring-uuid', 'Elden Ring', steamCover(1245620), false),
-    new SearchResult('itad-cyberpunk-uuid', 'Cyberpunk 2077', steamCover(1091500), true),
-    new SearchResult('itad-hades-uuid', 'Hades', steamCover(1145360), false),
-    new SearchResult('itad-bg3-uuid', "Baldur's Gate 3", steamCover(1086940), true),
-    new SearchResult('itad-hollow-knight-uuid', 'Hollow Knight', steamCover(367520), false),
-    new SearchResult('itad-stardew-uuid', 'Stardew Valley', steamCover(413150), false),
-    // Juegos que no están en la biblioteca del usuario mock
-    new SearchResult('itad-sekiro-uuid', 'Sekiro: Shadows Die Twice', steamCover(814380), false),
-    new SearchResult('itad-ds3-uuid', 'Dark Souls III', steamCover(374320), false),
-    new SearchResult('itad-witcher3-uuid', 'The Witcher 3: Wild Hunt', steamCover(292030), false),
+    // Juegos que SÍ están en la biblioteca del usuario mock (steamAppId permite cruzar ownership)
+    new SearchResult('itad-elden-ring-uuid',    'Elden Ring',                steamCover(1245620), false, 1245620),
+    new SearchResult('itad-cyberpunk-uuid',     'Cyberpunk 2077',            steamCover(1091500), false, 1091500),
+    new SearchResult('itad-hades-uuid',         'Hades',                     steamCover(1145360), false, 1145360),
+    new SearchResult('itad-bg3-uuid',           "Baldur's Gate 3",           steamCover(1086940), false, 1086940),
+    new SearchResult('itad-hollow-knight-uuid', 'Hollow Knight',             steamCover(367520),  false, 367520),
+    new SearchResult('itad-stardew-uuid',       'Stardew Valley',            steamCover(413150),  false, 413150),
+    // Juegos que NO están en la biblioteca del usuario mock
+    new SearchResult('itad-sekiro-uuid',        'Sekiro: Shadows Die Twice', steamCover(814380),  false, 814380),
+    new SearchResult('itad-ds3-uuid',           'Dark Souls III',            steamCover(374320),  false, 374320),
+    new SearchResult('itad-witcher3-uuid',      'The Witcher 3: Wild Hunt',  steamCover(292030),  false, 292030),
 ];
 
 // ─── Preferencias de notificaciones ──────────────────────────────────────────

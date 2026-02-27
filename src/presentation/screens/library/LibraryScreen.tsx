@@ -93,6 +93,7 @@ export const LibraryScreen: React.FC = observer(() => {
                 renderItem={({ item }) => (
                     <GameCard
                         coverUrl={item.getCoverUrl()}
+                        portraitCoverUrl={item.getPortraitCoverUrl()}
                         title={item.getTitle()}
                         platform={item.getPlatform()}
                         onPress={() => navigation.navigate('GameDetail', { gameId: item.getId() })}

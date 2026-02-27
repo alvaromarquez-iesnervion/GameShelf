@@ -5,7 +5,10 @@ import { spacing, radius, layout } from '../../theme/spacing';
 
 const { width } = Dimensions.get('window');
 
-export const COVER_HEIGHT = 450;
+// Steam header.jpg is 460×215 — preserve that aspect ratio so the image
+// is shown full-width without any cropping.
+const HEADER_ASPECT_RATIO = 460 / 215;
+export const COVER_HEIGHT = Math.round(width / HEADER_ASPECT_RATIO);
 
 export const styles = StyleSheet.create({
     container: {
