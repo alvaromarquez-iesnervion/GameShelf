@@ -66,6 +66,10 @@ export const LibraryScreen: React.FC = observer(() => {
                 numColumns={3}
                 columnWrapperStyle={styles.row}
                 contentContainerStyle={styles.list}
+                initialNumToRender={12}
+                maxToRenderPerBatch={6}
+                windowSize={5}
+                removeClippedSubviews={true}
                 ListHeaderComponent={
                     <View style={[styles.header, { paddingTop: insets.top + 44 }]}>
                         <Text style={styles.largeTitle}>Mi Biblioteca</Text>

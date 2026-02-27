@@ -1,5 +1,5 @@
 import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
-import { getAuth, Auth } from 'firebase/auth';
+import { initializeAuth, indexedDBLocalPersistence, getAuth, Auth } from 'firebase/auth';
 import { getFirestore, Firestore } from 'firebase/firestore';
 
 /**
@@ -24,13 +24,18 @@ let authInstance: Auth;
 let firestoreInstance: Firestore;
 
 export function initializeFirebase(): FirebaseApp {
+    const alreadyInitialized = getApps().length > 0;
+
     // Evita reinicializar si ya se llamó (útil en hot reload de desarrollo)
-    if (getApps().length > 0) {
-        app = getApps()[0];
-    } else {
-        app = initializeApp(firebaseConfig);
-    }
-    authInstance = getAuth(app);
+    app = alreadyInitialized ? getApps()[0] : initializeApp(firebaseConfig);
+
+    // initializeAuth con indexedDBLocalPersistence persiste la sesión entre reinicios.
+    // Expo/React Native polyfifica IndexedDB. En hot reload la instancia ya existe,
+    // por lo que usamos getAuth() para recuperarla sin lanzar "already initialized".
+    authInstance = alreadyInitialized
+        ? getAuth(app)
+        : initializeAuth(app, { persistence: indexedDBLocalPersistence });
+
     firestoreInstance = getFirestore(app);
     return app;
 }
