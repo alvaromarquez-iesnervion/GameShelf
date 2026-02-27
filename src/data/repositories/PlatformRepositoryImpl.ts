@@ -8,6 +8,7 @@ import {
     deleteDoc,
     getDocs,
     collection,
+    writeBatch,
 } from 'firebase/firestore';
 import { IPlatformRepository } from '../../domain/interfaces/repositories/IPlatformRepository';
 import { LinkedPlatform } from '../../domain/entities/LinkedPlatform';
@@ -55,17 +56,24 @@ export class PlatformRepositoryImpl implements IPlatformRepository {
     async unlinkPlatform(userId: string, platform: Platform): Promise<void> {
         const docId = PLATFORM_DOC_ID[platform];
 
-        // 1. Eliminar vinculación
+        // 1. Eliminar vinculación de plataforma
         await deleteDoc(doc(this.firestore, 'users', userId, 'platforms', docId));
 
-        // 2. Eliminar juegos de esa plataforma de la biblioteca
+        // 2. Eliminar juegos de esa plataforma de la biblioteca usando writeBatch
+        // (atómico y eficiente — Firestore admite hasta 500 ops por batch)
         const librarySnap = await getDocs(
             collection(this.firestore, 'users', userId, 'library'),
         );
-        for (const gameDoc of librarySnap.docs) {
-            if (gameDoc.data().platform === platform) {
-                await deleteDoc(gameDoc.ref);
-            }
+        const toDelete = librarySnap.docs.filter(
+            d => d.data().platform === platform,
+        );
+
+        // Procesar en lotes de 500 (límite de Firestore por batch)
+        const BATCH_LIMIT = 500;
+        for (let i = 0; i < toDelete.length; i += BATCH_LIMIT) {
+            const batch = writeBatch(this.firestore);
+            toDelete.slice(i, i + BATCH_LIMIT).forEach(d => batch.delete(d.ref));
+            await batch.commit();
         }
     }
 
