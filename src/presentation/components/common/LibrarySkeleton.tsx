@@ -18,7 +18,7 @@ export const LibrarySkeleton: React.FC = () => {
             <View style={styles.grid}>
                 {Array.from({ length: NUM_CARDS }).map((_, i) => (
                     <View key={i} style={styles.cardWrap}>
-                        <Shimmer width="100%" height={0} borderRadius={radius.md} style={styles.cover} />
+                        <Shimmer width="100%" height="100%" borderRadius={radius.md} style={styles.cover} />
                         <Shimmer width="70%" height={11} borderRadius={radius.xs} style={styles.titleShimmer} />
                     </View>
                 ))}
@@ -55,10 +55,8 @@ const styles = StyleSheet.create({
         marginBottom: spacing.sm,
     },
     cover: {
-        // Fill using aspectRatio on cardWrap; shimmer takes full width with height=0
-        // Use a large padding-based height trick is not needed — card has aspectRatio
         width: '100%',
-        height: '80%',
+        height: '100%',
     },
     titleShimmer: {
         marginTop: spacing.xs,

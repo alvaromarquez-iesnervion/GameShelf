@@ -33,6 +33,35 @@ Cumulative log of architectural decisions and key changes. Append new entries at
 
 ## Change Log (most recent first)
 
+### Session 29 — Fix duplicados de juegos de Steam en la biblioteca
+
+**Bug:** Los juegos de Steam aparecían duplicados hasta que el usuario actualizaba manualmente la biblioteca.
+
+**Tres causas identificadas y corregidas:**
+
+1. **`LibraryUseCase.autoSyncLibrary` — concatenación sin deduplicar** (`LibraryUseCase.ts:47-55`)
+   - `Promise.allSettled` sincronizaba todas las plataformas y concatenaba los arrays crudamente.
+   - Fix: deduplicación por `game.getId()` usando un `Map<string, Game>` antes de retornar.
+
+2. **`GameRepositoryImpl.syncLibrary` para Epic devolvía toda la biblioteca** (`GameRepositoryImpl.ts:127-131`)
+   - `syncLibrary(Platform.EPIC_GAMES)` llamaba a `getLibraryGames(userId)`, que incluye juegos de Steam.
+   - Al combinar los resultados de Steam + Epic, los juegos de Steam aparecían dos veces.
+   - Fix: filtrar por `Platform.EPIC_GAMES` antes de retornar (solo juegos propios de Epic).
+
+3. **Carrera de condiciones entre `autoSyncIfNeeded` y `LibraryScreen`** (`LibraryViewModel.ts`, `LibraryScreen.tsx`)
+   - `LibraryScreen` comprobaba `!vm.isLoading` pero el sync usaba `_isSyncing` (flag distinta).
+   - Ventana de tiempo donde `isLoading=false` e `isSyncing=true` permitía lanzar un segundo `loadLibrary` concurrente.
+   - Fix A: `autoSyncIfNeeded` activa `_isLoading = true` antes del primer `await` (cierra la ventana).
+   - Fix B: `LibraryScreen` añade `!vm.isSyncing` a la condición de carga inicial.
+
+**Archivos modificados:**
+- `src/domain/usecases/library/LibraryUseCase.ts`
+- `src/data/repositories/GameRepositoryImpl.ts`
+- `src/presentation/viewmodels/LibraryViewModel.ts`
+- `src/presentation/screens/library/LibraryScreen.tsx`
+
+---
+
 ### Session 28 — Fix hooks crash in PlatformLinkScreen + Home performance
 
 **Issues fixed:**

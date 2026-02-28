@@ -10,8 +10,10 @@ import { Platform } from '../../enums/Platform';
  *
  * - getLibrary: lee desde caché Firestore (rápido, sin red adicional).
  * - syncLibrary: llama a la API de la plataforma y actualiza Firestore (lento).
- * - searchInLibrary: filtrado local sobre los juegos en caché, sin llamada a red.
  * - getLinkedPlatforms: devuelve las plataformas vinculadas del usuario.
+ *
+ * Nota: el filtrado/búsqueda por título se realiza en LibraryViewModel (computed MobX),
+ * evitando llamadas a red innecesarias y aprovechando la reactividad del estado en memoria.
  */
 export class LibraryUseCase implements ILibraryUseCase {
 
@@ -42,22 +44,17 @@ export class LibraryUseCase implements ILibraryUseCase {
             platforms.map(p => this.gameRepository.syncLibrary(userId, p.getPlatform())),
         );
 
-        // 3. Combinar todos los juegos de plataformas exitosas
-        const allGames: Game[] = [];
+        // 3. Combinar todos los juegos de plataformas exitosas, deduplicando por ID
+        const seen = new Map<string, Game>();
         for (const result of results) {
             if (result.status === 'fulfilled') {
-                allGames.push(...result.value);
+                for (const game of result.value) {
+                    seen.set(game.getId(), game);
+                }
             }
         }
 
-        return allGames;
-    }
-
-    async searchInLibrary(userId: string, query: string): Promise<Game[]> {
-        if (!query.trim()) return [];
-        const games = await this.gameRepository.getLibraryGames(userId);
-        const lower = query.toLowerCase();
-        return games.filter(g => g.getTitle().toLowerCase().includes(lower));
+        return Array.from(seen.values());
     }
 
     async getLinkedPlatforms(userId: string): Promise<LinkedPlatform[]> {

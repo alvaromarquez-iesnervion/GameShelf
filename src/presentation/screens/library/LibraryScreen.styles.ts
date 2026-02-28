@@ -54,4 +54,29 @@ export const styles = StyleSheet.create({
     emptyContainer: {
         marginTop: 60,
     },
+    sortBar: {
+        flexDirection: 'row',
+        gap: spacing.sm,
+        marginTop: spacing.md,
+    },
+    sortChip: {
+        paddingHorizontal: spacing.md,
+        paddingVertical: spacing.xs + 2,
+        borderRadius: radius.full,
+        backgroundColor: colors.surface,
+        borderWidth: 1,
+        borderColor: colors.border,
+    },
+    sortChipActive: {
+        backgroundColor: colors.primary,
+        borderColor: colors.primary,
+    },
+    sortChipText: {
+        ...typography.caption,
+        color: colors.textSecondary,
+        fontWeight: '600',
+    },
+    sortChipTextActive: {
+        color: colors.onPrimary,
+    },
 });

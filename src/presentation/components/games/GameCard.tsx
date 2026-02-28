@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { View, TouchableOpacity, StyleSheet, Text, Platform } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -10,21 +10,25 @@ import { Platform as GamePlatform } from '../../../domain/enums/Platform';
 import { PlatformIcon } from '../platforms/PlatformIcon';
 
 interface GameCardProps {
+    gameId: string;
     coverUrl: string;
     portraitCoverUrl?: string;
     title: string;
     platform?: GamePlatform;
-    onPress: () => void;
+    onPress: (id: string) => void;
 }
 
-export const GameCard = React.memo(({ coverUrl, portraitCoverUrl, title, platform, onPress }: GameCardProps) => {
+export const GameCard = React.memo(({ gameId, coverUrl, portraitCoverUrl, title, platform, onPress }: GameCardProps) => {
     const imageSource = portraitCoverUrl || coverUrl;
-    const handlePress = () => {
+
+    // useCallback estabiliza la referencia para que React.memo funcione correctamente.
+    // onPress y gameId son las únicas dependencias reales: si no cambian, no se recrea.
+    const handlePress = useCallback(() => {
         if (Platform.OS !== 'web') {
             Haptics.selectionAsync();
         }
-        onPress();
-    };
+        onPress(gameId);
+    }, [onPress, gameId]);
 
     return (
         <TouchableOpacity 
@@ -65,7 +69,8 @@ const styles = StyleSheet.create({
         aspectRatio: 2/3,
         borderRadius: radius.md,
         overflow: 'hidden',
-        backgroundColor: colors.surface,
+        // Color de fondo visible mientras la imagen carga (actúa como placeholder)
+        backgroundColor: colors.surfaceElevated,
     },
     cover: {
         width: '100%',

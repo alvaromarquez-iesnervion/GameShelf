@@ -1,5 +1,5 @@
-import React, { useEffect, useCallback } from 'react';
-import { View, FlatList, TextInput, TouchableOpacity, Text, RefreshControl, Platform, Dimensions } from 'react-native';
+import React, { useEffect, useCallback, useRef, useState } from 'react';
+import { View, FlatList, TextInput, TouchableOpacity, Text, RefreshControl, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { observer } from 'mobx-react-lite';
@@ -16,19 +16,17 @@ import { ErrorMessage } from '../../components/common/ErrorMessage';
 import { EmptyState } from '../../components/common/EmptyState';
 import { LibrarySkeleton } from '../../components/common/LibrarySkeleton';
 import { Game } from '../../../domain/entities/Game';
+import { SortCriteria } from '../../../domain/enums/SortCriteria';
 import { colors } from '../../theme/colors';
-import { spacing } from '../../theme/spacing';
 import { styles } from './LibraryScreen.styles';
 
 type Nav = NativeStackNavigationProp<LibraryStackParamList, 'Library'>;
 
-// Constantes para getItemLayout (grid 3 columnas)
-const NUM_COLUMNS = 3;
-const SCREEN_WIDTH = Dimensions.get('window').width;
-const HORIZONTAL_PADDING = spacing.lg * 2; // padding left + right del contenedor
-const ITEM_WIDTH = (SCREEN_WIDTH - HORIZONTAL_PADDING - (spacing.lg * (NUM_COLUMNS - 1))) / NUM_COLUMNS;
-const ITEM_HEIGHT = ITEM_WIDTH * (3 / 2) + 28; // aspect 2:3 + título (~24px text + 4px margin)
-const ROW_MARGIN = spacing.lg;
+const SORT_OPTIONS: { label: string; criteria: SortCriteria }[] = [
+    { label: 'A-Z', criteria: SortCriteria.ALPHABETICAL },
+    { label: 'Recientes', criteria: SortCriteria.LAST_PLAYED },
+    { label: 'Tiempo jugado', criteria: SortCriteria.PLAYTIME },
+];
 
 export const LibraryScreen: React.FC = observer(() => {
     const insets = useSafeAreaInsets();
@@ -37,9 +35,35 @@ export const LibraryScreen: React.FC = observer(() => {
     const navigation = useNavigation<Nav>();
     const userId = authVm.currentUser?.getId() ?? '';
 
+    // La carga inicial la gestiona RootNavigator via autoSyncIfNeeded.
+    // La screen solo carga si al montarse no hay ningún dato aún (primera visita
+    // antes de que el autoSync haya terminado) y no hay una carga en curso.
     useEffect(() => {
-        if (userId) vm.loadLibrary(userId);
-    }, [userId, vm]);
+        if (userId && vm.games.length === 0 && !vm.isLoading && !vm.isSyncing) {
+            vm.loadLibrary(userId);
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    // Estado local del input para que la UI sea inmediata.
+    // El VM solo se actualiza tras el debounce para evitar recomputes en cada keystroke.
+    const [searchInput, setSearchInput] = useState(vm.searchQuery);
+    const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    const handleSearchChange = useCallback((query: string) => {
+        setSearchInput(query);
+        if (debounceTimer.current) clearTimeout(debounceTimer.current);
+        debounceTimer.current = setTimeout(() => {
+            vm.setSearchQuery(query);
+        }, 200);
+    }, [vm]);
+
+    // Limpiar timer al desmontar
+    useEffect(() => {
+        return () => {
+            if (debounceTimer.current) clearTimeout(debounceTimer.current);
+        };
+    }, []);
 
     const handleRefresh = useCallback(() => {
         if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -54,17 +78,18 @@ export const LibraryScreen: React.FC = observer(() => {
         navigation.navigate('GameDetail', { gameId });
     }, [navigation]);
 
-    const handleSearchChange = useCallback((query: string) => {
-        vm.setSearchQuery(query);
+    const handleSortChange = useCallback((criteria: SortCriteria) => {
+        vm.setSortCriteria(criteria);
     }, [vm]);
 
     const renderGameCard = useCallback(({ item }: { item: Game }) => (
         <GameCard
+            gameId={item.getId()}
             coverUrl={item.getCoverUrl()}
             portraitCoverUrl={item.getPortraitCoverUrl()}
             title={item.getTitle()}
             platform={item.getPlatform()}
-            onPress={() => handleGamePress(item.getId())}
+            onPress={handleGamePress}
         />
     ), [handleGamePress]);
 
@@ -94,6 +119,40 @@ export const LibraryScreen: React.FC = observer(() => {
 
     return (
         <View style={styles.container}>
+            {/* Header fuera del FlatList: evita que removeClippedSubviews desmonte
+                items visibles por calcular offsets sin contar la altura del header */}
+            <View style={[styles.header, { paddingTop: insets.top + 44 }]}>
+                <Text style={styles.largeTitle}>Mi Biblioteca</Text>
+                <View style={styles.searchContainer}>
+                    <Feather name="search" size={16} color={colors.textTertiary} />
+                    <TextInput
+                        style={styles.searchInput}
+                        placeholder="Buscar en la colección"
+                        placeholderTextColor={colors.textTertiary}
+                        value={searchInput}
+                        onChangeText={handleSearchChange}
+                        clearButtonMode="while-editing"
+                        selectionColor={colors.primary}
+                    />
+                </View>
+                <View style={styles.sortBar}>
+                    {SORT_OPTIONS.map(({ label, criteria }) => {
+                        const isActive = vm.sortCriteria === criteria;
+                        return (
+                            <TouchableOpacity
+                                key={criteria}
+                                style={[styles.sortChip, isActive && styles.sortChipActive]}
+                                onPress={() => handleSortChange(criteria)}
+                                activeOpacity={0.7}
+                            >
+                                <Text style={[styles.sortChipText, isActive && styles.sortChipTextActive]}>
+                                    {label}
+                                </Text>
+                            </TouchableOpacity>
+                        );
+                    })}
+                </View>
+            </View>
             <FlatList
                 data={vm.filteredGames}
                 keyExtractor={(item) => item.getId()}
@@ -104,31 +163,6 @@ export const LibraryScreen: React.FC = observer(() => {
                 maxToRenderPerBatch={6}
                 windowSize={5}
                 removeClippedSubviews={true}
-                getItemLayout={(data, index) => {
-                    const row = Math.floor(index / NUM_COLUMNS);
-                    return {
-                        length: ITEM_HEIGHT,
-                        offset: row * (ITEM_HEIGHT + ROW_MARGIN),
-                        index,
-                    };
-                }}
-                ListHeaderComponent={
-                    <View style={[styles.header, { paddingTop: insets.top + 44 }]}>
-                        <Text style={styles.largeTitle}>Mi Biblioteca</Text>
-                        <View style={styles.searchContainer}>
-                            <Feather name="search" size={16} color={colors.textTertiary} />
-                            <TextInput
-                                style={styles.searchInput}
-                                placeholder="Buscar en la colección"
-                                placeholderTextColor={colors.textTertiary}
-                                value={vm.searchQuery}
-                                onChangeText={handleSearchChange}
-                                clearButtonMode="while-editing"
-                                selectionColor={colors.primary}
-                            />
-                        </View>
-                    </View>
-                }
                 refreshControl={
                     <RefreshControl
                         refreshing={vm.isLoading}

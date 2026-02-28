@@ -126,8 +126,10 @@ export class GameRepositoryImpl implements IGameRepository {
             games = await this.steamApiService.getUserGames(steamId);
         } else if (platform === Platform.EPIC_GAMES) {
             // Epic no tiene API: los juegos ya están en Firestore tras la importación.
-            // syncLibrary para Epic solo devuelve lo que hay en caché.
-            return this.getLibraryGames(userId);
+            // Devolver solo los juegos cuya plataforma sea Epic para no duplicar
+            // juegos de otras plataformas (ej. Steam) que también están en la biblioteca.
+            const allGames = await this.getLibraryGames(userId);
+            return allGames.filter(g => g.getPlatform() === Platform.EPIC_GAMES);
         }
 
         if (games.length === 0) return [];

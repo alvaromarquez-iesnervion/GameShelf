@@ -4,7 +4,7 @@ import { colors } from '../../theme/colors';
 
 interface ShimmerProps {
     width: DimensionValue;
-    height: number;
+    height: DimensionValue;
     borderRadius?: number;
     style?: ViewStyle;
 }

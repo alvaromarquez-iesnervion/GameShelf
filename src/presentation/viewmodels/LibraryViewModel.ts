@@ -5,6 +5,7 @@ import { ILibraryUseCase } from '../../domain/interfaces/usecases/library/ILibra
 import { Game } from '../../domain/entities/Game';
 import { LinkedPlatform } from '../../domain/entities/LinkedPlatform';
 import { Platform } from '../../domain/enums/Platform';
+import { SortCriteria } from '../../domain/enums/SortCriteria';
 import { TYPES } from '../../di/types';
 import { withLoading } from './BaseViewModel';
 
@@ -20,6 +21,7 @@ export class LibraryViewModel {
     private _isLoading: boolean = false;
     private _isSyncing: boolean = false;
     private _searchQuery: string = '';
+    private _sortCriteria: SortCriteria = SortCriteria.ALPHABETICAL;
     private _errorMessage: string | null = null;
     private _hasSynced: boolean = false;
 
@@ -35,13 +37,32 @@ export class LibraryViewModel {
     }
 
     get filteredGames(): Game[] {
-        if (!this._searchQuery.trim()) {
-            return this._games;
+        // 1. Filtrado por búsqueda
+        const query = this._searchQuery.trim().toLowerCase();
+        const filtered = query
+            ? this._games.filter(game => game.getTitle().toLowerCase().includes(query))
+            : [...this._games];
+
+        // 2. Ordenación — slice implícito evita mutar el array original
+        switch (this._sortCriteria) {
+            case SortCriteria.ALPHABETICAL:
+                return filtered.sort((a, b) => a.getTitle().localeCompare(b.getTitle()));
+            case SortCriteria.LAST_PLAYED: {
+                return filtered.sort((a, b) => {
+                    const aTime = a.getLastPlayed()?.getTime() ?? 0;
+                    const bTime = b.getLastPlayed()?.getTime() ?? 0;
+                    return bTime - aTime; // más reciente primero
+                });
+            }
+            case SortCriteria.PLAYTIME:
+                return filtered.sort((a, b) => b.getPlaytime() - a.getPlaytime()); // mayor primero
+            default:
+                return filtered;
         }
-        const query = this._searchQuery.toLowerCase();
-        return this._games.filter(game =>
-            game.getTitle().toLowerCase().includes(query)
-        );
+    }
+
+    get sortCriteria(): SortCriteria {
+        return this._sortCriteria;
     }
 
     get linkedPlatforms(): LinkedPlatform[] {
@@ -94,6 +115,10 @@ export class LibraryViewModel {
         this._searchQuery = '';
     }
 
+    setSortCriteria(criteria: SortCriteria): void {
+        this._sortCriteria = criteria;
+    }
+
     /**
      * Llamado al arrancar la app tras autenticarse.
      * 1. Carga la biblioteca Firestore inmediatamente (respuesta rápida).
@@ -103,35 +128,47 @@ export class LibraryViewModel {
     async autoSyncIfNeeded(userId: string): Promise<void> {
         if (this._hasSynced) return;
 
-        // Carga rápida desde Firestore (lo que ya está guardado)
-        await this.loadLibrary(userId);
-
-        const platforms = this._linkedPlatforms;
-        if (platforms.length === 0) return;
-
-        // Sincronización en background — no bloquea la UI
+        // Marcar hasSynced y activar isLoading antes de cualquier await para
+        // cerrar la ventana de carrera con LibraryScreen (que comprueba isLoading).
         runInAction(() => {
-            this._isSyncing = true;
             this._hasSynced = true;
+            this._isLoading = true;
         });
 
         try {
-            const games = await this.libraryUseCase.autoSyncLibrary(userId);
-            
-            if (games.length > 0) {
-                runInAction(() => {
-                    this._games = games;
-                });
+            // Carga rápida desde Firestore (lo que ya está guardado)
+            const [games, platforms] = await Promise.all([
+                this.libraryUseCase.getLibrary(userId),
+                this.libraryUseCase.getLinkedPlatforms(userId),
+            ]);
+            runInAction(() => {
+                this._games = games;
+                this._linkedPlatforms = platforms;
+                this._isLoading = false;
+            });
+
+            if (platforms.length === 0) return;
+
+            // Sincronización en background — la UI ya muestra la caché
+            runInAction(() => { this._isSyncing = true; });
+
+            try {
+                const synced = await this.libraryUseCase.autoSyncLibrary(userId);
+                if (synced.length > 0) {
+                    runInAction(() => { this._games = synced; });
+                }
+            } catch (error) {
+                // El error de sync no es crítico — la biblioteca en caché sigue disponible
+                const message = error instanceof Error ? error.message : String(error);
+                runInAction(() => { this._errorMessage = message; });
+            } finally {
+                runInAction(() => { this._isSyncing = false; });
             }
         } catch (error) {
-            // El error de sync no es crítico — la biblioteca en caché sigue disponible
             const message = error instanceof Error ? error.message : String(error);
             runInAction(() => {
                 this._errorMessage = message;
-            });
-        } finally {
-            runInAction(() => {
-                this._isSyncing = false;
+                this._isLoading = false;
             });
         }
     }
