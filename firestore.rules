@@ -1,0 +1,12 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Cada usuario solo puede acceder a su propio subtree
+    // Esta regla permite leer y escribir únicamente los documentos bajo users/{userId}/
+    // donde userId coincide con el UID del usuario autenticado
+    match /users/{userId}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}
