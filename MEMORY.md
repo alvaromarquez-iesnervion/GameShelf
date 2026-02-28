@@ -33,6 +33,39 @@ Cumulative log of architectural decisions and key changes. Append new entries at
 
 ## Change Log (most recent first)
 
+### Session 26 — ProtonDB tier typing with union type
+
+**Issue:** `ProtonDbRating` fields `tier` and `trendingTier` accepted any `string` instead of a typed union, allowing invalid values at compile time.
+
+**Fix:**
+- Added `export type ProtonTier = 'platinum' | 'gold' | 'silver' | 'bronze' | 'borked' | 'pending'` to `ProtonDbRating.ts`.
+- Updated `tier` and `trendingTier` fields and constructor params to use `ProtonTier` instead of `string`.
+- Updated getters `getTier()` and `getTrendingTier()` to return `ProtonTier`.
+- Added `toProtonTier(value: string | undefined | null): ProtonTier` validation helper in `ProtonDbServiceImpl.ts` that validates API responses and falls back to `'pending'` for invalid values.
+- Updated `ProtonDbServiceImpl.getCompatibilityRating()` to validate API tier strings before constructing `ProtonDbRating`.
+
+**Files changed:** `ProtonDbRating.ts`, `ProtonDbServiceImpl.ts`, `KNOWN_ISSUES.md`
+
+**Resolved:** KNOWN_ISSUES §5 `[MEDIUM] ProtonDB tier as string instead of union type` — RESOLVED
+
+---
+
+### Session 25 — Firebase auth persistence + New Architecture + FlatList performance
+
+**Firebase auth persistence:**
+- Replaced `getAuth()` with `initializeAuth(indexedDBLocalPersistence)` in `FirebaseConfig.ts` so auth state survives app restarts (Firebase JS SDK v10+ uses indexedDB instead of AsyncStorage).
+- Installed `@react-native-async-storage/async-storage` as a dependency.
+
+**New Architecture:**
+- Set `newArchEnabled: true` in `app.json` to align Expo Go with production builds.
+
+**FlatList performance:**
+- Added perf props to `LibraryScreen` FlatList: `initialNumToRender={6}`, `maxToRenderPerBatch={6}`, `windowSize={5}`, `removeClippedSubviews={true}` to fix slow VirtualizedList warning.
+
+**Files changed:** `FirebaseConfig.ts`, `app.json`, `LibraryScreen.tsx`, `package.json`
+
+---
+
 ### Session 25 — Epic Games detail enrichment + carousel removal + platform icons in library
 
 **Changes:**
@@ -66,15 +99,65 @@ Cumulative log of architectural decisions and key changes. Append new entries at
 - Replaced the coloured dot in `GameCard` with `<PlatformIcon size={16} />`.
   Only renders for `STEAM` and `EPIC_GAMES`; hidden for `UNKNOWN`.
 
+### Session 24 — GameDetail enrichment with Steam metadata, screenshots carousel, player stats
+
+**Steam metadata enrichment:**
+- Added `SteamGameMetadata` DTO: `genres`, `developers`, `publishers`, `releaseDate`, `metacriticScore`, `recommendations`, `screenshots`.
+- Extended `ISteamApiService` with `getSteamAppDetails(appId): Promise<SteamGameMetadata | null>`.
+- Implemented `getSteamAppDetails` in `SteamApiServiceImpl` via Steam Store API; added stub to `MockSteamApiService`.
+- Extended `GameDetail` entity with `steamMetadata` and `protonDbReportCount` fields.
+- Added `ISteamApiService` as 5th dependency in `GameDetailUseCase` (fetched via `Promise.allSettled` so failures don't block other enrichments).
+
+**GameDetailScreen redesign:**
+- FlatList carousel: cover image + up to 9 screenshots with pagination dots.
+- "Mis estadísticas" section: total playtime + last played date (only for owned games).
+- "Linux / Steam Deck" section: ProtonDB rating + trending tier + report count.
+- "Información" section: developer, publisher, release date, genre chips.
+- Metacritic score badge + Steam recommendations count in header meta row.
+
+**Files changed:** `SteamGameMetadata.ts` (new), `ISteamApiService.ts`, `SteamApiServiceImpl.ts`, `MockSteamApiService.ts`, `GameDetail.ts`, `GameDetailUseCase.ts`, `GameDetailScreen.tsx`, `GameDetailScreen.styles.ts`, `container.ts`, `MockDataProvider.ts`
+
+---
+
+### Session 24 — portraitCoverUrl field + expo-image with crossfade transition
+
+**Changes:**
+- Added `portraitCoverUrl` field to `Game` entity (optional string).
+- Updated `FirestoreGameMapper` to map `portraitCoverUrl` bidirectionally.
+- Updated `SteamApiServiceImpl.syncLibrary()` to fetch portrait cover from Steam CDN (`library_600x900.jpg`).
+- Replaced React Native `Image` with `expo-image` in all game card components for `contentFit` and `transition` support.
+- `GameCard` prefers `portraitCoverUrl` over `coverUrl` for better 2:3 grid aspect ratio.
+- Updated `HomeGameCard`, `SearchResultCard`, `WishlistGameCard` to use `expo-image` with 300ms crossfade.
+- Minor adjustments to `GameDetailScreen` and `LibraryScreen` for layout consistency.
+
+**Files changed:** `Game.ts`, `FirestoreGameMapper.ts`, `SteamApiServiceImpl.ts`, `GameCard.tsx`, `HomeGameCard.tsx`, `SearchResultCard.tsx`, `WishlistGameCard.tsx`, `GameDetailScreen.tsx`, `GameDetailScreen.styles.ts`, `LibraryScreen.tsx`, `MockDataProvider.ts`, `MockGameRepository.ts`, `PlatformRepositoryImpl.ts`
+
+---
+
+### Session 24 — Replace BaseViewModel class with standalone `withLoading` function
+
+**Issue:** MobX `makeAutoObservable()` throws at runtime when used on a class that has a superclass (Session 24 initial attempt with abstract `BaseViewModel` class failed).
+
+**Fix:**
+- Replaced abstract `BaseViewModel` class with a plain exported function `withLoading<T>(vm, loadingKey, errorKey, action, rethrow?)` that accepts the ViewModel instance as its first argument.
+- All 8 ViewModels updated: removed `extends BaseViewModel` and `super()` calls, import `withLoading` directly.
+- Behaviour is identical to the class-based approach; MobX constraint is satisfied.
+
+**Files changed:** `BaseViewModel.ts` (refactored), all 8 ViewModel files
+
+**Note:** The original Session 24 entry below documents the first attempt with the abstract class pattern.
+
+---
+
 ### Session 24 — Extract `withLoading` helper — eliminate ViewModel boilerplate
 
 **Issue:** All 8 ViewModels repeated the same ~10-line try/catch/runInAction pattern in every async method (~80 occurrences total). See KNOWN_ISSUES §3.1 [HIGH].
 
 **Fix:**
-- Added `src/presentation/viewmodels/BaseViewModel.ts` — abstract base class with a
+- Added `src/presentation/viewmodels/BaseViewModel.ts` — initially an abstract base class with a
   `protected withLoading<T>(loadingKey, errorKey, action, rethrow?)` generic helper.
   The helper wraps the action with the standard loading/error/finally lifecycle inside `runInAction`.
-- All 8 ViewModels now extend `BaseViewModel` and call `withLoading` in every async method.
+- All 8 ViewModels extended `BaseViewModel` and called `withLoading` in every async method.
 - ViewModels with non-standard loading flags (`_isSyncing`, `_isLinking`, `_isSearching`) pass their
   specific key name — the helper is flag-name–agnostic.
 - `AuthViewModel.checkAuthState` retains a manual try/catch because it silences the error by design.
@@ -84,6 +167,54 @@ Cumulative log of architectural decisions and key changes. Append new entries at
 **Files changed:** `BaseViewModel.ts` (new), all 8 ViewModel files, `PRESENTATION.md`, `KNOWN_ISSUES.md`
 
 **Resolved:** KNOWN_ISSUES §3 `[HIGH] Repeated try/catch/runInAction boilerplate` — RESOLVED
+
+**Note:** This approach was later refactored (see "Replace BaseViewModel class" entry above) due to MobX runtime constraint.
+
+---
+
+### Session 24 — Ownership badge in search + hide wishlist/deals for owned games
+
+**Changes:**
+- Added `isOwned: boolean` and `ownedPlatform: Platform | null` fields to `SearchResult` entity.
+- Updated `HomeUseCase.searchGames()` to cross-reference search results against user library and populate ownership fields.
+- Updated `SearchResultCard`: replaced wishlist button with `PlatformBadge` when game is owned.
+- Updated `SearchScreen`: guard `toggleWishlist` against owned games.
+- Updated `GameDetailScreen`: hide wishlist button and ITAD deals section when game is owned (`platform != UNKNOWN`); `PlatformBadge` only shown when relevant.
+- Fixed `GameRepositoryImpl.getOrCreateGameById()` and `SteamSyncMemoryGameRepository.getOrCreateGameById()` to look up library by `steamAppId` when `gameId` is an ITAD UUID, so owned games return with their real platform instead of `UNKNOWN`.
+- Updated `AGENTS.md` to document that mocks are read-only historical artifacts and must never be modified or referenced when fixing bugs.
+
+**Files changed:** `SearchResult.ts`, `Platform.ts`, `HomeUseCase.ts`, `SearchResultCard.tsx`, `PlatformBadge.tsx`, `SearchScreen.tsx`, `GameDetailScreen.tsx`, `GameRepositoryImpl.ts`, `SteamSyncMemoryGameRepository.ts`, `AGENTS.md`
+
+---
+
+### Session 24 — writeBatch for platform unlink + Epic library-service endpoint
+
+**Platform unlink fix:**
+- Replaced sequential `deleteDoc()` loop in `PlatformRepositoryImpl.unlinkPlatform()` with `writeBatch()`.
+- Fixes issue where games remained in library after unlinking if Firestore permission errors silently stopped the loop mid-deletion.
+- `writeBatch` is atomic and significantly more efficient for bulk deletes.
+
+**Epic Games library fix:**
+- Replaced entitlements endpoint (which only returned internal Fortnite items) with official library-service API (`library-service.live.use1a.on.epicgames.com`).
+- `EpicGamesApiServiceImpl.fetchLibrary()` now uses pagination cursor; `fetchCatalogData()` enriches titles/images in bulk.
+- Removed `EPIC_ENTITLEMENTS_URL`, added `EPIC_LIBRARY_URL` to `ApiConstants.ts`.
+- Applied `React.memo` to all game card components (`GameCard`, `HomeGameCard`, `WishlistGameCard`, `SearchResultCard`).
+- Added safety comment to `babel.config.js` re: class-properties plugin.
+- Removed unused devDependencies: `@types/inversify`, `@types/reflect-metadata`, `@babel/plugin-transform-class-properties`.
+- Removed dead Expo Router scaffold files from `src/app/`.
+
+**Files changed:** `PlatformRepositoryImpl.ts`, `EpicGamesApiServiceImpl.ts`, `ApiConstants.ts`, `GameCard.tsx`, `HomeGameCard.tsx`, `WishlistGameCard.tsx`, `SearchResultCard.tsx`, `babel.config.js`, `package.json`, `package-lock.json`, `src/app/_layout.tsx`, `src/app/index.tsx`
+
+---
+
+### Session 24 — Epic catalog API + entitlement blacklist filter
+
+**Changes:**
+- `EpicGamesApiServiceImpl.fetchLibrary()`: added catalog data resolution via `fetchCatalogData()` to enrich game titles and cover images from Epic's catalog API.
+- Switched entitlement filtering from whitelist (only `EXECUTABLE`) to blacklist (exclude `AUDIENCE`, `ENTITLEMENT`, internal types) so DLCs and full games are both captured.
+- Added separate "Login" and "Paste Auth Code" buttons in Epic link modal for better UX.
+
+**Files changed:** `EpicGamesApiServiceImpl.ts`, `EpicLinkModal.tsx`
 
 ---
 
