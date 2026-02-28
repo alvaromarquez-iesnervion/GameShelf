@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import {
     View, ScrollView, Text, TouchableOpacity,
     Platform,
@@ -106,19 +106,17 @@ export const GameDetailScreen: React.FC = observer(() => {
     useEffect(() => {
         if (userId) vm.loadGameDetail(gameId, userId, steamAppId);
         return () => vm.clear();
-    }, [gameId, userId, steamAppId]);
+    }, [gameId, userId, steamAppId, vm]);
 
-    if (vm.isLoading) return <DetailSkeleton />;
-    if (vm.errorMessage) return <ErrorMessage message={vm.errorMessage} onRetry={() => vm.loadGameDetail(gameId, userId)} />;
-    if (!vm.gameDetail) return null;
+    const handleRetry = useCallback(() => {
+        vm.loadGameDetail(gameId, userId, steamAppId);
+    }, [vm, gameId, userId, steamAppId]);
 
-    const detail = vm.gameDetail.detail;
-    const game = detail.getGame();
-    const isOwned = game.getPlatform() !== GamePlatform.UNKNOWN;
-    const isInWishlist = wishlistVm.isGameInWishlist(game.getId());
-    const steamMeta: SteamGameMetadata | null = detail.getSteamMetadata();
+    const toggleWishlist = useCallback(async () => {
+        if (!vm.gameDetail) return;
+        const game = vm.gameDetail.detail.getGame();
+        const isInWishlist = wishlistVm.isGameInWishlist(game.getId());
 
-    const toggleWishlist = async () => {
         if (Platform.OS !== 'web') {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         }
@@ -132,7 +130,17 @@ export const GameDetailScreen: React.FC = observer(() => {
             );
             await wishlistVm.addToWishlist(userId, newItem);
         }
-    };
+    }, [vm.gameDetail, wishlistVm, userId]);
+
+    if (vm.isLoading) return <DetailSkeleton />;
+    if (vm.errorMessage) return <ErrorMessage message={vm.errorMessage} onRetry={handleRetry} />;
+    if (!vm.gameDetail) return null;
+
+    const detail = vm.gameDetail.detail;
+    const game = detail.getGame();
+    const isOwned = game.getPlatform() !== GamePlatform.UNKNOWN;
+    const isInWishlist = wishlistVm.isGameInWishlist(game.getId());
+    const steamMeta: SteamGameMetadata | null = detail.getSteamMetadata();
 
     const playtime = game.getPlaytime();
     const lastPlayed = game.getLastPlayed();

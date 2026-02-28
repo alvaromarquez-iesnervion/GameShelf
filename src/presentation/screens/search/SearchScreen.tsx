@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { View, FlatList, TextInput, Platform, Text, ScrollView, TouchableOpacity } from 'react-native';
+import { View, FlatList, TextInput, Platform, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { observer } from 'mobx-react-lite';
@@ -19,9 +19,15 @@ import { EmptyState } from '../../components/common/EmptyState';
 import { ListSkeleton } from '../../components/common/ListItemSkeleton';
 import { WishlistItem } from '../../../domain/entities/WishlistItem';
 import { colors } from '../../theme/colors';
+import { spacing } from '../../theme/spacing';
 import { styles } from './SearchScreen.styles';
 
 type Nav = NativeStackNavigationProp<SearchStackParamList, 'Search'>;
+
+// Constantes para getItemLayout
+// SearchResultCard: cover 75px height + margin spacing.sm (8px) * 2 + marginBottom spacing.sm (8px) + borders
+const ITEM_HEIGHT = 75 + (spacing.sm * 2) + StyleSheet.hairlineWidth * 2;
+const ITEM_MARGIN = spacing.sm;
 
 const formatPlaytime = (minutes: number): string => {
     const hours = Math.floor(minutes / 60);
@@ -40,11 +46,23 @@ export const SearchScreen: React.FC = observer(() => {
     const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const [inputText, setInputText] = useState('');
 
-    useFocusEffect(
-        useCallback(() => {
-            if (userId) vm.loadHomeData(userId);
-        }, [userId, vm]),
-    );
+    const handleLoadHomeData = useCallback(() => {
+        if (userId) vm.loadHomeData(userId);
+    }, [userId, vm]);
+
+    const handleGamePress = useCallback((gameId: string, steamAppId?: number) => {
+        navigation.navigate('GameDetail', { gameId, steamAppId });
+    }, [navigation]);
+
+    const handleNavigateSettings = useCallback(() => {
+        navigation.getParent()?.navigate('SettingsTab' as never);
+    }, [navigation]);
+
+    const handleRetry = useCallback(() => {
+        vm.loadHomeData(userId);
+    }, [vm, userId]);
+
+    useFocusEffect(handleLoadHomeData);
 
     const handleSearch = useCallback((text: string) => {
         setInputText(text);
@@ -64,7 +82,7 @@ export const SearchScreen: React.FC = observer(() => {
         }, 400);
     }, [userId, vm]);
 
-    const toggleWishlist = async (result: { getId: () => string; getTitle: () => string; getCoverUrl: () => string; getIsOwned: () => boolean }) => {
+    const toggleWishlist = useCallback(async (result: { getId: () => string; getTitle: () => string; getCoverUrl: () => string; getIsOwned: () => boolean }) => {
         // No permitir modificar wishlist de juegos ya poseídos
         if (result.getIsOwned()) return;
 
@@ -81,7 +99,7 @@ export const SearchScreen: React.FC = observer(() => {
             );
             await wishlistVm.addToWishlist(userId, newItem);
         }
-    };
+    }, [wishlistVm, userId]);
 
     const renderHomeContent = () => (
         <ScrollView
@@ -102,7 +120,7 @@ export const SearchScreen: React.FC = observer(() => {
                                 key={game.getId()}
                                 coverUrl={game.getCoverUrl()}
                                 title={game.getTitle()}
-                                onPress={() => navigation.navigate('GameDetail', { gameId: game.getId() })}
+                                onPress={() => handleGamePress(game.getId())}
                             />
                         ))}
                     </ScrollView>
@@ -123,7 +141,7 @@ export const SearchScreen: React.FC = observer(() => {
                                 coverUrl={game.getCoverUrl()}
                                 title={game.getTitle()}
                                 subtitle={formatPlaytime(game.getPlaytime())}
-                                onPress={() => navigation.navigate('GameDetail', { gameId: game.getId() })}
+                                onPress={() => handleGamePress(game.getId())}
                             />
                         ))}
                     </ScrollView>
@@ -153,7 +171,7 @@ export const SearchScreen: React.FC = observer(() => {
                                 title={game.getTitle()}
                                 subtitle={formatPlaytime(game.getPlaytime())}
                                 size="small"
-                                onPress={() => navigation.navigate('GameDetail', { gameId: game.getId() })}
+                                onPress={() => handleGamePress(game.getId())}
                             />
                         ))}
                     </ScrollView>
@@ -172,7 +190,7 @@ export const SearchScreen: React.FC = observer(() => {
                 <View style={styles.emptyHome}>
                     <TouchableOpacity
                         style={styles.linkButton}
-                        onPress={() => navigation.getParent()?.navigate('SettingsTab' as never)}
+                        onPress={handleNavigateSettings}
                     >
                         <Feather name="link" size={18} color={colors.textPrimary} />
                         <Text style={styles.linkButtonText}>Vincular Steam</Text>
@@ -188,20 +206,22 @@ export const SearchScreen: React.FC = observer(() => {
             keyExtractor={(item) => item.getId()}
             contentContainerStyle={styles.list}
             showsVerticalScrollIndicator={false}
-            renderItem={({ item }) => (
-                <SearchResultCard
-                    coverUrl={item.getCoverUrl()}
-                    title={item.getTitle()}
-                    isInWishlist={wishlistVm.isGameInWishlist(item.getId())}
-                    isOwned={item.getIsOwned()}
-                    ownedPlatform={item.getOwnedPlatform()}
-                    onPress={() => navigation.navigate('GameDetail', {
-                        gameId: item.getId(),
-                        steamAppId: item.getSteamAppId() ?? undefined,
-                    })}
-                    onToggleWishlist={() => toggleWishlist(item)}
-                />
-            )}
+            getItemLayout={(data, index) => ({
+                length: ITEM_HEIGHT + ITEM_MARGIN,
+                offset: index * (ITEM_HEIGHT + ITEM_MARGIN),
+                index,
+            })}
+                renderItem={({ item }) => (
+                    <SearchResultCard
+                        coverUrl={item.getCoverUrl()}
+                        title={item.getTitle()}
+                        isInWishlist={wishlistVm.isGameInWishlist(item.getId())}
+                        isOwned={item.getIsOwned()}
+                        ownedPlatform={item.getOwnedPlatform()}
+                        onPress={() => handleGamePress(item.getId(), item.getSteamAppId() ?? undefined)}
+                        onToggleWishlist={() => toggleWishlist(item)}
+                    />
+                )}
             ListEmptyComponent={
                 <View style={styles.emptyContainer}>
                     <EmptyState message="No encontramos resultados para tu búsqueda." icon="frown" />
@@ -233,7 +253,7 @@ export const SearchScreen: React.FC = observer(() => {
             {vm.isSearching ? (
                 <ListSkeleton />
             ) : vm.errorMessage ? (
-                <ErrorMessage message={vm.errorMessage} onRetry={() => vm.loadHomeData(userId)} />
+                <ErrorMessage message={vm.errorMessage} onRetry={handleRetry} />
             ) : inputText.trim().length > 0 ? (
                 renderSearchResults()
             ) : (

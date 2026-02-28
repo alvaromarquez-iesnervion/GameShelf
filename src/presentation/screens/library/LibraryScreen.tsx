@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { View, FlatList, TextInput, TouchableOpacity, Text, RefreshControl, Platform } from 'react-native';
+import React, { useEffect, useCallback } from 'react';
+import { View, FlatList, TextInput, TouchableOpacity, Text, RefreshControl, Platform, Dimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { observer } from 'mobx-react-lite';
@@ -16,9 +16,18 @@ import { ErrorMessage } from '../../components/common/ErrorMessage';
 import { EmptyState } from '../../components/common/EmptyState';
 import { LibrarySkeleton } from '../../components/common/LibrarySkeleton';
 import { colors } from '../../theme/colors';
+import { spacing } from '../../theme/spacing';
 import { styles } from './LibraryScreen.styles';
 
 type Nav = NativeStackNavigationProp<LibraryStackParamList, 'Library'>;
+
+// Constantes para getItemLayout (grid 3 columnas)
+const NUM_COLUMNS = 3;
+const SCREEN_WIDTH = Dimensions.get('window').width;
+const HORIZONTAL_PADDING = spacing.lg * 2; // padding left + right del contenedor
+const ITEM_WIDTH = (SCREEN_WIDTH - HORIZONTAL_PADDING - (spacing.lg * (NUM_COLUMNS - 1))) / NUM_COLUMNS;
+const ITEM_HEIGHT = ITEM_WIDTH * (3 / 2) + 28; // aspect 2:3 + título (~24px text + 4px margin)
+const ROW_MARGIN = spacing.lg;
 
 export const LibraryScreen: React.FC = observer(() => {
     const insets = useSafeAreaInsets();
@@ -29,7 +38,24 @@ export const LibraryScreen: React.FC = observer(() => {
 
     useEffect(() => {
         if (userId) vm.loadLibrary(userId);
-    }, [userId]);
+    }, [userId, vm]);
+
+    const handleRefresh = useCallback(() => {
+        if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        vm.loadLibrary(userId);
+    }, [vm, userId]);
+
+    const handleNavigateWishlist = useCallback(() => {
+        (navigation as any).navigate('WishlistStack');
+    }, [navigation]);
+
+    const handleGamePress = useCallback((gameId: string) => {
+        navigation.navigate('GameDetail', { gameId });
+    }, [navigation]);
+
+    const handleSearchChange = useCallback((query: string) => {
+        vm.setSearchQuery(query);
+    }, [vm]);
 
     React.useLayoutEffect(() => {
         navigation.setOptions({
@@ -37,26 +63,23 @@ export const LibraryScreen: React.FC = observer(() => {
                 <View style={styles.headerActions}>
                     <TouchableOpacity
                         style={styles.actionCircle}
-                        onPress={() => {
-                            if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                            vm.loadLibrary(userId);
-                        }}
+                        onPress={handleRefresh}
                     >
                         <Feather name="rotate-cw" size={18} color={colors.primary} />
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={styles.actionCircle}
-                        onPress={() => (navigation as any).navigate('WishlistStack')}
+                        onPress={handleNavigateWishlist}
                     >
                         <Feather name="heart" size={18} color={colors.primary} />
                     </TouchableOpacity>
                 </View>
             ),
         });
-    }, [navigation, userId]);
+    }, [navigation, handleRefresh, handleNavigateWishlist]);
 
     if (vm.isLoading && vm.games.length === 0) return <LibrarySkeleton />;
-    if (vm.errorMessage) return <ErrorMessage message={vm.errorMessage} onRetry={() => vm.loadLibrary(userId)} />;
+    if (vm.errorMessage) return <ErrorMessage message={vm.errorMessage} onRetry={handleRefresh} />;
 
     return (
         <View style={styles.container}>
@@ -70,6 +93,14 @@ export const LibraryScreen: React.FC = observer(() => {
                 maxToRenderPerBatch={6}
                 windowSize={5}
                 removeClippedSubviews={true}
+                getItemLayout={(data, index) => {
+                    const row = Math.floor(index / NUM_COLUMNS);
+                    return {
+                        length: ITEM_HEIGHT,
+                        offset: row * (ITEM_HEIGHT + ROW_MARGIN),
+                        index,
+                    };
+                }}
                 ListHeaderComponent={
                     <View style={[styles.header, { paddingTop: insets.top + 44 }]}>
                         <Text style={styles.largeTitle}>Mi Biblioteca</Text>
@@ -80,7 +111,7 @@ export const LibraryScreen: React.FC = observer(() => {
                                 placeholder="Buscar en la colección"
                                 placeholderTextColor={colors.textTertiary}
                                 value={vm.searchQuery}
-                                onChangeText={(q) => vm.setSearchQuery(q)}
+                                onChangeText={handleSearchChange}
                                 clearButtonMode="while-editing"
                                 selectionColor={colors.primary}
                             />
@@ -90,7 +121,7 @@ export const LibraryScreen: React.FC = observer(() => {
                 refreshControl={
                     <RefreshControl
                         refreshing={vm.isLoading}
-                        onRefresh={() => vm.loadLibrary(userId)}
+                        onRefresh={handleRefresh}
                         tintColor={colors.primary}
                     />
                 }
@@ -100,7 +131,7 @@ export const LibraryScreen: React.FC = observer(() => {
                         portraitCoverUrl={item.getPortraitCoverUrl()}
                         title={item.getTitle()}
                         platform={item.getPlatform()}
-                        onPress={() => navigation.navigate('GameDetail', { gameId: item.getId() })}
+                        onPress={() => handleGamePress(item.getId())}
                     />
                 )}
                 ListEmptyComponent={

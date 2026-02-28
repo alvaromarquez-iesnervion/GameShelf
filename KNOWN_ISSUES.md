@@ -21,11 +21,7 @@ This is intentional (documented in `AGENTS.md`), but it breaks consistency: all 
 
 ---
 
-### [HIGH] Business logic in LibraryViewModel.autoSyncIfNeeded()
-**File:** `src/presentation/viewmodels/LibraryViewModel.ts`  
-`autoSyncIfNeeded()` decides which platforms to sync, iterates over them, and merges results. This orchestration logic belongs in `ILibraryUseCase`, not the ViewModel.
 
----
 
 ### [MEDIUM] Transient ViewModels may hold stale data on navigation reuse
 **File:** `src/di/hooks/useInjection.ts`  
@@ -41,11 +37,7 @@ This is intentional (documented in `AGENTS.md`), but it breaks consistency: all 
 
 ## 3. Clean Code / DRY
 
-### [HIGH] N+1 HTTP calls in wishlist enrichment and search
-**File:** `src/domain/usecases/wishlist/WishlistUseCase.ts`, `SearchUseCase.ts`  
-`getWishlist()` fires 2 ITAD HTTP calls per wishlist item (lookupGameId + getPricesForGame). With 20 items that is 40 parallel requests. ITAD supports batch POSTing multiple IDs — use that instead.
 
----
 
 ### [MEDIUM] Navigation stack `screenOptions` duplicated across 4 stacks
 `SearchStack`, `LibraryStack`, `WishlistStack`, and `SettingsStack` all copy the same `headerTransparent` / `BlurView` / `contentStyle` config. Extract a `defaultStackScreenOptions` constant in `src/core/navigation/`.
@@ -59,22 +51,11 @@ All catch blocks cast directly without checking the type. If the thrown value is
 
 ## 4. React / React Native Performance
 
-### [HIGH] FlatList missing `getItemLayout` in Library and Wishlist screens
-**Files:** `LibraryScreen.tsx`, `WishlistScreen.tsx`, `SearchScreen.tsx`  
-Without `getItemLayout`, RN must render all items to compute scroll offsets, causing jank. The library grid uses a fixed 2:3 aspect ratio — `getItemLayout` can be provided precisely.
 
----
 
-### [HIGH] Inline callbacks not memoized in `observer()` screens
-All screens define handlers inline (e.g., `const handleLogin = async () => { ... }`), recreating functions on every MobX-triggered re-render. Wrap handlers passed as props to child components in `useCallback`.
 
----
 
-### [HIGH] Debounce in SearchScreen has no cleanup
-**File:** `src/presentation/screens/search/SearchScreen.tsx`  
-Manual `setTimeout` / `clearTimeout` with `useRef` does not clean up the last pending timeout on component unmount (potential memory leak / state update on unmounted component). Replace with a `useDebounce` hook that handles lifecycle cleanup.
 
----
 
 ### [MEDIUM] `HomeUseCase.getMostPlayed()` syncs library on every call
 **File:** `src/domain/usecases/home/HomeUseCase.ts`  
@@ -100,11 +81,7 @@ Two `useEffect` hooks have incomplete dependency arrays (`authVm`, `libraryVm`, 
 
 ## 6. Maintenance
 
-### [HIGH] `AuthRepositoryImpl.deleteAccount()` deletes docs one by one
-**File:** `src/data/repositories/AuthRepositoryImpl.ts:88-94`  
-Iterates and `await deleteDoc(...)` individually. With 500+ library games this is 500+ sequential Firestore writes. Use `writeBatch()` (already used in `GameRepositoryImpl.syncLibrary()`). Also leaves data in an inconsistent state if a deletion fails mid-loop.
 
----
 
 ### [MEDIUM] `PlatformRepositoryImpl.unlinkPlatform()` downloads all library docs to filter
 **File:** `src/data/repositories/PlatformRepositoryImpl.ts:63`  
@@ -123,6 +100,6 @@ Uses `getDocs(query(...where('gameId','==',...)))` which is O(n). If wishlist do
 | Severity | Open | Top action |
 |---|---|---|
 | Critical | 0 | — |
-| High | 4 | batch ITAD; memoize callbacks; `getItemLayout` in FlatLists; delete account batch write |
+| High | 0 | — |
 | Medium | 8 | nav stack options DRY; `useEffect` deps; error message helper |
 | Low | 0 | — |

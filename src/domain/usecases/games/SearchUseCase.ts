@@ -23,20 +23,17 @@ export class SearchUseCase implements ISearchUseCase {
         const results = await this.gameRepository.searchGames(query);
         if (results.length === 0) return results;
 
-        // Cruza en paralelo con wishlist
-        await Promise.allSettled(
-            results.map(async result => {
-                try {
-                    const inWishlist = await this.wishlistRepository.isInWishlist(
-                        userId,
-                        result.getId(),
-                    );
-                    result.setIsInWishlist(inWishlist);
-                } catch {
-                    // Mantiene el valor por defecto (false) si falla la comprobación
+        // Obtener Set de wishlist IDs en una sola llamada
+        try {
+            const wishlistGameIds = await this.wishlistRepository.getWishlistGameIds(userId);
+            results.forEach(result => {
+                if (wishlistGameIds.has(result.getId())) {
+                    result.setIsInWishlist(true);
                 }
-            }),
-        );
+            });
+        } catch {
+            // Si falla, mantiene el valor por defecto (false) en todos los resultados
+        }
 
         return results;
     }

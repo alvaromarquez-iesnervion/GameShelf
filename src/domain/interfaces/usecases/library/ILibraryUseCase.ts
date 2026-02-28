@@ -10,6 +10,11 @@ export interface ILibraryUseCase {
      * Itera todas las plataformas vinculadas si no se especifica platform.
      */
     syncLibrary(userId: string, platform: Platform): Promise<Game[]>;
+    /**
+     * Sincroniza todas las plataformas vinculadas del usuario.
+     * Usado en autoSync al inicio de sesión. Retorna la biblioteca unificada.
+     */
+    autoSyncLibrary(userId: string): Promise<Game[]>;
     /** Filtra la biblioteca local por título (sin llamada a red). */
     searchInLibrary(userId: string, query: string): Promise<Game[]>;
     /** Devuelve las plataformas vinculadas del usuario. */

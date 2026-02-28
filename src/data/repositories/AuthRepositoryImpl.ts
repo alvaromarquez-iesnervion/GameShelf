@@ -16,6 +16,7 @@ import {
     deleteDoc,
     collection,
     getDocs,
+    writeBatch,
 } from 'firebase/firestore';
 import { IAuthRepository } from '../../domain/interfaces/repositories/IAuthRepository';
 import { User } from '../../domain/entities/User';
@@ -89,13 +90,32 @@ export class AuthRepositoryImpl implements IAuthRepository {
 
         const uid = firebaseUser.uid;
 
-        // 1. Borrar subcolecciones de Firestore
+        // 1. Borrar subcolecciones de Firestore con writeBatch
         const subCollections = ['library', 'wishlist', 'platforms'];
         for (const col of subCollections) {
             const snap = await getDocs(collection(this.firestore, 'users', uid, col));
+            
+            // Firestore batches tienen límite de 500 ops
+            const batches: Promise<void>[] = [];
+            let currentBatch = writeBatch(this.firestore);
+            let opsInBatch = 0;
+
             for (const docSnap of snap.docs) {
-                await deleteDoc(docSnap.ref);
+                currentBatch.delete(docSnap.ref);
+                opsInBatch++;
+                
+                if (opsInBatch === 500) {
+                    batches.push(currentBatch.commit());
+                    currentBatch = writeBatch(this.firestore);
+                    opsInBatch = 0;
+                }
             }
+            
+            if (opsInBatch > 0) {
+                batches.push(currentBatch.commit());
+            }
+            
+            await Promise.all(batches);
         }
 
         // 2. Borrar settings/notifications

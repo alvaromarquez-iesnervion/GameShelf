@@ -46,4 +46,16 @@ export class WishlistRepositoryImpl implements IWishlistRepository {
         const snap = await getDocs(q);
         return !snap.empty;
     }
+
+    async getWishlistGameIds(userId: string): Promise<Set<string>> {
+        const snap = await getDocs(
+            collection(this.firestore, 'users', userId, 'wishlist'),
+        );
+        const gameIds = new Set<string>();
+        snap.docs.forEach(d => {
+            const gameId = d.data().gameId;
+            if (gameId) gameIds.add(gameId);
+        });
+        return gameIds;
+    }
 }

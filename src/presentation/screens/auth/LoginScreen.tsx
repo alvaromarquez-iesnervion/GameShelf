@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
     View,
     Text,
@@ -33,23 +33,35 @@ export const LoginScreen: React.FC = observer(() => {
     const [showPassword, setShowPassword] = useState(false);
     const [focusedField, setFocusedField] = useState<string | null>(null);
 
-    const handleLogin = async () => {
+    const handleLogin = useCallback(async () => {
         if (!email.trim() || !password.trim()) return;
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         await authVm.login(email.trim(), password);
-    };
+    }, [email, password, authVm]);
 
-    const handleNavigateRegister = () => {
+    const handleNavigateRegister = useCallback(() => {
         Haptics.selectionAsync();
         authVm.clearError();
         navigation.navigate('Register');
-    };
+    }, [authVm, navigation]);
 
-    const handleNavigateForgotPassword = () => {
+    const handleNavigateForgotPassword = useCallback(() => {
         Haptics.selectionAsync();
         authVm.clearError();
         navigation.navigate('ForgotPassword');
-    };
+    }, [authVm, navigation]);
+
+    const handleTogglePassword = useCallback(() => {
+        setShowPassword(prev => !prev);
+    }, []);
+
+    const handleFocusField = useCallback((field: string) => {
+        setFocusedField(field);
+    }, []);
+
+    const handleBlurField = useCallback(() => {
+        setFocusedField(null);
+    }, []);
 
     return (
         <KeyboardAvoidingView
@@ -102,8 +114,8 @@ export const LoginScreen: React.FC = observer(() => {
                             autoCapitalize="none"
                             autoCorrect={false}
                             keyboardAppearance="dark"
-                            onFocus={() => setFocusedField('email')}
-                            onBlur={() => setFocusedField(null)}
+                            onFocus={() => handleFocusField('email')}
+                            onBlur={handleBlurField}
                         />
                     </View>
 
@@ -122,12 +134,12 @@ export const LoginScreen: React.FC = observer(() => {
                             onChangeText={setPassword}
                             secureTextEntry={!showPassword}
                             keyboardAppearance="dark"
-                            onFocus={() => setFocusedField('password')}
-                            onBlur={() => setFocusedField(null)}
+                            onFocus={() => handleFocusField('password')}
+                            onBlur={handleBlurField}
                         />
                         <TouchableOpacity
                             style={formStyles.eyeBtn}
-                            onPress={() => setShowPassword(!showPassword)}
+                            onPress={handleTogglePassword}
                             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                         >
                             <Feather

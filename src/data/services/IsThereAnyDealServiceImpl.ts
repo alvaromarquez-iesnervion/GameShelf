@@ -61,6 +61,32 @@ export class IsThereAnyDealServiceImpl implements IIsThereAnyDealService {
         }
     }
 
+    async lookupGameIdsBatch(titles: string[]): Promise<Map<string, string | null>> {
+        const resultMap = new Map<string, string | null>();
+        
+        if (titles.length === 0) return resultMap;
+
+        try {
+            const response = await axios.post(
+                `${ITAD_API_BASE_URL}/games/lookup/v1`,
+                titles,
+                { params: this.authParams },
+            );
+            
+            // Response es un array en el mismo orden que el input
+            const results = response.data ?? [];
+            titles.forEach((title, index) => {
+                const itadId = results[index]?.id ?? null;
+                resultMap.set(title, itadId);
+            });
+        } catch {
+            // En caso de error, marcar todos como null
+            titles.forEach(title => resultMap.set(title, null));
+        }
+
+        return resultMap;
+    }
+
     async lookupGameIdBySteamAppId(steamAppId: string): Promise<string | null> {
         try {
             const response = await axios.post(
@@ -90,6 +116,35 @@ export class IsThereAnyDealServiceImpl implements IIsThereAnyDealService {
         } catch {
             return [];
         }
+    }
+
+    async getPricesForGamesBatch(itadGameIds: string[]): Promise<Map<string, Deal[]>> {
+        const resultMap = new Map<string, Deal[]>();
+        
+        if (itadGameIds.length === 0) return resultMap;
+
+        try {
+            const response = await axios.post(
+                `${ITAD_API_BASE_URL}/games/prices/v2`,
+                itadGameIds,
+                { params: this.authParams },
+            );
+            
+            // Response es un array en el mismo orden que el input
+            const results = response.data ?? [];
+            itadGameIds.forEach((gameId, index) => {
+                const priceData = results[index]?.deals ?? [];
+                const deals = priceData.map((p: ItadPriceEntry, i: number) =>
+                    this.mapItadPriceToDeal(p, i),
+                );
+                resultMap.set(gameId, deals);
+            });
+        } catch {
+            // En caso de error, marcar todos como array vacío
+            itadGameIds.forEach(gameId => resultMap.set(gameId, []));
+        }
+
+        return resultMap;
     }
 
     async getHistoricalLow(itadGameId: string): Promise<Deal | null> {

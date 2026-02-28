@@ -20,23 +20,37 @@ export class WishlistUseCase implements IWishlistUseCase {
     async getWishlist(userId: string): Promise<WishlistItem[]> {
         const items = await this.wishlistRepository.getWishlist(userId);
 
-        // Enriquece en paralelo; errores aislados por item
-        await Promise.allSettled(
-            items.map(async item => {
-                try {
-                    const itadId = await this.itadService.lookupGameId(item.getTitle());
-                    if (!itadId) return;
-                    const deals = await this.itadService.getPricesForGame(itadId);
-                    if (deals.length === 0) return;
-                    const best = deals.reduce((max, d) =>
-                        d.getDiscountPercentage() > max.getDiscountPercentage() ? d : max,
-                    );
-                    item.setBestDealPercentage(best.getDiscountPercentage());
-                } catch {
-                    // El item queda con su bestDealPercentage original (null o caché previa)
-                }
-            }),
-        );
+        if (items.length === 0) return items;
+
+        try {
+            // 1. Batch lookup de todos los títulos
+            const titles = items.map(item => item.getTitle());
+            const titleToItadId = await this.itadService.lookupGameIdsBatch(titles);
+
+            // 2. Recolectar IDs válidos
+            const validItadIds = Array.from(titleToItadId.values()).filter(id => id !== null) as string[];
+            
+            if (validItadIds.length === 0) return items;
+
+            // 3. Batch prices para todos los IDs
+            const itadIdToPrices = await this.itadService.getPricesForGamesBatch(validItadIds);
+
+            // 4. Asignar mejores deals a cada item
+            items.forEach(item => {
+                const itadId = titleToItadId.get(item.getTitle());
+                if (!itadId) return;
+
+                const deals = itadIdToPrices.get(itadId) ?? [];
+                if (deals.length === 0) return;
+
+                const best = deals.reduce((max, d) =>
+                    d.getDiscountPercentage() > max.getDiscountPercentage() ? d : max,
+                );
+                item.setBestDealPercentage(best.getDiscountPercentage());
+            });
+        } catch {
+            // Si falla el batch completo, los items quedan con bestDealPercentage original
+        }
 
         return items;
     }

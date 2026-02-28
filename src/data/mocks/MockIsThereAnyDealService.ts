@@ -53,6 +53,23 @@ export class MockIsThereAnyDealService implements IIsThereAnyDealService {
         return match ? TITLE_TO_ITAD_ID[match] : null;
     }
 
+    async lookupGameIdsBatch(titles: string[]): Promise<Map<string, string | null>> {
+        await simulateDelay(350);
+        const resultMap = new Map<string, string | null>();
+        for (const title of titles) {
+            const key = title.toLowerCase().trim();
+            if (TITLE_TO_ITAD_ID[key]) {
+                resultMap.set(title, TITLE_TO_ITAD_ID[key]);
+            } else {
+                const match = Object.keys(TITLE_TO_ITAD_ID).find(k =>
+                    key.includes(k) || k.includes(key),
+                );
+                resultMap.set(title, match ? TITLE_TO_ITAD_ID[match] : null);
+            }
+        }
+        return resultMap;
+    }
+
     async lookupGameIdBySteamAppId(steamAppId: string): Promise<string | null> {
         await simulateDelay(300);
         return STEAM_APP_TO_ITAD_ID[steamAppId] ?? null;
@@ -61,6 +78,15 @@ export class MockIsThereAnyDealService implements IIsThereAnyDealService {
     async getPricesForGame(itadGameId: string): Promise<Deal[]> {
         await simulateDelay(500);
         return [...(MOCK_DEALS_BY_ITAD_ID[itadGameId] ?? [])];
+    }
+
+    async getPricesForGamesBatch(itadGameIds: string[]): Promise<Map<string, Deal[]>> {
+        await simulateDelay(500);
+        const resultMap = new Map<string, Deal[]>();
+        for (const gameId of itadGameIds) {
+            resultMap.set(gameId, [...(MOCK_DEALS_BY_ITAD_ID[gameId] ?? [])]);
+        }
+        return resultMap;
     }
 
     async getHistoricalLow(itadGameId: string): Promise<Deal | null> {

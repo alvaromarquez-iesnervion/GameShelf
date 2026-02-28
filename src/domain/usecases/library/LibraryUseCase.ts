@@ -28,6 +28,31 @@ export class LibraryUseCase implements ILibraryUseCase {
         return this.gameRepository.syncLibrary(userId, platform);
     }
 
+    async autoSyncLibrary(userId: string): Promise<Game[]> {
+        // 1. Obtener plataformas vinculadas
+        const platforms = await this.platformRepository.getLinkedPlatforms(userId);
+        
+        if (platforms.length === 0) {
+            // Sin plataformas, retornar biblioteca vacía o caché existente
+            return this.gameRepository.getLibraryGames(userId);
+        }
+
+        // 2. Sincronizar todas las plataformas en paralelo con Promise.allSettled
+        const results = await Promise.allSettled(
+            platforms.map(p => this.gameRepository.syncLibrary(userId, p.getPlatform())),
+        );
+
+        // 3. Combinar todos los juegos de plataformas exitosas
+        const allGames: Game[] = [];
+        for (const result of results) {
+            if (result.status === 'fulfilled') {
+                allGames.push(...result.value);
+            }
+        }
+
+        return allGames;
+    }
+
     async searchInLibrary(userId: string, query: string): Promise<Game[]> {
         if (!query.trim()) return [];
         const games = await this.gameRepository.getLibraryGames(userId);

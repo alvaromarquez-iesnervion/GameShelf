@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { View, Text, Switch } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { observer } from 'mobx-react-lite';
@@ -17,7 +17,11 @@ export const NotificationSettingsScreen: React.FC = observer(() => {
 
     useEffect(() => {
         if (userId && !vm.profile) vm.loadProfile(userId);
-    }, [userId]);
+    }, [userId, vm]);
+
+    const handleToggleNotifications = useCallback((value: boolean) => {
+        void vm.updateNotificationPreferences(userId, value);
+    }, [vm, userId]);
 
     if (vm.isLoading && !vm.profile) return <ListSkeleton count={1} />;
 
@@ -38,7 +42,7 @@ export const NotificationSettingsScreen: React.FC = observer(() => {
                     </View>
                     <Switch
                         value={vm.isDealsEnabled}
-                        onValueChange={(value) => { void vm.updateNotificationPreferences(userId, value); }}
+                        onValueChange={handleToggleNotifications}
                         trackColor={{ false: colors.surfaceVariant, true: colors.primary }}
                         thumbColor={colors.onPrimary}
                         ios_backgroundColor={colors.surfaceVariant}

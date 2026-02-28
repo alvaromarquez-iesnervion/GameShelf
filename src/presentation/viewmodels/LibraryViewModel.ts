@@ -98,8 +98,7 @@ export class LibraryViewModel {
      * Llamado al arrancar la app tras autenticarse.
      * 1. Carga la biblioteca Firestore inmediatamente (respuesta rápida).
      * 2. Si el usuario tiene plataformas vinculadas y no hemos sincronizado
-     *    en esta sesión, lanza una sincronización en background para cada
-     *    plataforma y actualiza la UI cuando termina.
+     *    en esta sesión, lanza una sincronización en background y actualiza la UI cuando termina.
      */
     async autoSyncIfNeeded(userId: string): Promise<void> {
         if (this._hasSynced) return;
@@ -117,21 +116,11 @@ export class LibraryViewModel {
         });
 
         try {
-            const results = await Promise.allSettled(
-                platforms.map(p => this.libraryUseCase.syncLibrary(userId, p.getPlatform())),
-            );
-
-            // Reunir todos los juegos de todas las plataformas sincronizadas
-            const allGames: Game[] = [];
-            for (const result of results) {
-                if (result.status === 'fulfilled') {
-                    allGames.push(...result.value);
-                }
-            }
-
-            if (allGames.length > 0) {
+            const games = await this.libraryUseCase.autoSyncLibrary(userId);
+            
+            if (games.length > 0) {
                 runInAction(() => {
-                    this._games = allGames;
+                    this._games = games;
                 });
             }
         } catch (error) {

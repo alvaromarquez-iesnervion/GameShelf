@@ -48,4 +48,9 @@ export class MockWishlistRepository implements IWishlistRepository {
         await simulateDelay(200);
         return this.items.some(i => i.getGameId() === gameId);
     }
+
+    async getWishlistGameIds(_userId: string): Promise<Set<string>> {
+        await simulateDelay(200);
+        return new Set(this.items.map(i => i.getGameId()));
+    }
 }

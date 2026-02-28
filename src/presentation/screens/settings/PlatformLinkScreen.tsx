@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, Alert } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { observer } from 'mobx-react-lite';
@@ -24,11 +24,15 @@ export const PlatformLinkScreen: React.FC = observer(() => {
 
     useEffect(() => {
         if (userId) vm.loadLinkedPlatforms(userId);
-    }, [userId]);
+    }, [userId, vm]);
+
+    const handleRetry = useCallback(() => {
+        vm.loadLinkedPlatforms(userId);
+    }, [vm, userId]);
 
     if (vm.isLinking && vm.linkedPlatforms.length === 0) return <ListSkeleton count={2} />;
     if (vm.errorMessage && !steamModalVisible && !epicModalVisible) {
-        return <ErrorMessage message={vm.errorMessage} onRetry={() => vm.loadLinkedPlatforms(userId)} />;
+        return <ErrorMessage message={vm.errorMessage} onRetry={handleRetry} />;
     }
 
     const steamLinked = vm.isPlatformLinked(PlatformEnum.STEAM);
@@ -36,18 +40,18 @@ export const PlatformLinkScreen: React.FC = observer(() => {
 
     // ─── Handlers Steam ───────────────────────────────────────────────────────
 
-    const handleOpenSteamModal = () => {
+    const handleOpenSteamModal = useCallback(() => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         vm.clearError();
         setSteamModalVisible(true);
-    };
+    }, [vm]);
 
-    const handleCloseSteamModal = () => {
+    const handleCloseSteamModal = useCallback(() => {
         setSteamModalVisible(false);
         vm.clearError();
-    };
+    }, [vm]);
 
-    const handleConfirmSteam = async (input: string) => {
+    const handleConfirmSteam = useCallback(async (input: string) => {
         const trimmed = input.trim();
         if (!trimmed) return;
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -61,38 +65,38 @@ export const PlatformLinkScreen: React.FC = observer(() => {
                 [{ text: 'Entendido' }],
             );
         }
-    };
+    }, [vm, userId]);
 
     // ─── Handlers Epic ────────────────────────────────────────────────────────
 
-    const handleOpenEpicModal = () => {
+    const handleOpenEpicModal = useCallback(() => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         vm.clearError();
         setEpicModalVisible(true);
-    };
+    }, [vm]);
 
-    const handleCloseEpicModal = () => {
+    const handleCloseEpicModal = useCallback(() => {
         setEpicModalVisible(false);
         vm.clearError();
-    };
+    }, [vm]);
 
-    const handleOpenEpicLoginInBrowser = () => {
+    const handleOpenEpicLoginInBrowser = useCallback(() => {
         const { Linking } = require('react-native');
         const url = 'https://www.epicgames.com/login';
         Linking.openURL(url).catch(() => {
             Alert.alert('Error', 'No se pudo abrir el navegador. Visita manualmente:\n\n' + url);
         });
-    };
+    }, []);
 
-    const handleOpenEpicInBrowser = () => {
+    const handleOpenEpicInBrowser = useCallback(() => {
         const { Linking } = require('react-native');
         const url = vm.getEpicAuthUrl();
         Linking.openURL(url).catch(() => {
             Alert.alert('Error', 'No se pudo abrir el navegador. Copia esta URL manualmente:\n\n' + url);
         });
-    };
+    }, [vm]);
 
-    const handleConfirmEpicAuthCode = async (code: string) => {
+    const handleConfirmEpicAuthCode = useCallback(async (code: string) => {
         const trimmed = code.trim();
         if (!trimmed) return;
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -106,9 +110,9 @@ export const PlatformLinkScreen: React.FC = observer(() => {
                 [{ text: 'Entendido' }],
             );
         }
-    };
+    }, [vm, userId]);
 
-    const handleConfirmEpicGdpr = async (json: string) => {
+    const handleConfirmEpicGdpr = useCallback(async (json: string) => {
         const trimmed = json.trim();
         if (!trimmed) return;
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -122,11 +126,11 @@ export const PlatformLinkScreen: React.FC = observer(() => {
                 [{ text: 'Entendido' }],
             );
         }
-    };
+    }, [vm, userId]);
 
     // ─── Handler desvinculación ───────────────────────────────────────────────
 
-    const handleUnlink = (platform: PlatformEnum) => {
+    const handleUnlink = useCallback((platform: PlatformEnum) => {
         const name = platform === PlatformEnum.STEAM ? 'Steam' : 'Epic Games';
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
         Alert.alert(
@@ -137,7 +141,7 @@ export const PlatformLinkScreen: React.FC = observer(() => {
                 { text: 'Desvincular', style: 'destructive', onPress: () => vm.unlinkPlatform(userId, platform) },
             ],
         );
-    };
+    }, [vm, userId]);
 
     // ─── Render ───────────────────────────────────────────────────────────────
 

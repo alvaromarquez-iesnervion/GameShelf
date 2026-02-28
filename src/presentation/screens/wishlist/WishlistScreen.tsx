@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { View, Text, FlatList, RefreshControl } from 'react-native';
+import React, { useEffect, useCallback } from 'react';
+import { View, Text, FlatList, RefreshControl, StyleSheet } from 'react-native';
 import { observer } from 'mobx-react-lite';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -13,9 +13,15 @@ import { ErrorMessage } from '../../components/common/ErrorMessage';
 import { EmptyState } from '../../components/common/EmptyState';
 import { ListSkeleton } from '../../components/common/ListItemSkeleton';
 import { colors } from '../../theme/colors';
+import { spacing } from '../../theme/spacing';
 import { styles } from './WishlistScreen.styles';
 
 type Nav = NativeStackNavigationProp<WishlistStackParamList, 'Wishlist'>;
+
+// Constantes para getItemLayout
+// WishlistGameCard: cover 96px height + marginBottom spacing.sm (8px) + borderWidth (~0.33px)
+const ITEM_HEIGHT = 96 + StyleSheet.hairlineWidth * 2; // cover height + borders
+const ITEM_MARGIN = spacing.sm; // marginBottom
 
 export const WishlistScreen: React.FC = observer(() => {
     const authVm = useInjection<AuthViewModel>(TYPES.AuthViewModel);
@@ -25,10 +31,22 @@ export const WishlistScreen: React.FC = observer(() => {
 
     useEffect(() => {
         if (userId) vm.loadWishlist(userId);
-    }, [userId]);
+    }, [userId, vm]);
+
+    const handleRefresh = useCallback(() => {
+        vm.loadWishlist(userId);
+    }, [vm, userId]);
+
+    const handleGamePress = useCallback((gameId: string) => {
+        navigation.navigate('GameDetail', { gameId });
+    }, [navigation]);
+
+    const handleRemove = useCallback((itemId: string) => {
+        vm.removeFromWishlist(userId, itemId);
+    }, [vm, userId]);
 
     if (vm.isLoading && vm.items.length === 0) return <ListSkeleton />;
-    if (vm.errorMessage) return <ErrorMessage message={vm.errorMessage} onRetry={() => vm.loadWishlist(userId)} />;
+    if (vm.errorMessage) return <ErrorMessage message={vm.errorMessage} onRetry={handleRefresh} />;
 
     return (
         <View style={styles.container}>
@@ -37,10 +55,15 @@ export const WishlistScreen: React.FC = observer(() => {
                 keyExtractor={(item) => item.getId()}
                 contentContainerStyle={styles.listContent}
                 showsVerticalScrollIndicator={false}
+                getItemLayout={(data, index) => ({
+                    length: ITEM_HEIGHT + ITEM_MARGIN,
+                    offset: index * (ITEM_HEIGHT + ITEM_MARGIN),
+                    index,
+                })}
                 refreshControl={
                     <RefreshControl
                         refreshing={vm.isLoading}
-                        onRefresh={() => vm.loadWishlist(userId)}
+                        onRefresh={handleRefresh}
                         tintColor={colors.primary}
                         colors={[colors.primary]}
                     />
@@ -58,8 +81,8 @@ export const WishlistScreen: React.FC = observer(() => {
                         coverUrl={item.getCoverUrl()}
                         title={item.getTitle()}
                         discountPercentage={item.getBestDealPercentage()}
-                        onPress={() => navigation.navigate('GameDetail', { gameId: item.getGameId() })}
-                        onRemove={() => vm.removeFromWishlist(userId, item.getId())}
+                        onPress={() => handleGamePress(item.getGameId())}
+                        onRemove={() => handleRemove(item.getId())}
                     />
                 )}
                 ListEmptyComponent={

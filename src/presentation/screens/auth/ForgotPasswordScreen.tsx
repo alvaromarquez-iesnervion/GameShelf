@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
     View,
     Text,
@@ -32,19 +32,27 @@ export const ForgotPasswordScreen: React.FC = observer(() => {
     const [focusedField, setFocusedField] = useState<string | null>(null);
     const [emailSent, setEmailSent] = useState(false);
 
-    const handleReset = async () => {
+    const handleReset = useCallback(async () => {
         if (!email.trim()) return;
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         const success = await authVm.resetPassword(email.trim());
         if (success) {
             setEmailSent(true);
         }
-    };
+    }, [email, authVm]);
 
-    const handleBack = () => {
+    const handleBack = useCallback(() => {
         authVm.clearError();
         navigation.goBack();
-    };
+    }, [authVm, navigation]);
+
+    const handleFocusField = useCallback((field: string) => {
+        setFocusedField(field);
+    }, []);
+
+    const handleBlurField = useCallback(() => {
+        setFocusedField(null);
+    }, []);
 
     return (
         <KeyboardAvoidingView

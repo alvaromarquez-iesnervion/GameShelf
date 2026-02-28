@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Alert, Platform } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { observer } from 'mobx-react-lite';
@@ -47,17 +47,29 @@ export const SettingsScreen: React.FC = observer(() => {
 
     useEffect(() => {
         if (userId) vm.loadProfile(userId);
-    }, [userId]);
+    }, [userId, vm]);
 
-    if (vm.isLoading && !vm.profile) return <ListSkeleton count={4} />;
+    const handleNavigateProfile = useCallback(() => {
+        navigation.navigate('Profile');
+    }, [navigation]);
 
-    const handleLogout = () => {
+    const handleNavigatePlatformLink = useCallback(() => {
+        navigation.navigate('PlatformLink');
+    }, [navigation]);
+
+    const handleNavigateNotifications = useCallback(() => {
+        navigation.navigate('NotificationSettings');
+    }, [navigation]);
+
+    const handleLogout = useCallback(() => {
         if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
         Alert.alert('Cerrar sesión', '¿Estás seguro?', [
             { text: 'Cancelar', style: 'cancel' },
             { text: 'Salir', style: 'destructive', onPress: () => authVm.logout() },
         ]);
-    };
+    }, [authVm]);
+
+    if (vm.isLoading && !vm.profile) return <ListSkeleton count={4} />;
 
     return (
         <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -69,7 +81,7 @@ export const SettingsScreen: React.FC = observer(() => {
             {vm.profile && (
                 <TouchableOpacity
                     style={styles.profileCard}
-                    onPress={() => navigation.navigate('Profile')}
+                    onPress={handleNavigateProfile}
                 >
                     <View style={styles.avatar}>
                         <Text style={styles.avatarText}>{vm.profile.user.getDisplayName().charAt(0)}</Text>
@@ -88,13 +100,13 @@ export const SettingsScreen: React.FC = observer(() => {
                     <SettingRow
                         label="Plataformas Vinculadas"
                         icon="monitor"
-                        onPress={() => navigation.navigate('PlatformLink')}
+                        onPress={handleNavigatePlatformLink}
                         color={colors.primary}
                     />
                     <SettingRow
                         label="Notificaciones"
                         icon="bell"
-                        onPress={() => navigation.navigate('NotificationSettings')}
+                        onPress={handleNavigateNotifications}
                         color={colors.iosRed}
                         isLast
                     />

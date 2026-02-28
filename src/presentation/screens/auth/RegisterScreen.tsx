@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
     View,
     Text,
@@ -36,7 +36,7 @@ export const RegisterScreen: React.FC = observer(() => {
     const [localError, setLocalError] = useState<string | null>(null);
     const [focusedField, setFocusedField] = useState<string | null>(null);
 
-    const handleRegister = async () => {
+    const handleRegister = useCallback(async () => {
         setLocalError(null);
         if (!email.trim() || !password.trim()) {
             setLocalError('Rellena todos los campos');
@@ -55,13 +55,29 @@ export const RegisterScreen: React.FC = observer(() => {
         }
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         await authVm.register(email.trim(), password);
-    };
+    }, [email, password, confirmPassword, authVm]);
 
-    const handleGoBack = () => {
+    const handleGoBack = useCallback(() => {
         Haptics.selectionAsync();
         authVm.clearError();
         navigation.goBack();
-    };
+    }, [authVm, navigation]);
+
+    const handleTogglePassword = useCallback(() => {
+        setShowPassword(prev => !prev);
+    }, []);
+
+    const handleToggleConfirmPassword = useCallback(() => {
+        setShowConfirmPassword(prev => !prev);
+    }, []);
+
+    const handleFocusField = useCallback((field: string) => {
+        setFocusedField(field);
+    }, []);
+
+    const handleBlurField = useCallback(() => {
+        setFocusedField(null);
+    }, []);
 
     const displayError = localError ?? authVm.errorMessage;
 

@@ -11,10 +11,14 @@ export interface ItadGameInfo {
 export interface IIsThereAnyDealService {
     /** POST /games/lookup/v1 → UUID interno de ITAD. null si no encontrado. */
     lookupGameId(title: string): Promise<string | null>;
+    /** POST /games/lookup/v1 batch → Map de título a UUID. null para no encontrados. */
+    lookupGameIdsBatch(titles: string[]): Promise<Map<string, string | null>>;
     /** POST /games/lookup/id/shop/v1 con shop="steam". Más fiable que por título. */
     lookupGameIdBySteamAppId(steamAppId: string): Promise<string | null>;
     /** POST /games/prices/v2 → lista de ofertas activas por tienda. */
     getPricesForGame(itadGameId: string): Promise<Deal[]>;
+    /** POST /games/prices/v2 batch → Map de itadGameId a lista de ofertas. */
+    getPricesForGamesBatch(itadGameIds: string[]): Promise<Map<string, Deal[]>>;
     /** POST /games/historylow/v1 → precio más bajo histórico. */
     getHistoricalLow(itadGameId: string): Promise<Deal | null>;
     /** GET /games/search/v1?title={query} → búsqueda en catálogo ITAD. */
