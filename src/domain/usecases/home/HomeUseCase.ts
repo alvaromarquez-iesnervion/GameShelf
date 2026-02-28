@@ -27,9 +27,9 @@ export class HomeUseCase implements IHomeUseCase {
     async getRecentlyPlayed(userId: string): Promise<Game[]> {
         const platforms = await this.platformRepository.getLinkedPlatforms(userId);
         const steamPlatform = platforms.find(p => p.getPlatform() === Platform.STEAM);
-        
+
         if (!steamPlatform) return [];
-        
+
         const steamId = steamPlatform.getExternalUserId();
         try {
             return await this.steamService.getRecentlyPlayedGames(steamId);
@@ -39,17 +39,8 @@ export class HomeUseCase implements IHomeUseCase {
     }
 
     async getMostPlayed(userId: string, limit: number = 5): Promise<Game[]> {
-        // Sincronizar con Steam antes de leer para que los datos de playtime estén frescos
-        const platforms = await this.platformRepository.getLinkedPlatforms(userId);
-        const steamPlatform = platforms.find(p => p.getPlatform() === Platform.STEAM);
-        if (steamPlatform) {
-            try {
-                await this.gameRepository.syncLibrary(userId, Platform.STEAM);
-            } catch {
-                // Si falla el sync, continuar con los datos en caché
-            }
-        }
-
+        // Lee directamente de Firestore sin forzar sync.
+        // La sincronización es responsabilidad de LibraryViewModel (botón ↻ en Biblioteca).
         const games = await this.gameRepository.getLibraryGames(userId);
         return games
             .filter(g => g.getPlaytime() > 0)

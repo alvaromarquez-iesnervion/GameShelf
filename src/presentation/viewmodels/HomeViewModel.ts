@@ -7,6 +7,10 @@ import { SearchResult } from '../../domain/entities/SearchResult';
 import { TYPES } from '../../di/types';
 import { withLoading } from './BaseViewModel';
 
+// Tiempo mínimo entre recargas del home (5 minutos).
+// Cambiar de pestaña y volver dentro de este tiempo usa los datos en memoria.
+const HOME_CACHE_TTL_MS = 5 * 60 * 1000;
+
 @injectable()
 export class HomeViewModel {
     private _popularGames: Game[] = [];
@@ -17,6 +21,7 @@ export class HomeViewModel {
     private _isLoadingHome: boolean = false;
     private _isSearching: boolean = false;
     private _errorMessage: string | null = null;
+    private _lastHomeLoadTime: number = 0;
 
     constructor(
         @inject(TYPES.IHomeUseCase)
@@ -35,6 +40,9 @@ export class HomeViewModel {
     get errorMessage(): string | null { return this._errorMessage; }
 
     async loadHomeData(userId: string): Promise<void> {
+        // Si los datos son recientes, no relanzar los fetches
+        if (Date.now() - this._lastHomeLoadTime < HOME_CACHE_TTL_MS) return;
+
         await withLoading(this, '_isLoadingHome', '_errorMessage', async () => {
             const [popular, recent, mostPlayed] = await Promise.all([
                 this.homeUseCase.getPopularGames(10),
@@ -45,8 +53,15 @@ export class HomeViewModel {
                 this._popularGames = popular;
                 this._recentlyPlayed = recent;
                 this._mostPlayed = mostPlayed;
+                this._lastHomeLoadTime = Date.now();
             });
         });
+    }
+
+    /** Fuerza una recarga completa ignorando el TTL. Útil tras sincronizar la biblioteca. */
+    async forceReloadHomeData(userId: string): Promise<void> {
+        runInAction(() => { this._lastHomeLoadTime = 0; });
+        await this.loadHomeData(userId);
     }
 
     async loadPopularGames(): Promise<void> {

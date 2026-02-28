@@ -30,14 +30,6 @@ export const PlatformLinkScreen: React.FC = observer(() => {
         vm.loadLinkedPlatforms(userId);
     }, [vm, userId]);
 
-    if (vm.isLinking && vm.linkedPlatforms.length === 0) return <ListSkeleton count={2} />;
-    if (vm.errorMessage && !steamModalVisible && !epicModalVisible) {
-        return <ErrorMessage message={vm.errorMessage} onRetry={handleRetry} />;
-    }
-
-    const steamLinked = vm.isPlatformLinked(PlatformEnum.STEAM);
-    const epicLinked = vm.isPlatformLinked(PlatformEnum.EPIC_GAMES);
-
     // ─── Handlers Steam ───────────────────────────────────────────────────────
 
     const handleOpenSteamModal = useCallback(() => {
@@ -142,6 +134,16 @@ export const PlatformLinkScreen: React.FC = observer(() => {
             ],
         );
     }, [vm, userId]);
+
+    // ─── Early returns (después de todos los hooks) ───────────────────────────
+
+    if (vm.isLinking && vm.linkedPlatforms.length === 0) return <ListSkeleton count={2} />;
+    if (vm.errorMessage && !steamModalVisible && !epicModalVisible) {
+        return <ErrorMessage message={vm.errorMessage} onRetry={handleRetry} />;
+    }
+
+    const steamLinked = vm.isPlatformLinked(PlatformEnum.STEAM);
+    const epicLinked = vm.isPlatformLinked(PlatformEnum.EPIC_GAMES);
 
     // ─── Render ───────────────────────────────────────────────────────────────
 

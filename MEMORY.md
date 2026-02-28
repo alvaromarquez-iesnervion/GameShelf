@@ -27,11 +27,38 @@ Cumulative log of architectural decisions and key changes. Append new entries at
 | Epic Auth Code flow (unofficial internal API) | Uses `launcherAppClient2` credentials (publicly known via EpicResearch). Violates Epic ToS. GDPR import is the stable fallback. |
 | `Buffer.from()` not available in React Native | Hermes/JSC has no `Buffer`. Use `btoa()` instead. See KNOWN_ISSUES §4.3. |
 | Global `/games/*` Firestore collection is obsolete | `getGameById` now reads from `users/{uid}/library/{gameId}`. Nothing writes to the global collection. |
-| `HomeUseCase.getMostPlayed()` syncs with Steam first | Ensures data is fresh before sorting by playtime. Known performance concern: see KNOWN_ISSUES §8.2. |
+| Home screen uses TTL cache (5 min) in HomeViewModel | `loadHomeData()` skips fetches if data is less than 5 min old. `getMostPlayed()` reads Firestore only (no sync). Library sync stays in LibraryViewModel. |
 
 ---
 
 ## Change Log (most recent first)
+
+### Session 28 — Fix hooks crash in PlatformLinkScreen + Home performance
+
+**Issues fixed:**
+
+1. **[BUG] "Rendered fewer hooks than expected" en PlatformLinkScreen**
+   - Causa: Session 27 añadió 10 `useCallback` hooks *después* de dos early returns condicionales (`vm.isLinking` y `vm.errorMessage`). En el primer render (carga), los early returns se disparaban con 6 hooks. Al completar la carga, el early return dejaba de dispararse y React intentaba 16 hooks → crash.
+   - Fix: Todos los `useCallback` movidos por encima de los early returns. Los early returns ahora están justo antes del `return JSX`. Sin cambios de lógica.
+   - **Regla:** En componentes `observer()`, todos los hooks deben declararse antes de cualquier `return` condicional.
+
+2. **[PERF] Home carga lenta en cada cambio de pestaña**
+   - Causa A: `HomeUseCase.getMostPlayed()` llamaba `await syncLibrary(userId, Platform.STEAM)` en cada load (introducido en Session 16), bloqueando todo el `Promise.all` durante 1–5 segundos.
+   - Fix A: Eliminado `syncLibrary()` de `getMostPlayed()`. Ahora solo lee de Firestore con `getLibraryGames()`. La sincronización sigue siendo responsabilidad de `LibraryViewModel` (botón ↻ en Biblioteca).
+   - Causa B: `useFocusEffect` relanzaba 3+ llamadas de red en cada cambio de pestaña sin caché.
+   - Fix B: `HomeViewModel` añade TTL de 5 minutos (`HOME_CACHE_TTL_MS`). `loadHomeData()` retorna inmediatamente si los datos son recientes. `forceReloadHomeData()` ignora el TTL para uso futuro post-sync.
+
+**Architectural decision updated:**
+- Eliminada decisión §30: "`HomeUseCase.getMostPlayed()` syncs with Steam first" — el sync fue removido.
+- KNOWN_ISSUES §4 `[MEDIUM] HomeUseCase.getMostPlayed() syncs library on every call` — RESOLVED.
+
+**Files changed:**
+- `src/presentation/screens/settings/PlatformLinkScreen.tsx` (reorder hooks)
+- `src/domain/usecases/home/HomeUseCase.ts` (remove syncLibrary from getMostPlayed)
+- `src/presentation/viewmodels/HomeViewModel.ts` (TTL cache, forceReloadHomeData)
+- `KNOWN_ISSUES.md` (removed resolved issue, updated summary)
+
+---
 
 ### Session 27 — Resolved all HIGH priority issues from KNOWN_ISSUES.md
 

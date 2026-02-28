@@ -57,11 +57,7 @@ All catch blocks cast directly without checking the type. If the thrown value is
 
 
 
-### [MEDIUM] `HomeUseCase.getMostPlayed()` syncs library on every call
-**File:** `src/domain/usecases/home/HomeUseCase.ts`  
-A full Steam library sync (1–3 seconds) is triggered every time the Home screen loads. The sync should be a separate explicit operation, not implicit in a data-read method.
 
----
 
 ### [MEDIUM] `useEffect` missing dependencies in RootNavigator
 **File:** `src/core/navigation/RootNavigator.tsx`  
@@ -101,5 +97,5 @@ Uses `getDocs(query(...where('gameId','==',...)))` which is O(n). If wishlist do
 |---|---|---|
 | Critical | 0 | — |
 | High | 0 | — |
-| Medium | 8 | nav stack options DRY; `useEffect` deps; error message helper |
+| Medium | 7 | nav stack options DRY; `useEffect` deps; error message helper |
 | Low | 0 | — |
