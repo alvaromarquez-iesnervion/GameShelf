@@ -2,7 +2,7 @@ import 'reflect-metadata';
 import { injectable } from 'inversify';
 import axios from 'axios';
 import { IProtonDbService } from '../../domain/interfaces/services/IProtonDbService';
-import { ProtonDbRating } from '../../domain/entities/ProtonDbRating';
+import { ProtonDbRating, ProtonTier } from '../../domain/entities/ProtonDbRating';
 import { PROTONDB_API_URL, BROWSER_HEADERS } from '../config/ApiConstants';
 
 // Estructura real de la respuesta de ProtonDB
@@ -13,6 +13,18 @@ interface ProtonDbResponse {
     total: number;
     score: number;
     confidence: string;
+}
+
+/**
+ * Valida que un string sea un ProtonTier válido.
+ * Si no lo es, devuelve 'pending' como fallback.
+ */
+function toProtonTier(value: string | undefined | null): ProtonTier {
+    const validTiers: ProtonTier[] = ['platinum', 'gold', 'silver', 'bronze', 'borked', 'pending'];
+    if (value && validTiers.includes(value as ProtonTier)) {
+        return value as ProtonTier;
+    }
+    return 'pending';
 }
 
 /**
@@ -41,9 +53,11 @@ export class ProtonDbServiceImpl implements IProtonDbService {
                 },
             );
             const data = response.data;
+            const tier = toProtonTier(data.tier);
+            const trendingTier = toProtonTier(data.trendingTier ?? data.tier);
             return new ProtonDbRating(
-                data.tier ?? 'pending',
-                data.trendingTier ?? data.tier ?? 'pending',
+                tier,
+                trendingTier,
                 data.total ?? 0,
             );
         } catch {

@@ -90,15 +90,6 @@ Two `useEffect` hooks have incomplete dependency arrays (`authVm`, `libraryVm`, 
 
 ## 5. TypeScript
 
-### [MEDIUM] ProtonDB tier as `string` instead of union type
-**File:** `src/domain/entities/ProtonDbRating.ts`  
-`tier` and `trendingTier` accept any string. Should be:
-```ts
-type ProtonTier = 'platinum' | 'gold' | 'silver' | 'bronze' | 'borked' | 'pending';
-```
-
----
-
 ### [MEDIUM] `ItadGameInfo` coupled to its service interface
 **File:** `src/domain/interfaces/services/IIsThereAnyDealService.ts`  
 `ItadGameInfo` is used in `GameRepositoryImpl`, `SteamSyncMemoryGameRepository`, and `EpicGamesApiServiceImpl`. It should live in `domain/dtos/` or `domain/entities/`, not be exported from a service interface file.
@@ -133,5 +124,5 @@ Uses `getDocs(query(...where('gameId','==',...)))` which is O(n). If wishlist do
 |---|---|---|
 | Critical | 0 | — |
 | High | 4 | batch ITAD; memoize callbacks; `getItemLayout` in FlatLists; delete account batch write |
-| Medium | 9 | union types for ProtonDB tiers; nav stack options DRY; `useEffect` deps |
+| Medium | 8 | nav stack options DRY; `useEffect` deps; error message helper |
 | Low | 0 | — |
