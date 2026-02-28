@@ -240,7 +240,7 @@ Root cause: `@babel/plugin-transform-class-properties` crashes Hermes with read-
 
 ---
 
-### Session 24 — Firebase Security Rules version-controlled + KNOWN_ISSUES cleanup
+### Session 24 — Firebase Security Rules version-controlled + KNOWN_ISSUES cleanup (both LOW issues resolved)
 
 **Issue LOW #1 resolved:** `@types/inversify` and `@types/reflect-metadata` were never installed (issue was outdated). Removed from KNOWN_ISSUES.md.
 
@@ -251,7 +251,9 @@ Root cause: `@babel/plugin-transform-class-properties` crashes Hermes with read-
 
 Rules can now be deployed with `firebase deploy --only firestore:rules`.
 
-**Updated:** `KNOWN_ISSUES.md` — removed LOW #1, updated LOW #2 description to reflect local version control. Summary table updated: LOW count reduced from 2 to 1.
+**Issue LOW #3 resolved:** `@babel/plugin-transform-class-properties` was never installed (issue was outdated). Removed from KNOWN_ISSUES.md.
+
+**Updated:** `KNOWN_ISSUES.md` — removed all 3 LOW issues (2 were false positives, 1 was improved with local version control). Summary table updated: **LOW count reduced from 2 to 0**. All LOW severity issues are now resolved.
 
 ---
 

@@ -127,11 +127,6 @@ Uses `getDocs(query(...where('gameId','==',...)))` which is O(n). If wishlist do
 
 ---
 
-### [LOW] `@babel/plugin-transform-class-properties` in devDependencies but must never be used
-Creates confusion for new contributors who might add it to `babel.config.js` (causing a Hermes crash). Either remove from `package.json` or add a comment explaining why it is present but unused.
-
----
-
 ## Summary
 
 | Severity | Open | Top action |
@@ -139,4 +134,4 @@ Creates confusion for new contributors who might add it to `babel.config.js` (ca
 | Critical | 0 | — |
 | High | 4 | batch ITAD; memoize callbacks; `getItemLayout` in FlatLists; delete account batch write |
 | Medium | 9 | union types for ProtonDB tiers; nav stack options DRY; `useEffect` deps |
-| Low | 1 | Babel plugin comment |
+| Low | 0 | — |
