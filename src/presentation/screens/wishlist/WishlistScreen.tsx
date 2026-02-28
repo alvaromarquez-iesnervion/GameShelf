@@ -1,5 +1,5 @@
 import React, { useEffect, useCallback } from 'react';
-import { View, Text, FlatList, RefreshControl, StyleSheet } from 'react-native';
+import { View, Text, FlatList, RefreshControl, StyleSheet, ListRenderItemInfo } from 'react-native';
 import { observer } from 'mobx-react-lite';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -8,6 +8,7 @@ import { AuthViewModel } from '../../viewmodels/AuthViewModel';
 import { WishlistViewModel } from '../../viewmodels/WishlistViewModel';
 import { TYPES } from '../../../di/types';
 import { WishlistStackParamList } from '../../../core/navigation/navigationTypes';
+import { WishlistItem } from '../../../domain/entities/WishlistItem';
 import { WishlistGameCard } from '../../components/games/WishlistGameCard';
 import { ErrorMessage } from '../../components/common/ErrorMessage';
 import { EmptyState } from '../../components/common/EmptyState';
@@ -45,6 +46,16 @@ export const WishlistScreen: React.FC = observer(() => {
         vm.removeFromWishlist(userId, itemId);
     }, [vm, userId]);
 
+    const renderWishlistCard = useCallback(({ item }: ListRenderItemInfo<WishlistItem>) => (
+        <WishlistGameCard
+            coverUrl={item.getCoverUrl()}
+            title={item.getTitle()}
+            discountPercentage={item.getBestDealPercentage()}
+            onPress={() => handleGamePress(item.getGameId())}
+            onRemove={() => handleRemove(item.getId())}
+        />
+    ), [handleGamePress, handleRemove]);
+
     if (vm.isLoading && vm.items.length === 0) return <ListSkeleton />;
     if (vm.errorMessage) return <ErrorMessage message={vm.errorMessage} onRetry={handleRefresh} />;
 
@@ -55,6 +66,10 @@ export const WishlistScreen: React.FC = observer(() => {
                 keyExtractor={(item) => item.getId()}
                 contentContainerStyle={styles.listContent}
                 showsVerticalScrollIndicator={false}
+                initialNumToRender={10}
+                maxToRenderPerBatch={5}
+                windowSize={5}
+                removeClippedSubviews={true}
                 getItemLayout={(data, index) => ({
                     length: ITEM_HEIGHT + ITEM_MARGIN,
                     offset: index * (ITEM_HEIGHT + ITEM_MARGIN),
@@ -76,15 +91,7 @@ export const WishlistScreen: React.FC = observer(() => {
                         )}
                     </View>
                 }
-                renderItem={({ item }) => (
-                    <WishlistGameCard
-                        coverUrl={item.getCoverUrl()}
-                        title={item.getTitle()}
-                        discountPercentage={item.getBestDealPercentage()}
-                        onPress={() => handleGamePress(item.getGameId())}
-                        onRemove={() => handleRemove(item.getId())}
-                    />
-                )}
+                renderItem={renderWishlistCard}
                 ListEmptyComponent={
                     <EmptyState
                         message="Tu lista de deseos está vacía. Agrega juegos desde la búsqueda."

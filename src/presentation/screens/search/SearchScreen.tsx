@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { View, FlatList, TextInput, Platform, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, FlatList, TextInput, Platform, Text, ScrollView, TouchableOpacity, StyleSheet, ListRenderItemInfo } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { observer } from 'mobx-react-lite';
@@ -12,6 +12,7 @@ import { HomeViewModel } from '../../viewmodels/HomeViewModel';
 import { WishlistViewModel } from '../../viewmodels/WishlistViewModel';
 import { TYPES } from '../../../di/types';
 import { SearchStackParamList } from '../../../core/navigation/navigationTypes';
+import { SearchResult } from '../../../domain/entities/SearchResult';
 import { SearchResultCard } from '../../components/games/SearchResultCard';
 import { HomeGameCard } from '../../components/games/HomeGameCard';
 import { ErrorMessage } from '../../components/common/ErrorMessage';
@@ -100,6 +101,18 @@ export const SearchScreen: React.FC = observer(() => {
             await wishlistVm.addToWishlist(userId, newItem);
         }
     }, [wishlistVm, userId]);
+
+    const renderSearchResult = useCallback(({ item }: ListRenderItemInfo<SearchResult>) => (
+        <SearchResultCard
+            coverUrl={item.getCoverUrl()}
+            title={item.getTitle()}
+            isInWishlist={wishlistVm.isGameInWishlist(item.getId())}
+            isOwned={item.getIsOwned()}
+            ownedPlatform={item.getOwnedPlatform()}
+            onPress={() => handleGamePress(item.getId(), item.getSteamAppId() ?? undefined)}
+            onToggleWishlist={() => toggleWishlist(item)}
+        />
+    ), [handleGamePress, toggleWishlist, wishlistVm]);
 
     const renderHomeContent = () => (
         <ScrollView
@@ -206,22 +219,16 @@ export const SearchScreen: React.FC = observer(() => {
             keyExtractor={(item) => item.getId()}
             contentContainerStyle={styles.list}
             showsVerticalScrollIndicator={false}
+            initialNumToRender={10}
+            maxToRenderPerBatch={5}
+            windowSize={5}
+            removeClippedSubviews={true}
             getItemLayout={(data, index) => ({
                 length: ITEM_HEIGHT + ITEM_MARGIN,
                 offset: index * (ITEM_HEIGHT + ITEM_MARGIN),
                 index,
             })}
-                renderItem={({ item }) => (
-                    <SearchResultCard
-                        coverUrl={item.getCoverUrl()}
-                        title={item.getTitle()}
-                        isInWishlist={wishlistVm.isGameInWishlist(item.getId())}
-                        isOwned={item.getIsOwned()}
-                        ownedPlatform={item.getOwnedPlatform()}
-                        onPress={() => handleGamePress(item.getId(), item.getSteamAppId() ?? undefined)}
-                        onToggleWishlist={() => toggleWishlist(item)}
-                    />
-                )}
+            renderItem={renderSearchResult}
             ListEmptyComponent={
                 <View style={styles.emptyContainer}>
                     <EmptyState message="No encontramos resultados para tu búsqueda." icon="frown" />

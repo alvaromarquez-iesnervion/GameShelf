@@ -15,6 +15,7 @@ import { GameCard } from '../../components/games/GameCard';
 import { ErrorMessage } from '../../components/common/ErrorMessage';
 import { EmptyState } from '../../components/common/EmptyState';
 import { LibrarySkeleton } from '../../components/common/LibrarySkeleton';
+import { Game } from '../../../domain/entities/Game';
 import { colors } from '../../theme/colors';
 import { spacing } from '../../theme/spacing';
 import { styles } from './LibraryScreen.styles';
@@ -56,6 +57,16 @@ export const LibraryScreen: React.FC = observer(() => {
     const handleSearchChange = useCallback((query: string) => {
         vm.setSearchQuery(query);
     }, [vm]);
+
+    const renderGameCard = useCallback(({ item }: { item: Game }) => (
+        <GameCard
+            coverUrl={item.getCoverUrl()}
+            portraitCoverUrl={item.getPortraitCoverUrl()}
+            title={item.getTitle()}
+            platform={item.getPlatform()}
+            onPress={() => handleGamePress(item.getId())}
+        />
+    ), [handleGamePress]);
 
     React.useLayoutEffect(() => {
         navigation.setOptions({
@@ -125,15 +136,7 @@ export const LibraryScreen: React.FC = observer(() => {
                         tintColor={colors.primary}
                     />
                 }
-                renderItem={({ item }) => (
-                    <GameCard
-                        coverUrl={item.getCoverUrl()}
-                        portraitCoverUrl={item.getPortraitCoverUrl()}
-                        title={item.getTitle()}
-                        platform={item.getPlatform()}
-                        onPress={() => handleGamePress(item.getId())}
-                    />
-                )}
+                renderItem={renderGameCard}
                 ListEmptyComponent={
                     <View style={styles.emptyContainer}>
                         <EmptyState
