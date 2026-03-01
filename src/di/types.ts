@@ -29,6 +29,7 @@ export const TYPES = {
     IIsThereAnyDealService: Symbol.for('IIsThereAnyDealService'),
 
     // Casos de uso
+    IAuthUseCase: Symbol.for('IAuthUseCase'),
     ILibraryUseCase: Symbol.for('ILibraryUseCase'),
     IWishlistUseCase: Symbol.for('IWishlistUseCase'),
     IGameDetailUseCase: Symbol.for('IGameDetailUseCase'),

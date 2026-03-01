@@ -18,6 +18,7 @@ import { IHowLongToBeatService } from '../domain/interfaces/services/IHowLongToB
 import { IIsThereAnyDealService } from '../domain/interfaces/services/IIsThereAnyDealService';
 
 // ─── Interfaces (use cases) ───────────────────────────────────────────────────
+import { IAuthUseCase } from '../domain/interfaces/usecases/auth/IAuthUseCase';
 import { ILibraryUseCase } from '../domain/interfaces/usecases/library/ILibraryUseCase';
 import { IWishlistUseCase } from '../domain/interfaces/usecases/wishlist/IWishlistUseCase';
 import { IGameDetailUseCase } from '../domain/interfaces/usecases/games/IGameDetailUseCase';
@@ -63,6 +64,7 @@ import { MemoryPlatformRepository } from '../data/repositories/MemoryPlatformRep
 import { SteamSyncMemoryGameRepository } from '../data/repositories/SteamSyncMemoryGameRepository';
 
 // ─── Use case implementations ─────────────────────────────────────────────────
+import { AuthUseCase } from '../domain/usecases/auth/AuthUseCase';
 import { LibraryUseCase } from '../domain/usecases/library/LibraryUseCase';
 import { WishlistUseCase } from '../domain/usecases/wishlist/WishlistUseCase';
 import { GameDetailUseCase } from '../domain/usecases/games/GameDetailUseCase';
@@ -154,6 +156,10 @@ container.bind<IIsThereAnyDealService>(TYPES.IIsThereAnyDealService).to(IsThereA
 // Los use cases son TypeScript puro (sin decoradores Inversify). Se construyen
 // manualmente con toDynamicValue para respetar la regla de que domain/ no
 // debe conocer ningún detalle de infraestructura (di/, inversify, reflect-metadata).
+container.bind<IAuthUseCase>(TYPES.IAuthUseCase).toDynamicValue(ctx => new AuthUseCase(
+    ctx.get<IAuthRepository>(TYPES.IAuthRepository),
+    ctx.get<IGuestSessionRepository>(TYPES.IGuestSessionRepository),
+)).inSingletonScope();
 container.bind<ILibraryUseCase>(TYPES.ILibraryUseCase).toDynamicValue(ctx => new LibraryUseCase(
     ctx.get<IGameRepository>(TYPES.IGameRepository),
     ctx.get<IPlatformRepository>(TYPES.IPlatformRepository),
