@@ -1,7 +1,7 @@
-import { StyleSheet } from 'react-native';
+import { Platform, StyleSheet } from 'react-native';
 import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
-import { spacing, radius } from '../../theme/spacing';
+import { spacing, radius, layout } from '../../theme/spacing';
 
 export const styles = StyleSheet.create({
     container: {
@@ -10,7 +10,9 @@ export const styles = StyleSheet.create({
     },
     header: {
         paddingHorizontal: spacing.lg,
-        paddingTop: spacing.xxl,
+        paddingTop: Platform.OS === 'ios'
+            ? layout.safeAreaPaddingTop.ios
+            : layout.safeAreaPaddingTop.android,
         marginBottom: spacing.lg,
     },
     largeTitle: {
