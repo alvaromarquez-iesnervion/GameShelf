@@ -10,7 +10,6 @@ import { AuthViewModel } from '../../viewmodels/AuthViewModel';
 import { SettingsViewModel } from '../../viewmodels/SettingsViewModel';
 import { TYPES } from '../../../di/types';
 import { SettingsStackParamList } from '../../../core/navigation/navigationTypes';
-import { PlatformBadge } from '../../components/platforms/PlatformBadge';
 import { ListSkeleton } from '../../components/common/ListItemSkeleton';
 import { colors } from '../../theme/colors';
 import { styles } from './SettingsScreen.styles';

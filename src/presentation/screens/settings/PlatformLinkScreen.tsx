@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, Alert } from 'react-native';
+import { View, Text, Alert, Linking } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { observer } from 'mobx-react-lite';
 import { useInjection } from '../../../di/hooks/useInjection';
@@ -73,7 +73,6 @@ export const PlatformLinkScreen: React.FC = observer(() => {
     }, [vm]);
 
     const handleOpenEpicLoginInBrowser = useCallback(() => {
-        const { Linking } = require('react-native');
         const url = 'https://www.epicgames.com/login';
         Linking.openURL(url).catch(() => {
             Alert.alert('Error', 'No se pudo abrir el navegador. Visita manualmente:\n\n' + url);
@@ -81,7 +80,6 @@ export const PlatformLinkScreen: React.FC = observer(() => {
     }, []);
 
     const handleOpenEpicInBrowser = useCallback(() => {
-        const { Linking } = require('react-native');
         const url = vm.getEpicAuthUrl();
         Linking.openURL(url).catch(() => {
             Alert.alert('Error', 'No se pudo abrir el navegador. Copia esta URL manualmente:\n\n' + url);
@@ -170,7 +168,7 @@ export const PlatformLinkScreen: React.FC = observer(() => {
             </View>
 
             <Text style={styles.footnote}>
-                Steam requiere que tu perfil y la sección "Estado del juego" sean públicos para sincronizar tu biblioteca.
+                Steam requiere que tu perfil y la sección &quot;Estado del juego&quot; sean públicos para sincronizar tu biblioteca.
             </Text>
 
             <SteamLinkModal

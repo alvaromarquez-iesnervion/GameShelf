@@ -4,15 +4,14 @@ import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { RootNavigator } from './navigation/RootNavigator';
 import { colors } from '../presentation/theme/colors';
+// Importar container para que se ejecuten todos los bindings
+import '../di/container';
+import { initializeFirebase } from '../data/config/FirebaseConfig';
 
 // Inicializar Firebase antes del contenedor DI (solo si las variables están configuradas)
-import { initializeFirebase } from '../data/config/FirebaseConfig';
 if (process.env['EXPO_PUBLIC_FIREBASE_API_KEY']) {
     initializeFirebase();
 }
-
-// Importar container para que se ejecuten todos los bindings
-import '../di/container';
 
 const darkTheme = {
     ...DefaultTheme,

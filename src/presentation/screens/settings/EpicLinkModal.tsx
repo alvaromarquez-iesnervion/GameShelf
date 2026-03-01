@@ -203,7 +203,7 @@ const AuthCodeForm: React.FC<AuthCodeFormProps> = ({
             <Text style={[styles.openBrowserText, styles.openBrowserTextSecondary]}>Obtener código de autorización</Text>
         </TouchableOpacity>
 
-        <Text style={styles.modalLabel}>Pega el valor de "authorizationCode" aquí:</Text>
+        <Text style={styles.modalLabel}>Pega el valor de &quot;authorizationCode&quot; aquí:</Text>
         <TextInput
             style={formStyles.modalInput}
             placeholder="Ej: a1b2c3d4e5f6..."

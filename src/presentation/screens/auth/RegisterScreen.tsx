@@ -63,22 +63,6 @@ export const RegisterScreen: React.FC = observer(() => {
         navigation.goBack();
     }, [authVm, navigation]);
 
-    const handleTogglePassword = useCallback(() => {
-        setShowPassword(prev => !prev);
-    }, []);
-
-    const handleToggleConfirmPassword = useCallback(() => {
-        setShowConfirmPassword(prev => !prev);
-    }, []);
-
-    const handleFocusField = useCallback((field: string) => {
-        setFocusedField(field);
-    }, []);
-
-    const handleBlurField = useCallback(() => {
-        setFocusedField(null);
-    }, []);
-
     const displayError = localError ?? authVm.errorMessage;
 
     return (

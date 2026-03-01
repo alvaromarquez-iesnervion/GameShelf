@@ -15,6 +15,7 @@ export const RootNavigator: React.FC = observer(() => {
 
     useEffect(() => {
         authVm.checkAuthState();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     // Disparar carga de biblioteca una sola vez cuando el usuario pasa a autenticado
@@ -32,6 +33,7 @@ export const RootNavigator: React.FC = observer(() => {
             syncStartedRef.current = false;
             libraryVm.resetSyncState();
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [authVm.isAuthenticated]);
 
     if (authVm.isLoading && !authVm.isAuthenticated) {

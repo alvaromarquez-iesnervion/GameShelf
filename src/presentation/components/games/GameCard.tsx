@@ -59,6 +59,7 @@ export const GameCard = React.memo(({ gameId, coverUrl, portraitCoverUrl, title,
         </TouchableOpacity>
     );
 });
+GameCard.displayName = 'GameCard';
 
 const styles = StyleSheet.create({
     card: {

@@ -63,6 +63,16 @@ import { GuestAwareGameRepository } from '../data/repositories/GuestAwareGameRep
 import { MemoryPlatformRepository } from '../data/repositories/MemoryPlatformRepository';
 import { SteamSyncMemoryGameRepository } from '../data/repositories/SteamSyncMemoryGameRepository';
 
+// ─── ViewModels ───────────────────────────────────────────────────────────────
+import { AuthViewModel } from '../presentation/viewmodels/AuthViewModel';
+import { LibraryViewModel } from '../presentation/viewmodels/LibraryViewModel';
+import { WishlistViewModel } from '../presentation/viewmodels/WishlistViewModel';
+import { HomeViewModel } from '../presentation/viewmodels/HomeViewModel';
+import { GameDetailViewModel } from '../presentation/viewmodels/GameDetailViewModel';
+import { SearchViewModel } from '../presentation/viewmodels/SearchViewModel';
+import { PlatformLinkViewModel } from '../presentation/viewmodels/PlatformLinkViewModel';
+import { SettingsViewModel } from '../presentation/viewmodels/SettingsViewModel';
+
 // ─── Use case implementations ─────────────────────────────────────────────────
 import { AuthUseCase } from '../domain/usecases/auth/AuthUseCase';
 import { LibraryUseCase } from '../domain/usecases/library/LibraryUseCase';
@@ -201,22 +211,12 @@ container.bind<IHomeUseCase>(TYPES.IHomeUseCase).toDynamicValue(ctx => new HomeU
 // ─── ViewModels ───────────────────────────────────────────────────────────────
 
 // Singleton ViewModels (estado global compartido)
-import { AuthViewModel } from '../presentation/viewmodels/AuthViewModel';
-import { LibraryViewModel } from '../presentation/viewmodels/LibraryViewModel';
-import { WishlistViewModel } from '../presentation/viewmodels/WishlistViewModel';
-import { HomeViewModel } from '../presentation/viewmodels/HomeViewModel';
-
 container.bind<AuthViewModel>(TYPES.AuthViewModel).to(AuthViewModel).inSingletonScope();
 container.bind<LibraryViewModel>(TYPES.LibraryViewModel).to(LibraryViewModel).inSingletonScope();
 container.bind<WishlistViewModel>(TYPES.WishlistViewModel).to(WishlistViewModel).inSingletonScope();
 container.bind<HomeViewModel>(TYPES.HomeViewModel).to(HomeViewModel).inSingletonScope();
 
 // Transient ViewModels (instancia nueva por pantalla)
-import { GameDetailViewModel } from '../presentation/viewmodels/GameDetailViewModel';
-import { SearchViewModel } from '../presentation/viewmodels/SearchViewModel';
-import { PlatformLinkViewModel } from '../presentation/viewmodels/PlatformLinkViewModel';
-import { SettingsViewModel } from '../presentation/viewmodels/SettingsViewModel';
-
 container.bind<GameDetailViewModel>(TYPES.GameDetailViewModel).to(GameDetailViewModel).inTransientScope();
 container.bind<SearchViewModel>(TYPES.SearchViewModel).to(SearchViewModel).inTransientScope();
 container.bind<PlatformLinkViewModel>(TYPES.PlatformLinkViewModel).to(PlatformLinkViewModel).inTransientScope();

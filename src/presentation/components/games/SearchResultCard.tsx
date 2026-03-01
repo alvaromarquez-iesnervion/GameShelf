@@ -56,6 +56,7 @@ export const SearchResultCard = React.memo(({ coverUrl, title, isInWishlist, isO
         </TouchableOpacity>
     );
 });
+SearchResultCard.displayName = 'SearchResultCard';
 
 const styles = StyleSheet.create({
     card: {

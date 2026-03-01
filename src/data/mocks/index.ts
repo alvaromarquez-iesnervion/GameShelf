@@ -8,7 +8,6 @@
  */
 
 // Datos semilla
-export { simulateDelay } from './MockDataProvider';
 export * from './MockDataProvider';
 
 // Repositorios mock

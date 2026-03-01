@@ -3,7 +3,6 @@ import { injectable, inject } from 'inversify';
 import {
     Firestore,
     doc,
-    getDoc,
     setDoc,
     deleteDoc,
     getDocs,

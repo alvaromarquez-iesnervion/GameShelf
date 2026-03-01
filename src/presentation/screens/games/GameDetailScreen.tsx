@@ -84,6 +84,7 @@ const HeroImage = React.memo(({ coverUrl, portraitCoverUrl }: HeroImageProps) =>
         </View>
     );
 });
+HeroImage.displayName = 'HeroImage';
 
 interface InfoRowProps { label: string; value: string }
 const InfoRow = ({ label, value }: InfoRowProps) => (

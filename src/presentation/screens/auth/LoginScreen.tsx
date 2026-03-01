@@ -19,7 +19,6 @@ import { AuthViewModel } from '../../viewmodels/AuthViewModel';
 import { TYPES } from '../../../di/types';
 import { AuthStackParamList } from '../../../core/navigation/navigationTypes';
 import { colors } from '../../theme/colors';
-import { sharedStyles } from '../../styles/shared';
 import { formStyles, authBgGradientPrimary, primaryGradientColors } from '../../styles/forms';
 import { styles } from './LoginScreen.styles';
 

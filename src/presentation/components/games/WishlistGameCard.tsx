@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, TouchableOpacity, StyleSheet, Text, Platform } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, Text } from 'react-native';
 import { Image } from 'expo-image';
 import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -131,3 +131,4 @@ const styles = StyleSheet.create({
         borderRadius: radius.sm,
     },
 });
+WishlistGameCard.displayName = 'WishlistGameCard';

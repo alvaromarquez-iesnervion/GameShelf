@@ -43,6 +43,7 @@ export const HomeGameCard = React.memo(({ coverUrl, title, subtitle, onPress, si
         </TouchableOpacity>
     );
 });
+HomeGameCard.displayName = 'HomeGameCard';
 
 const styles = StyleSheet.create({
     card: {

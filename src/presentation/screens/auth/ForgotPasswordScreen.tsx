@@ -46,14 +46,6 @@ export const ForgotPasswordScreen: React.FC = observer(() => {
         navigation.goBack();
     }, [authVm, navigation]);
 
-    const handleFocusField = useCallback((field: string) => {
-        setFocusedField(field);
-    }, []);
-
-    const handleBlurField = useCallback(() => {
-        setFocusedField(null);
-    }, []);
-
     return (
         <KeyboardAvoidingView
             style={styles.container}
