@@ -33,4 +33,19 @@ export const styles = StyleSheet.create({
         ...typography.small,
         color: colors.primary,
     },
+    dividerRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: spacing.md,
+        gap: spacing.sm,
+    },
+    dividerLine: {
+        flex: 1,
+        height: 1,
+        backgroundColor: colors.border,
+    },
+    dividerText: {
+        ...typography.small,
+        color: colors.textTertiary,
+    },
 });

@@ -51,6 +51,11 @@ export const LoginScreen: React.FC = observer(() => {
         navigation.navigate('ForgotPassword');
     }, [authVm, navigation]);
 
+    const handleContinueAsGuest = useCallback(async () => {
+        Haptics.selectionAsync();
+        await authVm.continueAsGuest();
+    }, [authVm]);
+
     const handleTogglePassword = useCallback(() => {
         setShowPassword(prev => !prev);
     }, []);
@@ -180,6 +185,23 @@ export const LoginScreen: React.FC = observer(() => {
                         </LinearGradient>
                     </TouchableOpacity>
                 </View>
+
+                {/* Divisor */}
+                <View style={styles.dividerRow}>
+                    <View style={styles.dividerLine} />
+                    <Text style={styles.dividerText}>o</Text>
+                    <View style={styles.dividerLine} />
+                </View>
+
+                {/* Continuar sin cuenta */}
+                <TouchableOpacity
+                    style={[formStyles.secondaryBtn, authVm.isLoading && formStyles.primaryBtnDisabled]}
+                    onPress={handleContinueAsGuest}
+                    disabled={authVm.isLoading}
+                    activeOpacity={0.8}
+                >
+                    <Text style={formStyles.secondaryBtnText}>Continuar sin cuenta</Text>
+                </TouchableOpacity>
 
                 {/* Footer */}
                 <TouchableOpacity style={formStyles.footerLink} onPress={handleNavigateRegister} activeOpacity={0.7}>

@@ -46,8 +46,8 @@ export const SettingsScreen: React.FC = observer(() => {
     const userId = authVm.currentUser?.getId() ?? '';
 
     useEffect(() => {
-        if (userId) vm.loadProfile(userId);
-    }, [userId, vm]);
+        if (userId && !authVm.isGuest) vm.loadProfile(userId);
+    }, [userId, vm, authVm.isGuest]);
 
     const handleNavigateProfile = useCallback(() => {
         navigation.navigate('Profile');
@@ -63,13 +63,24 @@ export const SettingsScreen: React.FC = observer(() => {
 
     const handleLogout = useCallback(() => {
         if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-        Alert.alert('Cerrar sesión', '¿Estás seguro?', [
-            { text: 'Cancelar', style: 'cancel' },
-            { text: 'Salir', style: 'destructive', onPress: () => authVm.logout() },
-        ]);
+        if (authVm.isGuest) {
+            Alert.alert(
+                'Borrar datos de invitado',
+                'Se eliminarán todos los datos locales (biblioteca y plataformas vinculadas). ¿Continuar?',
+                [
+                    { text: 'Cancelar', style: 'cancel' },
+                    { text: 'Borrar todo', style: 'destructive', onPress: () => authVm.logout() },
+                ],
+            );
+        } else {
+            Alert.alert('Cerrar sesión', '¿Estás seguro?', [
+                { text: 'Cancelar', style: 'cancel' },
+                { text: 'Salir', style: 'destructive', onPress: () => authVm.logout() },
+            ]);
+        }
     }, [authVm]);
 
-    if (vm.isLoading && !vm.profile) return <ListSkeleton count={4} />;
+    if (vm.isLoading && !vm.profile && !authVm.isGuest) return <ListSkeleton count={4} />;
 
     return (
         <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -78,7 +89,17 @@ export const SettingsScreen: React.FC = observer(() => {
             </View>
 
             {/* Profile Section */}
-            {vm.profile && (
+            {authVm.isGuest ? (
+                <View style={styles.profileCard}>
+                    <View style={[styles.avatar, { backgroundColor: colors.surfaceElevated }]}>
+                        <Feather name="user" size={24} color={colors.textTertiary} />
+                    </View>
+                    <View style={styles.profileInfo}>
+                        <Text style={styles.profileName}>Invitado</Text>
+                        <Text style={styles.profileEmail}>Sin cuenta</Text>
+                    </View>
+                </View>
+            ) : vm.profile ? (
                 <TouchableOpacity
                     style={styles.profileCard}
                     onPress={handleNavigateProfile}
@@ -92,7 +113,7 @@ export const SettingsScreen: React.FC = observer(() => {
                     </View>
                     <Feather name="chevron-right" size={20} color={colors.textTertiary} />
                 </TouchableOpacity>
-            )}
+            ) : null}
 
             <View style={styles.section}>
                 <Text style={styles.sectionTitle}>CUENTA Y PLATAFORMAS</Text>
@@ -102,14 +123,17 @@ export const SettingsScreen: React.FC = observer(() => {
                         icon="monitor"
                         onPress={handleNavigatePlatformLink}
                         color={colors.primary}
+                        isLast={authVm.isGuest}
                     />
-                    <SettingRow
-                        label="Notificaciones"
-                        icon="bell"
-                        onPress={handleNavigateNotifications}
-                        color={colors.iosRed}
-                        isLast
-                    />
+                    {!authVm.isGuest && (
+                        <SettingRow
+                            label="Notificaciones"
+                            icon="bell"
+                            onPress={handleNavigateNotifications}
+                            color={colors.iosRed}
+                            isLast
+                        />
+                    )}
                 </View>
             </View>
 
@@ -133,7 +157,9 @@ export const SettingsScreen: React.FC = observer(() => {
             </View>
 
             <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
-                <Text style={styles.logoutText}>Cerrar Sesión</Text>
+                <Text style={styles.logoutText}>
+                    {authVm.isGuest ? 'Borrar datos y salir' : 'Cerrar Sesión'}
+                </Text>
             </TouchableOpacity>
 
             <Text style={styles.version}>GameShelf v1.0.0 (OLED Edition)</Text>

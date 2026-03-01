@@ -4,6 +4,7 @@ import { TYPES } from './types';
 
 // ─── Interfaces (repositorios) ────────────────────────────────────────────────
 import { IAuthRepository } from '../domain/interfaces/repositories/IAuthRepository';
+import { IGuestSessionRepository } from '../domain/interfaces/repositories/IGuestSessionRepository';
 import { IGameRepository } from '../domain/interfaces/repositories/IGameRepository';
 import { IWishlistRepository } from '../domain/interfaces/repositories/IWishlistRepository';
 import { IPlatformRepository } from '../domain/interfaces/repositories/IPlatformRepository';
@@ -50,6 +51,13 @@ import { getFirebaseAuth, getFirebaseFirestore } from '../data/config/FirebaseCo
 import { Auth } from 'firebase/auth';
 import { Firestore } from 'firebase/firestore';
 
+// ─── Implementaciones para modo invitado (AsyncStorage) ───────────────────────
+import { GuestSessionRepository } from '../data/repositories/GuestSessionRepository';
+import { LocalPlatformRepository } from '../data/repositories/LocalPlatformRepository';
+import { LocalGameRepository } from '../data/repositories/LocalGameRepository';
+import { GuestAwarePlatformRepository } from '../data/repositories/GuestAwarePlatformRepository';
+import { GuestAwareGameRepository } from '../data/repositories/GuestAwareGameRepository';
+
 // ─── Repositorios en memoria (fallback Steam sin Firebase) ───────────────────
 import { MemoryPlatformRepository } from '../data/repositories/MemoryPlatformRepository';
 import { SteamSyncMemoryGameRepository } from '../data/repositories/SteamSyncMemoryGameRepository';
@@ -94,6 +102,9 @@ if (useFirebase) {
     container.bind<Firestore>(TYPES.Firestore).toDynamicValue(() => getFirebaseFirestore());
 }
 
+// ─── Sesión de invitado (siempre disponible — AsyncStorage local) ─────────────
+container.bind<IGuestSessionRepository>(TYPES.IGuestSessionRepository).to(GuestSessionRepository);
+
 // ─── Auth, Wishlist, Notificaciones ──────────────────────────────────────────
 if (useFirebase) {
     container.bind<IAuthRepository>(TYPES.IAuthRepository).to(AuthRepositoryImpl);
@@ -107,10 +118,19 @@ if (useFirebase) {
 
 // ─── Steam / Juegos / Plataformas ─────────────────────────────────────────────
 if (useFirebase && useRealSteam) {
-    // MODO PRODUCCIÓN: todo persiste en Firestore
+    // MODO PRODUCCIÓN: todo persiste en Firestore (usuarios autenticados)
+    // Los wrappers guest-aware enrutan a AsyncStorage cuando userId empieza por "guest_"
     container.bind<ISteamApiService>(TYPES.ISteamApiService).to(SteamApiServiceImpl);
-    container.bind<IPlatformRepository>(TYPES.IPlatformRepository).to(PlatformRepositoryImpl);
-    container.bind<IGameRepository>(TYPES.IGameRepository).to(GameRepositoryImpl);
+
+    // Concretas Firestore bajo símbolos privados
+    container.bind<IPlatformRepository>(TYPES.FirestorePlatformRepository).to(PlatformRepositoryImpl);
+    container.bind<IGameRepository>(TYPES.FirestoreGameRepository).to(GameRepositoryImpl);
+    // Concretas AsyncStorage bajo símbolos privados
+    container.bind<IPlatformRepository>(TYPES.LocalPlatformRepository).to(LocalPlatformRepository);
+    container.bind<IGameRepository>(TYPES.LocalGameRepository).to(LocalGameRepository);
+    // Públicos apuntan a wrappers enrutadores
+    container.bind<IPlatformRepository>(TYPES.IPlatformRepository).to(GuestAwarePlatformRepository);
+    container.bind<IGameRepository>(TYPES.IGameRepository).to(GuestAwareGameRepository);
 } else if (useRealSteam) {
     // MODO STEAM SIN FIREBASE: Steam real, datos en memoria
     container.bind<ISteamApiService>(TYPES.ISteamApiService).to(SteamApiServiceImpl);

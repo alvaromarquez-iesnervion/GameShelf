@@ -2,15 +2,18 @@ import 'reflect-metadata';
 import { injectable, inject } from 'inversify';
 import { makeAutoObservable, runInAction } from 'mobx';
 import { IAuthRepository } from '../../domain/interfaces/repositories/IAuthRepository';
+import { IGuestSessionRepository } from '../../domain/interfaces/repositories/IGuestSessionRepository';
 import { User } from '../../domain/entities/User';
 import { TYPES } from '../../di/types';
 import { withLoading } from './BaseViewModel';
+import { isGuestUser } from '../../core/utils/guestUtils';
 
 /**
  * ViewModel para autenticación.
  *
  * Singleton: estado de auth global compartido en toda la app.
  * Depende directamente de IAuthRepository (sin use case intermedio).
+ * Para sesiones de invitado, delega en IGuestSessionRepository (AsyncStorage).
  */
 @injectable()
 export class AuthViewModel {
@@ -21,6 +24,8 @@ export class AuthViewModel {
     constructor(
         @inject(TYPES.IAuthRepository)
         private readonly authRepository: IAuthRepository,
+        @inject(TYPES.IGuestSessionRepository)
+        private readonly guestSessionRepository: IGuestSessionRepository,
     ) {
         makeAutoObservable(this);
     }
@@ -41,9 +46,15 @@ export class AuthViewModel {
         return this._errorMessage;
     }
 
+    get isGuest(): boolean {
+        return this._currentUser != null && isGuestUser(this._currentUser.getId());
+    }
+
     async login(email: string, password: string): Promise<boolean> {
         const result = await withLoading(this, '_isLoading', '_errorMessage', async () => {
             const user = await this.authRepository.login(email, password);
+            // Limpiar sesión de invitado obsoleta si existía
+            await this.guestSessionRepository.clearGuestSession();
             runInAction(() => {
                 this._currentUser = user;
             });
@@ -55,6 +66,8 @@ export class AuthViewModel {
     async register(email: string, password: string): Promise<boolean> {
         const result = await withLoading(this, '_isLoading', '_errorMessage', async () => {
             const user = await this.authRepository.register(email, password);
+            // Limpiar sesión de invitado obsoleta si existía
+            await this.guestSessionRepository.clearGuestSession();
             runInAction(() => {
                 this._currentUser = user;
             });
@@ -65,7 +78,11 @@ export class AuthViewModel {
 
     async logout(): Promise<void> {
         await withLoading(this, '_isLoading', '_errorMessage', async () => {
-            await this.authRepository.logout();
+            if (this.isGuest) {
+                await this.guestSessionRepository.clearGuestSession();
+            } else {
+                await this.authRepository.logout();
+            }
             runInAction(() => {
                 this._currentUser = null;
             });
@@ -80,9 +97,23 @@ export class AuthViewModel {
         });
         try {
             const user = await this.authRepository.getCurrentUser();
-            runInAction(() => {
-                this._currentUser = user;
-            });
+            if (user) {
+                runInAction(() => {
+                    this._currentUser = user;
+                });
+                return;
+            }
+            // Firebase no tiene sesión — comprobar si hay sesión de invitado en local
+            const guestId = await this.guestSessionRepository.loadGuestId();
+            if (guestId) {
+                runInAction(() => {
+                    this._currentUser = new User(guestId, '', 'Invitado', new Date());
+                });
+            } else {
+                runInAction(() => {
+                    this._currentUser = null;
+                });
+            }
         } catch {
             runInAction(() => {
                 this._currentUser = null;
@@ -92,6 +123,15 @@ export class AuthViewModel {
                 this._isLoading = false;
             });
         }
+    }
+
+    async continueAsGuest(): Promise<void> {
+        await withLoading(this, '_isLoading', '_errorMessage', async () => {
+            const guestId = await this.guestSessionRepository.getOrCreateGuestId();
+            runInAction(() => {
+                this._currentUser = new User(guestId, '', 'Invitado', new Date());
+            });
+        });
     }
 
     async deleteAccount(): Promise<void> {

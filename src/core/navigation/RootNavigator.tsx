@@ -17,14 +17,20 @@ export const RootNavigator: React.FC = observer(() => {
         authVm.checkAuthState();
     }, []);
 
-    // Disparar auto-sync una sola vez cuando el usuario pasa a autenticado
+    // Disparar carga de biblioteca una sola vez cuando el usuario pasa a autenticado
     useEffect(() => {
         if (authVm.isAuthenticated && authVm.currentUser && !syncStartedRef.current) {
             syncStartedRef.current = true;
-            libraryVm.autoSyncIfNeeded(authVm.currentUser.getId());
+            if (authVm.isGuest) {
+                // Invitado: carga desde AsyncStorage local, sin sincronización con Firestore
+                libraryVm.loadLibrary(authVm.currentUser.getId());
+            } else {
+                libraryVm.autoSyncIfNeeded(authVm.currentUser.getId());
+            }
         }
         if (!authVm.isAuthenticated) {
             syncStartedRef.current = false;
+            libraryVm.resetSyncState();
         }
     }, [authVm.isAuthenticated]);
 

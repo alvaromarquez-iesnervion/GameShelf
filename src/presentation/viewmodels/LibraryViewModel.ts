@@ -173,6 +173,15 @@ export class LibraryViewModel {
         }
     }
 
+    /** Limpia el estado entre sesiones (logout → nuevo login/invitado en el mismo proceso). */
+    resetSyncState(): void {
+        runInAction(() => {
+            this._hasSynced = false;
+            this._games = [];
+            this._linkedPlatforms = [];
+        });
+    }
+
     clearError(): void {
         this._errorMessage = null;
     }
