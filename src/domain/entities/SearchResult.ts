@@ -8,7 +8,7 @@ export class SearchResult {
     private isInWishlist: boolean;
     private steamAppId: number | null;
     private owned: boolean;
-    private ownedPlatform: Platform;
+    private ownedPlatforms: Platform[];
 
     constructor(
         id: string,
@@ -17,7 +17,7 @@ export class SearchResult {
         isInWishlist: boolean,
         steamAppId: number | null = null,
         owned: boolean = false,
-        ownedPlatform: Platform = Platform.UNKNOWN,
+        ownedPlatforms: Platform[] = [],
     ) {
         this.id = id;
         this.title = title;
@@ -25,7 +25,7 @@ export class SearchResult {
         this.isInWishlist = isInWishlist;
         this.steamAppId = steamAppId;
         this.owned = owned;
-        this.ownedPlatform = ownedPlatform;
+        this.ownedPlatforms = ownedPlatforms;
     }
 
     getId(): string { return this.id; }
@@ -34,10 +34,10 @@ export class SearchResult {
     getIsInWishlist(): boolean { return this.isInWishlist; }
     getSteamAppId(): number | null { return this.steamAppId; }
     getIsOwned(): boolean { return this.owned; }
-    getOwnedPlatform(): Platform { return this.ownedPlatform; }
+    getOwnedPlatforms(): Platform[] { return this.ownedPlatforms; }
 
     setIsInWishlist(value: boolean): void { this.isInWishlist = value; }
     setSteamAppId(value: number | null): void { this.steamAppId = value; }
     setIsOwned(value: boolean): void { this.owned = value; }
-    setOwnedPlatform(value: Platform): void { this.ownedPlatform = value; }
+    addOwnedPlatform(value: Platform): void { this.ownedPlatforms.push(value); }
 }

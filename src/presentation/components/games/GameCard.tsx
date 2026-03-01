@@ -14,11 +14,11 @@ interface GameCardProps {
     coverUrl: string;
     portraitCoverUrl?: string;
     title: string;
-    platform?: GamePlatform;
+    platforms?: GamePlatform[];
     onPress: (id: string) => void;
 }
 
-export const GameCard = React.memo(({ gameId, coverUrl, portraitCoverUrl, title, platform, onPress }: GameCardProps) => {
+export const GameCard = React.memo(({ gameId, coverUrl, portraitCoverUrl, title, platforms, onPress }: GameCardProps) => {
     const imageSource = portraitCoverUrl || coverUrl;
 
     // useCallback estabiliza la referencia para que React.memo funcione correctamente.
@@ -47,9 +47,11 @@ export const GameCard = React.memo(({ gameId, coverUrl, portraitCoverUrl, title,
                     colors={['transparent', 'rgba(0,0,0,0.7)']}
                     style={styles.gradient}
                 />
-                {platform !== undefined && platform !== GamePlatform.UNKNOWN && (
+                {platforms && platforms.filter(p => p !== GamePlatform.UNKNOWN).length > 0 && (
                     <View style={styles.badgeContainer}>
-                        <PlatformIcon platform={platform} size={16} />
+                        {platforms.filter(p => p !== GamePlatform.UNKNOWN).map(p => (
+                            <PlatformIcon key={p} platform={p} size={16} />
+                        ))}
                     </View>
                 )}
             </View>
@@ -88,6 +90,8 @@ const styles = StyleSheet.create({
         position: 'absolute',
         top: 6,
         right: 6,
+        flexDirection: 'column',
+        gap: 2,
     },
     info: {
         marginTop: spacing.xs,

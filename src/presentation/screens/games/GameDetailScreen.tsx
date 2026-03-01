@@ -98,7 +98,7 @@ const InfoRow = ({ label, value }: InfoRowProps) => (
 
 export const GameDetailScreen: React.FC = observer(() => {
     const route = useRoute<Route>();
-    const { gameId, steamAppId } = route.params;
+    const { gameId, steamAppId, platforms: navPlatforms } = route.params;
     const authVm = useInjection<AuthViewModel>(TYPES.AuthViewModel);
     const vm = useInjection<GameDetailViewModel>(TYPES.GameDetailViewModel);
     const wishlistVm = useInjection<WishlistViewModel>(TYPES.WishlistViewModel);
@@ -140,6 +140,9 @@ export const GameDetailScreen: React.FC = observer(() => {
     const detail = vm.gameDetail.detail;
     const game = detail.getGame();
     const isOwned = game.getPlatform() !== GamePlatform.UNKNOWN;
+    const displayPlatforms = navPlatforms && navPlatforms.length > 0
+        ? navPlatforms
+        : [game.getPlatform()];
     const isInWishlist = wishlistVm.isGameInWishlist(game.getId());
     const steamMeta: SteamGameMetadata | null = detail.getSteamMetadata();
 
@@ -171,7 +174,9 @@ export const GameDetailScreen: React.FC = observer(() => {
 
                     {/* Platform badge + Metacritic score on same row */}
                     <View style={styles.metaRow}>
-                        <PlatformBadge platform={game.getPlatform()} />
+                        {displayPlatforms.filter(p => p !== GamePlatform.UNKNOWN).map(p => (
+                            <PlatformBadge key={p} platform={p} />
+                        ))}
                         {steamMeta?.metacriticScore !== null && steamMeta?.metacriticScore !== undefined && (
                             <View style={[
                                 styles.metacriticBadge,

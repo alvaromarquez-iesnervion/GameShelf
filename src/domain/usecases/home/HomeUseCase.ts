@@ -62,15 +62,22 @@ export class HomeUseCase implements IHomeUseCase {
             // Si falla, continuamos sin ownership info
         }
 
-        // Construir mapa de identificadores owned → plataforma para búsqueda O(1)
-        const ownedBySteamAppId = new Map<number, Platform>(
-            libraryGames
-                .filter(g => g.getSteamAppId() !== null)
-                .map(g => [g.getSteamAppId() as number, g.getPlatform()]),
-        );
-        const ownedByGameId = new Map<string, Platform>(
-            libraryGames.map(g => [g.getId(), g.getPlatform()]),
-        );
+        // Construir mapa de identificadores owned → plataformas para búsqueda O(1)
+        const ownedBySteamAppId = new Map<number, Platform[]>();
+        libraryGames.forEach(g => {
+            const sid = g.getSteamAppId();
+            if (sid !== null) {
+                const arr = ownedBySteamAppId.get(sid) ?? [];
+                arr.push(g.getPlatform());
+                ownedBySteamAppId.set(sid, arr);
+            }
+        });
+        const ownedByGameId = new Map<string, Platform[]>();
+        libraryGames.forEach(g => {
+            const arr = ownedByGameId.get(g.getId()) ?? [];
+            arr.push(g.getPlatform());
+            ownedByGameId.set(g.getId(), arr);
+        });
 
         await Promise.allSettled(
             results.map(async result => {
@@ -85,16 +92,13 @@ export class HomeUseCase implements IHomeUseCase {
 
                 // Marcar como owned si el steamAppId o el id coincide con la biblioteca
                 const steamAppId = result.getSteamAppId();
-                let ownedPlatform: Platform | undefined;
-                if (steamAppId !== null) {
-                    ownedPlatform = ownedBySteamAppId.get(steamAppId);
-                }
-                if (!ownedPlatform) {
-                    ownedPlatform = ownedByGameId.get(result.getId());
-                }
-                if (ownedPlatform) {
+                const bySteam = steamAppId !== null ? ownedBySteamAppId.get(steamAppId) : undefined;
+                const byId = ownedByGameId.get(result.getId());
+                const allPlatforms = [...(bySteam ?? []), ...(byId ?? [])];
+                const unique = [...new Set(allPlatforms)];
+                if (unique.length > 0) {
                     result.setIsOwned(true);
-                    result.setOwnedPlatform(ownedPlatform);
+                    unique.forEach(p => result.addOwnedPlatform(p));
                 }
             }),
         );

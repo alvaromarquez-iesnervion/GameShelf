@@ -13,6 +13,7 @@ import { WishlistViewModel } from '../../viewmodels/WishlistViewModel';
 import { TYPES } from '../../../di/types';
 import { SearchStackParamList } from '../../../core/navigation/navigationTypes';
 import { SearchResult } from '../../../domain/entities/SearchResult';
+import { Platform as GamePlatform } from '../../../domain/enums/Platform';
 import { SearchResultCard } from '../../components/games/SearchResultCard';
 import { HomeGameCard } from '../../components/games/HomeGameCard';
 import { ErrorMessage } from '../../components/common/ErrorMessage';
@@ -51,8 +52,8 @@ export const SearchScreen: React.FC = observer(() => {
         if (userId) vm.loadHomeData(userId);
     }, [userId, vm]);
 
-    const handleGamePress = useCallback((gameId: string, steamAppId?: number) => {
-        navigation.navigate('GameDetail', { gameId, steamAppId });
+    const handleGamePress = useCallback((gameId: string, steamAppId?: number, platforms?: GamePlatform[]) => {
+        navigation.navigate('GameDetail', { gameId, steamAppId, platforms });
     }, [navigation]);
 
     const handleNavigateSettings = useCallback(() => {
@@ -108,8 +109,8 @@ export const SearchScreen: React.FC = observer(() => {
             title={item.getTitle()}
             isInWishlist={wishlistVm.isGameInWishlist(item.getId())}
             isOwned={item.getIsOwned()}
-            ownedPlatform={item.getOwnedPlatform()}
-            onPress={() => handleGamePress(item.getId(), item.getSteamAppId() ?? undefined)}
+            ownedPlatforms={item.getOwnedPlatforms()}
+            onPress={() => handleGamePress(item.getId(), item.getSteamAppId() ?? undefined, item.getOwnedPlatforms())}
             onToggleWishlist={() => toggleWishlist(item)}
         />
     ), [handleGamePress, toggleWishlist, wishlistVm]);

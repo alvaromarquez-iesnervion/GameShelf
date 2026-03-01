@@ -9,6 +9,11 @@ import { SortCriteria } from '../../domain/enums/SortCriteria';
 import { TYPES } from '../../di/types';
 import { withLoading } from './BaseViewModel';
 
+export interface MergedLibraryGame {
+    game: Game;
+    platforms: Platform[];
+}
+
 /**
  * ViewModel para la biblioteca de juegos.
  *
@@ -59,6 +64,31 @@ export class LibraryViewModel {
             default:
                 return filtered;
         }
+    }
+
+    get mergedFilteredGames(): MergedLibraryGame[] {
+        const map = new Map<string, MergedLibraryGame>();
+        for (const game of this.filteredGames) {
+            const steamId = game.getSteamAppId();
+            const itadId = game.getItadGameId();
+            const key = steamId !== null
+                ? `steam-${steamId}`
+                : itadId
+                    ? `itad-${itadId}`
+                    : `title-${game.getTitle().toLowerCase()}`;
+
+            const existing = map.get(key);
+            if (existing) {
+                existing.platforms.push(game.getPlatform());
+                // Prefer Steam game as canonical
+                if (game.getPlatform() === Platform.STEAM) {
+                    existing.game = game;
+                }
+            } else {
+                map.set(key, { game, platforms: [game.getPlatform()] });
+            }
+        }
+        return [...map.values()];
     }
 
     get sortCriteria(): SortCriteria {

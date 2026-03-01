@@ -8,14 +8,13 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as Haptics from 'expo-haptics';
 import { useInjection } from '../../../di/hooks/useInjection';
 import { AuthViewModel } from '../../viewmodels/AuthViewModel';
-import { LibraryViewModel } from '../../viewmodels/LibraryViewModel';
+import { LibraryViewModel, MergedLibraryGame } from '../../viewmodels/LibraryViewModel';
 import { TYPES } from '../../../di/types';
 import { LibraryStackParamList } from '../../../core/navigation/navigationTypes';
 import { GameCard } from '../../components/games/GameCard';
 import { ErrorMessage } from '../../components/common/ErrorMessage';
 import { EmptyState } from '../../components/common/EmptyState';
 import { LibrarySkeleton } from '../../components/common/LibrarySkeleton';
-import { Game } from '../../../domain/entities/Game';
 import { SortCriteria } from '../../../domain/enums/SortCriteria';
 import { colors } from '../../theme/colors';
 import { styles } from './LibraryScreen.styles';
@@ -74,22 +73,22 @@ export const LibraryScreen: React.FC = observer(() => {
         (navigation as any).navigate('WishlistStack');
     }, [navigation]);
 
-    const handleGamePress = useCallback((gameId: string) => {
-        navigation.navigate('GameDetail', { gameId });
+    const handleGamePress = useCallback((gameId: string, platforms: MergedLibraryGame['platforms']) => {
+        navigation.navigate('GameDetail', { gameId, platforms });
     }, [navigation]);
 
     const handleSortChange = useCallback((criteria: SortCriteria) => {
         vm.setSortCriteria(criteria);
     }, [vm]);
 
-    const renderGameCard = useCallback(({ item }: { item: Game }) => (
+    const renderGameCard = useCallback(({ item }: { item: MergedLibraryGame }) => (
         <GameCard
-            gameId={item.getId()}
-            coverUrl={item.getCoverUrl()}
-            portraitCoverUrl={item.getPortraitCoverUrl()}
-            title={item.getTitle()}
-            platform={item.getPlatform()}
-            onPress={handleGamePress}
+            gameId={item.game.getId()}
+            coverUrl={item.game.getCoverUrl()}
+            portraitCoverUrl={item.game.getPortraitCoverUrl()}
+            title={item.game.getTitle()}
+            platforms={item.platforms}
+            onPress={(id) => handleGamePress(id, item.platforms)}
         />
     ), [handleGamePress]);
 
@@ -154,8 +153,8 @@ export const LibraryScreen: React.FC = observer(() => {
                 </View>
             </View>
             <FlatList
-                data={vm.filteredGames}
-                keyExtractor={(item) => item.getId()}
+                data={vm.mergedFilteredGames}
+                keyExtractor={(item) => item.game.getId()}
                 numColumns={3}
                 columnWrapperStyle={styles.row}
                 contentContainerStyle={styles.list}

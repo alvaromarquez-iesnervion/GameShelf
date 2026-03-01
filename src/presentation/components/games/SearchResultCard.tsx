@@ -14,12 +14,12 @@ interface SearchResultCardProps {
     title: string;
     isInWishlist: boolean;
     isOwned?: boolean;
-    ownedPlatform?: Platform;
+    ownedPlatforms?: Platform[];
     onPress: () => void;
     onToggleWishlist: () => void;
 }
 
-export const SearchResultCard = React.memo(({ coverUrl, title, isInWishlist, isOwned, ownedPlatform, onPress, onToggleWishlist }: SearchResultCardProps) => {
+export const SearchResultCard = React.memo(({ coverUrl, title, isInWishlist, isOwned, ownedPlatforms, onPress, onToggleWishlist }: SearchResultCardProps) => {
     const handleWishlist = () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         onToggleWishlist();
@@ -38,7 +38,9 @@ export const SearchResultCard = React.memo(({ coverUrl, title, isInWishlist, isO
             </View>
             {isOwned ? (
                 <View style={styles.ownedBadgeContainer}>
-                    <PlatformBadge platform={ownedPlatform ?? Platform.STEAM} />
+                    {(ownedPlatforms ?? [Platform.STEAM]).map(p => (
+                        <PlatformBadge key={p} platform={p} />
+                    ))}
                 </View>
             ) : (
                 <TouchableOpacity

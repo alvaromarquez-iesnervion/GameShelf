@@ -1,3 +1,5 @@
+import { Platform } from '../../domain/enums/Platform';
+
 export type AuthStackParamList = {
     Login: undefined;
     Register: undefined;
@@ -6,17 +8,17 @@ export type AuthStackParamList = {
 
 export type LibraryStackParamList = {
     Library: undefined;
-    GameDetail: { gameId: string; steamAppId?: number };
+    GameDetail: { gameId: string; steamAppId?: number; platforms?: Platform[] };
 };
 
 export type SearchStackParamList = {
     Search: undefined;
-    GameDetail: { gameId: string; steamAppId?: number };
+    GameDetail: { gameId: string; steamAppId?: number; platforms?: Platform[] };
 };
 
 export type WishlistStackParamList = {
     Wishlist: undefined;
-    GameDetail: { gameId: string; steamAppId?: number };
+    GameDetail: { gameId: string; steamAppId?: number; platforms?: Platform[] };
 };
 
 export type SettingsStackParamList = {
