@@ -110,6 +110,23 @@ export class PlatformLinkViewModel {
         return result ?? false;
     }
 
+    /** Devuelve la URL OAuth2 de GOG. */
+    getGogAuthUrl(): string {
+        return this.platformLinkUseCase.getGogAuthUrl();
+    }
+
+    /**
+     * Vincula GOG usando el authorization code capturado desde el WebView.
+     */
+    async linkGogByCode(userId: string, code: string): Promise<boolean> {
+        const result = await withLoading(this, '_isLinking', '_errorMessage', async () => {
+            await this.platformLinkUseCase.linkGogByCode(userId, code);
+            await this.loadLinkedPlatforms(userId);
+            return true;
+        });
+        return result ?? false;
+    }
+
     async unlinkPlatform(userId: string, platform: Platform): Promise<boolean> {
         const result = await withLoading(this, '_isLinking', '_errorMessage', async () => {
             await this.platformLinkUseCase.unlinkPlatform(userId, platform);

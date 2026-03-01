@@ -3,6 +3,7 @@ import { injectable } from 'inversify';
 import { IPlatformRepository } from '../../domain/interfaces/repositories/IPlatformRepository';
 import { LinkedPlatform } from '../../domain/entities/LinkedPlatform';
 import { Platform } from '../../domain/enums/Platform';
+import { GogAuthToken } from '../../domain/dtos/GogAuthToken';
 import { simulateDelay } from './MockDataProvider';
 
 /**
@@ -30,6 +31,14 @@ export class MockPlatformRepository implements IPlatformRepository {
         const externalId = epicAccountId ?? 'imported';
         const linked = new LinkedPlatform(Platform.EPIC_GAMES, externalId, new Date());
         this.platforms = this.platforms.filter(p => p.getPlatform() !== Platform.EPIC_GAMES);
+        this.platforms.push(linked);
+        return linked;
+    }
+
+    async linkGogPlatform(_userId: string, gogUserId: string, _tokens: GogAuthToken): Promise<LinkedPlatform> {
+        await simulateDelay(600);
+        const linked = new LinkedPlatform(Platform.GOG, gogUserId, new Date());
+        this.platforms = this.platforms.filter(p => p.getPlatform() !== Platform.GOG);
         this.platforms.push(linked);
         return linked;
     }

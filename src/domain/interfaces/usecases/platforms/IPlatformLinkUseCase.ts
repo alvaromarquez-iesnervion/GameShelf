@@ -49,6 +49,15 @@ export interface IPlatformLinkUseCase {
      *  4. syncLibrary de Epic (no bloqueante)
      */
     linkEpic(userId: string, fileContent: string): Promise<LinkedPlatform>;
+    /** Devuelve la URL OAuth2 de GOG para abrir en el navegador. */
+    getGogAuthUrl(): string;
+    /**
+     * Vincula GOG usando el authorization code capturado de la redirect URL.
+     *  1. exchangeAuthCode → GogAuthToken
+     *  2. linkGogPlatform (almacena tokens en Firestore)
+     *  3. syncLibrary de GOG (no bloqueante)
+     */
+    linkGogByCode(userId: string, code: string): Promise<LinkedPlatform>;
     /** Elimina la vinculación y los juegos de esa plataforma. */
     unlinkPlatform(userId: string, platform: Platform): Promise<void>;
     getLinkedPlatforms(userId: string): Promise<LinkedPlatform[]>;

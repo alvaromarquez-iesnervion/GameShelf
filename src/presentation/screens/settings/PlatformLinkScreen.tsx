@@ -12,6 +12,7 @@ import { ErrorMessage } from '../../components/common/ErrorMessage';
 import { ListSkeleton } from '../../components/common/ListItemSkeleton';
 import { SteamLinkModal } from './SteamLinkModal';
 import { EpicLinkModal } from './EpicLinkModal';
+import { GogLinkModal } from './GogLinkModal';
 import { styles } from './PlatformLinkScreen.styles';
 
 export const PlatformLinkScreen: React.FC = observer(() => {
@@ -21,6 +22,7 @@ export const PlatformLinkScreen: React.FC = observer(() => {
 
     const [steamModalVisible, setSteamModalVisible] = useState(false);
     const [epicModalVisible, setEpicModalVisible] = useState(false);
+    const [gogModalVisible, setGogModalVisible] = useState(false);
 
     useEffect(() => {
         if (userId) vm.loadLinkedPlatforms(userId);
@@ -118,10 +120,40 @@ export const PlatformLinkScreen: React.FC = observer(() => {
         }
     }, [vm, userId]);
 
+    // ─── Handlers GOG ─────────────────────────────────────────────────────────
+
+    const handleOpenGogModal = useCallback(() => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        vm.clearError();
+        setGogModalVisible(true);
+    }, [vm]);
+
+    const handleCloseGogModal = useCallback(() => {
+        setGogModalVisible(false);
+        vm.clearError();
+    }, [vm]);
+
+    const handleGogCodeReceived = useCallback(async (code: string) => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        const success = await vm.linkGogByCode(userId, code);
+        if (success) {
+            setGogModalVisible(false);
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            Alert.alert(
+                'GOG vinculado',
+                'Tu biblioteca de GOG se está sincronizando en segundo plano.\n\nVe a Biblioteca y pulsa ↻ para ver tus juegos.',
+                [{ text: 'Entendido' }],
+            );
+        }
+    }, [vm, userId]);
+
     // ─── Handler desvinculación ───────────────────────────────────────────────
 
     const handleUnlink = useCallback((platform: PlatformEnum) => {
-        const name = platform === PlatformEnum.STEAM ? 'Steam' : 'Epic Games';
+        const name =
+            platform === PlatformEnum.STEAM ? 'Steam' :
+            platform === PlatformEnum.GOG ? 'GOG' :
+            'Epic Games';
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
         Alert.alert(
             `Desvincular ${name}`,
@@ -135,13 +167,14 @@ export const PlatformLinkScreen: React.FC = observer(() => {
 
     // ─── Early returns (después de todos los hooks) ───────────────────────────
 
-    if (vm.isLinking && vm.linkedPlatforms.length === 0) return <ListSkeleton count={2} />;
-    if (vm.errorMessage && !steamModalVisible && !epicModalVisible) {
+    if (vm.isLinking && vm.linkedPlatforms.length === 0) return <ListSkeleton count={3} />;
+    if (vm.errorMessage && !steamModalVisible && !epicModalVisible && !gogModalVisible) {
         return <ErrorMessage message={vm.errorMessage} onRetry={handleRetry} />;
     }
 
     const steamLinked = vm.isPlatformLinked(PlatformEnum.STEAM);
     const epicLinked = vm.isPlatformLinked(PlatformEnum.EPIC_GAMES);
+    const gogLinked = vm.isPlatformLinked(PlatformEnum.GOG);
 
     // ─── Render ───────────────────────────────────────────────────────────────
 
@@ -164,6 +197,14 @@ export const PlatformLinkScreen: React.FC = observer(() => {
                     loading={vm.isLinking}
                     onLink={handleOpenEpicModal}
                     onUnlink={() => handleUnlink(PlatformEnum.EPIC_GAMES)}
+                />
+                <View style={styles.separator} />
+                <PlatformRow
+                    platform={PlatformEnum.GOG}
+                    linked={gogLinked}
+                    loading={vm.isLinking}
+                    onLink={handleOpenGogModal}
+                    onUnlink={() => handleUnlink(PlatformEnum.GOG)}
                 />
             </View>
 
@@ -188,6 +229,15 @@ export const PlatformLinkScreen: React.FC = observer(() => {
                 onOpenLogin={handleOpenEpicLoginInBrowser}
                 onOpenBrowser={handleOpenEpicInBrowser}
                 onClose={handleCloseEpicModal}
+            />
+
+            <GogLinkModal
+                visible={gogModalVisible}
+                isLinking={vm.isLinking}
+                errorMessage={vm.errorMessage}
+                authUrl={vm.getGogAuthUrl()}
+                onCodeReceived={handleGogCodeReceived}
+                onClose={handleCloseGogModal}
             />
         </View>
     );

@@ -3,6 +3,7 @@ import { IPlatformRepository } from '../../interfaces/repositories/IPlatformRepo
 import { IGameRepository } from '../../interfaces/repositories/IGameRepository';
 import { ISteamApiService } from '../../interfaces/services/ISteamApiService';
 import { IEpicGamesApiService } from '../../interfaces/services/IEpicGamesApiService';
+import { IGogApiService } from '../../interfaces/services/IGogApiService';
 import { LinkedPlatform } from '../../entities/LinkedPlatform';
 import { Platform } from '../../enums/Platform';
 
@@ -25,6 +26,7 @@ export class PlatformLinkUseCase implements IPlatformLinkUseCase {
         private readonly gameRepository: IGameRepository,
         private readonly steamService: ISteamApiService,
         private readonly epicService: IEpicGamesApiService,
+        private readonly gogService: IGogApiService,
     ) {}
 
     getSteamLoginUrl(returnUrl: string): string {
@@ -139,6 +141,23 @@ export class PlatformLinkUseCase implements IPlatformLinkUseCase {
         this.gameRepository.syncLibrary(userId, Platform.EPIC_GAMES).catch(() => {
             // La sync puede fallar sin romper la vinculación ya completada
         });
+
+        return linked;
+    }
+
+    getGogAuthUrl(): string {
+        return this.gogService.getAuthUrl();
+    }
+
+    async linkGogByCode(userId: string, code: string): Promise<LinkedPlatform> {
+        // 1. Intercambiar el authorization code por tokens OAuth2
+        const token = await this.gogService.exchangeAuthCode(code);
+
+        // 2. Almacenar la vinculación y los tokens en Firestore
+        const linked = await this.platformRepository.linkGogPlatform(userId, token.userId, token);
+
+        // 3. Sincronizar biblioteca GOG (no bloqueante)
+        this.gameRepository.syncLibrary(userId, Platform.GOG).catch(() => {});
 
         return linked;
     }

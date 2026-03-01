@@ -3,6 +3,7 @@ import { injectable } from 'inversify';
 import { IPlatformRepository } from '../../domain/interfaces/repositories/IPlatformRepository';
 import { LinkedPlatform } from '../../domain/entities/LinkedPlatform';
 import { Platform } from '../../domain/enums/Platform';
+import { GogAuthToken } from '../../domain/dtos/GogAuthToken';
 
 /**
  * Implementación en memoria de IPlatformRepository.
@@ -28,6 +29,12 @@ export class MemoryPlatformRepository implements IPlatformRepository {
     async linkEpicPlatform(userId: string, epicAccountId?: string): Promise<LinkedPlatform> {
         const externalId = epicAccountId ?? 'imported';
         const linked = new LinkedPlatform(Platform.EPIC_GAMES, externalId, new Date());
+        this.upsert(userId, linked);
+        return linked;
+    }
+
+    async linkGogPlatform(userId: string, gogUserId: string, _tokens: GogAuthToken): Promise<LinkedPlatform> {
+        const linked = new LinkedPlatform(Platform.GOG, gogUserId, new Date());
         this.upsert(userId, linked);
         return linked;
     }

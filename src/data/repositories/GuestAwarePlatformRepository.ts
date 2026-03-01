@@ -3,6 +3,7 @@ import { injectable, inject } from 'inversify';
 import { IPlatformRepository } from '../../domain/interfaces/repositories/IPlatformRepository';
 import { LinkedPlatform } from '../../domain/entities/LinkedPlatform';
 import { Platform } from '../../domain/enums/Platform';
+import { GogAuthToken } from '../../domain/dtos/GogAuthToken';
 import { TYPES } from '../../di/types';
 import { isGuestUser } from '../../core/utils/guestUtils';
 
@@ -26,6 +27,10 @@ export class GuestAwarePlatformRepository implements IPlatformRepository {
 
     linkEpicPlatform(userId: string, epicAccountId?: string): Promise<LinkedPlatform> {
         return this.repo(userId).linkEpicPlatform(userId, epicAccountId);
+    }
+
+    linkGogPlatform(userId: string, gogUserId: string, tokens: GogAuthToken): Promise<LinkedPlatform> {
+        return this.repo(userId).linkGogPlatform(userId, gogUserId, tokens);
     }
 
     unlinkPlatform(userId: string, platform: Platform): Promise<void> {

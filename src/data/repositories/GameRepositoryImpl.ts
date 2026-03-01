@@ -6,12 +6,14 @@ import {
     doc,
     getDoc,
     getDocs,
+    setDoc,
     writeBatch,
     updateDoc,
 } from 'firebase/firestore';
 import { IGameRepository } from '../../domain/interfaces/repositories/IGameRepository';
 import { ISteamApiService } from '../../domain/interfaces/services/ISteamApiService';
 import { IEpicGamesApiService } from '../../domain/interfaces/services/IEpicGamesApiService';
+import { IGogApiService } from '../../domain/interfaces/services/IGogApiService';
 import { IIsThereAnyDealService } from '../../domain/interfaces/services/IIsThereAnyDealService';
 import { Game } from '../../domain/entities/Game';
 import { SearchResult } from '../../domain/entities/SearchResult';
@@ -26,6 +28,7 @@ export class GameRepositoryImpl implements IGameRepository {
         @inject(TYPES.Firestore) private firestore: Firestore,
         @inject(TYPES.ISteamApiService) private steamApiService: ISteamApiService,
         @inject(TYPES.IEpicGamesApiService) private epicGamesApiService: IEpicGamesApiService,
+        @inject(TYPES.IGogApiService) private gogApiService: IGogApiService,
         @inject(TYPES.IIsThereAnyDealService) private itadService: IIsThereAnyDealService,
     ) {}
 
@@ -130,6 +133,39 @@ export class GameRepositoryImpl implements IGameRepository {
             // juegos de otras plataformas (ej. Steam) que también están en la biblioteca.
             const allGames = await this.getLibraryGames(userId);
             return allGames.filter(g => g.getPlatform() === Platform.EPIC_GAMES);
+        } else if (platform === Platform.GOG) {
+            // 1. Leer tokens de Firestore
+            const gogDoc = await getDoc(
+                doc(this.firestore, 'users', userId, 'platforms', 'gog'),
+            );
+            if (!gogDoc.exists()) return [];
+
+            const docData = gogDoc.data();
+            let accessToken = docData['accessToken'] as string;
+            const refreshToken = docData['refreshToken'] as string;
+            const expiresAtStr = docData['expiresAt'] as string | undefined;
+
+            // 2. Renovar token si ha expirado (con margen de 60 s)
+            if (expiresAtStr) {
+                const expiresAt = new Date(expiresAtStr);
+                if (expiresAt.getTime() - Date.now() < 60_000) {
+                    const renewed = await this.gogApiService.refreshToken(refreshToken);
+                    accessToken = renewed.accessToken;
+                    // Actualizar tokens en Firestore
+                    await setDoc(
+                        doc(this.firestore, 'users', userId, 'platforms', 'gog'),
+                        {
+                            ...docData,
+                            accessToken: renewed.accessToken,
+                            refreshToken: renewed.refreshToken,
+                            expiresAt: renewed.expiresAt.toISOString(),
+                        },
+                    );
+                }
+            }
+
+            // 3. Obtener biblioteca de GOG
+            games = await this.gogApiService.getUserGames(accessToken);
         }
 
         if (games.length === 0) return [];

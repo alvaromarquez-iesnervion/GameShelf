@@ -45,6 +45,7 @@ export const colors = {
     steam: '#171A21',
     steamAccent: '#66C0F4',
     epic: '#0078F2',
+    gog: '#86328A',
     
     // ProtonDB
     protonPlatinum: '#B4D455',

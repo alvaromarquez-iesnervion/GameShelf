@@ -24,6 +24,7 @@ export const TYPES = {
     // Servicios externos
     ISteamApiService: Symbol.for('ISteamApiService'),
     IEpicGamesApiService: Symbol.for('IEpicGamesApiService'),
+    IGogApiService: Symbol.for('IGogApiService'),
     IProtonDbService: Symbol.for('IProtonDbService'),
     IHowLongToBeatService: Symbol.for('IHowLongToBeatService'),
     IIsThereAnyDealService: Symbol.for('IIsThereAnyDealService'),

@@ -13,6 +13,7 @@ import { INotificationRepository } from '../domain/interfaces/repositories/INoti
 // ─── Interfaces (servicios) ───────────────────────────────────────────────────
 import { ISteamApiService } from '../domain/interfaces/services/ISteamApiService';
 import { IEpicGamesApiService } from '../domain/interfaces/services/IEpicGamesApiService';
+import { IGogApiService } from '../domain/interfaces/services/IGogApiService';
 import { IProtonDbService } from '../domain/interfaces/services/IProtonDbService';
 import { IHowLongToBeatService } from '../domain/interfaces/services/IHowLongToBeatService';
 import { IIsThereAnyDealService } from '../domain/interfaces/services/IIsThereAnyDealService';
@@ -34,10 +35,12 @@ import { MockWishlistRepository } from '../data/mocks/MockWishlistRepository';
 import { MockPlatformRepository } from '../data/mocks/MockPlatformRepository';
 import { MockNotificationRepository } from '../data/mocks/MockNotificationRepository';
 import { MockSteamApiService } from '../data/mocks/MockSteamApiService';
+import { MockGogApiService } from '../data/mocks/MockGogApiService';
 
 // ─── Implementaciones reales (servicios externos) ─────────────────────────────
 import { SteamApiServiceImpl } from '../data/services/SteamApiServiceImpl';
 import { EpicGamesApiServiceImpl } from '../data/services/EpicGamesApiServiceImpl';
+import { GogApiServiceImpl } from '../data/services/GogApiServiceImpl';
 import { ProtonDbServiceImpl } from '../data/services/ProtonDbServiceImpl';
 import { HowLongToBeatServiceImpl } from '../data/services/HowLongToBeatServiceImpl';
 import { IsThereAnyDealServiceImpl } from '../data/services/IsThereAnyDealServiceImpl';
@@ -158,6 +161,12 @@ if (useFirebase && useRealSteam) {
 // ─── Servicios externos ───────────────────────────────────────────────────────
 // Epic: usar implementación real (no requiere API key, parsea export GDPR)
 container.bind<IEpicGamesApiService>(TYPES.IEpicGamesApiService).to(EpicGamesApiServiceImpl);
+// GOG: real solo en producción (requiere Cloud Function configurada)
+if (useFirebase) {
+    container.bind<IGogApiService>(TYPES.IGogApiService).to(GogApiServiceImpl);
+} else {
+    container.bind<IGogApiService>(TYPES.IGogApiService).to(MockGogApiService);
+}
 container.bind<IProtonDbService>(TYPES.IProtonDbService).to(ProtonDbServiceImpl);
 container.bind<IHowLongToBeatService>(TYPES.IHowLongToBeatService).to(HowLongToBeatServiceImpl);
 container.bind<IIsThereAnyDealService>(TYPES.IIsThereAnyDealService).to(IsThereAnyDealServiceImpl);
@@ -195,6 +204,7 @@ container.bind<IPlatformLinkUseCase>(TYPES.IPlatformLinkUseCase).toDynamicValue(
     ctx.get<IGameRepository>(TYPES.IGameRepository),
     ctx.get<ISteamApiService>(TYPES.ISteamApiService),
     ctx.get<IEpicGamesApiService>(TYPES.IEpicGamesApiService),
+    ctx.get<IGogApiService>(TYPES.IGogApiService),
 )).inSingletonScope();
 container.bind<ISettingsUseCase>(TYPES.ISettingsUseCase).toDynamicValue(ctx => new SettingsUseCase(
     ctx.get<IAuthRepository>(TYPES.IAuthRepository),

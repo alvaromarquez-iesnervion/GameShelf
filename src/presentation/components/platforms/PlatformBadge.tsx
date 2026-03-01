@@ -14,17 +14,24 @@ export const PlatformBadge: React.FC<PlatformBadgeProps> = ({ platform }) => {
     if (platform === Platform.UNKNOWN) return null;
 
     const isSteam = platform === Platform.STEAM;
+    const isGog = platform === Platform.GOG;
+
+    const badgeStyle = isSteam ? styles.steam : isGog ? styles.gog : styles.epic;
+    const iconName = isSteam ? 'monitor' : isGog ? 'shopping-bag' : 'box';
+    const iconColor = isSteam ? colors.steamAccent : isGog ? colors.gog : colors.epic;
+    const textStyle = isSteam ? styles.steamText : isGog ? styles.gogText : styles.epicText;
+    const label = isSteam ? 'Steam' : isGog ? 'GOG' : 'Epic Games';
 
     return (
-        <View style={[styles.badge, isSteam ? styles.steam : styles.epic]}>
-            <Feather 
-                name={isSteam ? 'monitor' : 'box'} 
-                size={12} 
-                color={isSteam ? colors.steamAccent : colors.epic} 
+        <View style={[styles.badge, badgeStyle]}>
+            <Feather
+                name={iconName}
+                size={12}
+                color={iconColor}
                 style={styles.icon}
             />
-            <Text style={[styles.text, isSteam ? styles.steamText : styles.epicText]}>
-                {isSteam ? 'Steam' : 'Epic Games'}
+            <Text style={[styles.text, textStyle]}>
+                {label}
             </Text>
         </View>
     );
@@ -48,6 +55,10 @@ const styles = StyleSheet.create({
         backgroundColor: colors.surfaceElevated,
         borderColor: colors.epic,
     },
+    gog: {
+        backgroundColor: colors.surfaceElevated,
+        borderColor: colors.gog,
+    },
     icon: {
         marginRight: spacing.xs,
     },
@@ -60,5 +71,8 @@ const styles = StyleSheet.create({
     },
     epicText: {
         color: colors.epic,
+    },
+    gogText: {
+        color: colors.gog,
     },
 });

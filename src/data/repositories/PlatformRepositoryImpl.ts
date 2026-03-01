@@ -12,12 +12,14 @@ import {
 import { IPlatformRepository } from '../../domain/interfaces/repositories/IPlatformRepository';
 import { LinkedPlatform } from '../../domain/entities/LinkedPlatform';
 import { Platform } from '../../domain/enums/Platform';
+import { GogAuthToken } from '../../domain/dtos/GogAuthToken';
 import { TYPES } from '../../di/types';
 
 // Mapa de enum a nombre de documento en Firestore (solo plataformas vinculables)
 const PLATFORM_DOC_ID: Record<Exclude<Platform, Platform.UNKNOWN>, string> = {
     [Platform.STEAM]: 'steam',
     [Platform.EPIC_GAMES]: 'epic_games',
+    [Platform.GOG]: 'gog',
 };
 
 @injectable()
@@ -50,6 +52,21 @@ export class PlatformRepositoryImpl implements IPlatformRepository {
             },
         );
         return new LinkedPlatform(Platform.EPIC_GAMES, externalUserId, linkedAt);
+    }
+
+    async linkGogPlatform(userId: string, gogUserId: string, tokens: GogAuthToken): Promise<LinkedPlatform> {
+        const linkedAt = new Date();
+        await setDoc(
+            doc(this.firestore, 'users', userId, 'platforms', 'gog'),
+            {
+                externalUserId: gogUserId,
+                accessToken: tokens.accessToken,
+                refreshToken: tokens.refreshToken,
+                expiresAt: tokens.expiresAt.toISOString(),
+                linkedAt: linkedAt.toISOString(),
+            },
+        );
+        return new LinkedPlatform(Platform.GOG, gogUserId, linkedAt);
     }
 
     async unlinkPlatform(userId: string, platform: Platform): Promise<void> {
