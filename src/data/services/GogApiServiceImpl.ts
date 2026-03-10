@@ -119,12 +119,13 @@ export class GogApiServiceImpl implements IGogApiService {
             `gog_${p.id}`,
             p.title,
             '',
-            p.image ? `https:${p.image}_196.jpg` : '',
+            p.image ? `https:${p.image}_392.jpg` : '',
             Platform.GOG,
             null,
             null,
             0,
             null,
+            p.image ? `https:${p.image}_bg_crop_1680x655.jpg` : '',
         ));
     }
 }

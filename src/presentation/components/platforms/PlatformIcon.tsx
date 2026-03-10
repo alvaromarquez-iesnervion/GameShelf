@@ -15,6 +15,7 @@ interface PlatformIconProps {
  *
  * Steam  → MaterialCommunityIcons "steam" glyph (official icon available in the set)
  * Epic   → Styled "E" badge that matches the Epic Games brand mark
+ * GOG    → Styled "G" badge using the GOG brand color
  * Other  → null (renders nothing)
  */
 export const PlatformIcon: React.FC<PlatformIconProps> = ({ platform, size = 18 }) => {
@@ -43,6 +44,19 @@ export const PlatformIcon: React.FC<PlatformIconProps> = ({ platform, size = 18 
         );
     }
 
+    if (platform === GamePlatform.GOG) {
+        const fontSize = Math.round(size * 0.62);
+        return (
+            <View style={[
+                styles.container,
+                styles.gogContainer,
+                { width: size + 4, height: size + 4, borderRadius: (size + 4) / 2 },
+            ]}>
+                <Text style={[styles.gogLetter, { fontSize, lineHeight: fontSize + 2 }]}>G</Text>
+            </View>
+        );
+    }
+
     return null;
 };
 
@@ -56,6 +70,15 @@ const styles = StyleSheet.create({
         backgroundColor: colors.epic ?? '#2563EB',
     },
     epicLetter: {
+        color: '#fff',
+        fontWeight: '800',
+        includeFontPadding: false,
+        textAlignVertical: 'center',
+    },
+    gogContainer: {
+        backgroundColor: colors.gog ?? '#86328A',
+    },
+    gogLetter: {
         color: '#fff',
         fontWeight: '800',
         includeFontPadding: false,

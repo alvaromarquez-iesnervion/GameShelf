@@ -17,7 +17,7 @@ import { Platform } from '../../enums/Platform';
  * the corresponding field is null and the rest of the detail is still shown.
  * Only IGameRepository (Firestore) is critical: its errors propagate.
  *
- * Phase 0 (Epic Games only): If the game is an Epic Games library entry without a
+ * Phase 0 (Epic Games + GOG): If the game is an Epic Games or GOG library entry without a
  * known steamAppId, attempt to resolve one so that ProtonDB, Steam screenshots,
  * Metacritic, and other Steam-based data become available. Strategy:
  *   1. If itadGameId is available, ask ITAD for the associated Steam App ID.
@@ -39,9 +39,9 @@ export class GameDetailUseCase implements IGameDetailUseCase {
     async getGameDetail(gameId: string, userId: string, providedSteamAppId?: number): Promise<GameDetailDTO> {
         const game = await this.gameRepository.getOrCreateGameById(userId, gameId, providedSteamAppId);
 
-        // ── Phase 0: Steam App ID resolution for Epic Games entries ───────────
-        if (game.getPlatform() === Platform.EPIC_GAMES && game.getSteamAppId() === null) {
-            const resolvedId = await this._resolveEpicSteamAppId(game);
+        // ── Phase 0: Steam App ID resolution for Epic Games and GOG entries ──
+        if ((game.getPlatform() === Platform.EPIC_GAMES || game.getPlatform() === Platform.GOG) && game.getSteamAppId() === null) {
+            const resolvedId = await this._resolveSteamAppId(game);
             if (resolvedId !== null) {
                 game.setSteamAppId(resolvedId);
                 // Persist so next open skips this lookup
@@ -90,11 +90,11 @@ export class GameDetailUseCase implements IGameDetailUseCase {
     }
 
     /**
-     * Attempts to find a Steam App ID for an Epic Games library entry.
+     * Attempts to find a Steam App ID for an Epic Games or GOG library entry.
      * Strategy 1: ITAD lookup via getGameInfo (uses itadGameId if already resolved).
      * Strategy 2: Steam Store Search API fuzzy title match.
      */
-    private async _resolveEpicSteamAppId(game: Game): Promise<number | null> {
+    private async _resolveSteamAppId(game: Game): Promise<number | null> {
         // Strategy 1: ask ITAD (reliable when the game is on both platforms)
         try {
             let itadId = game.getItadGameId();
