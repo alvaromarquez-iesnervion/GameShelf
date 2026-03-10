@@ -43,5 +43,3 @@ app-example
 /ios
 /android
 # Documentation — keep all .md files local only
-*.md
-!README.md
