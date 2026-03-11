@@ -13,6 +13,7 @@ import { IPlatformRepository } from '../../domain/interfaces/repositories/IPlatf
 import { LinkedPlatform } from '../../domain/entities/LinkedPlatform';
 import { Platform } from '../../domain/enums/Platform';
 import { GogAuthToken } from '../../domain/dtos/GogAuthToken';
+import { saveGogTokens, clearGogTokens } from '../utils/GogTokenStore';
 import { TYPES } from '../../di/types';
 
 // Mapa de enum a nombre de documento en Firestore (solo plataformas vinculables)
@@ -56,16 +57,20 @@ export class PlatformRepositoryImpl implements IPlatformRepository {
 
     async linkGogPlatform(userId: string, gogUserId: string, tokens: GogAuthToken): Promise<LinkedPlatform> {
         const linkedAt = new Date();
-        await setDoc(
-            doc(this.firestore, 'users', userId, 'platforms', 'gog'),
-            {
-                externalUserId: gogUserId,
-                accessToken: tokens.accessToken,
-                refreshToken: tokens.refreshToken,
-                expiresAt: tokens.expiresAt.toISOString(),
-                linkedAt: linkedAt.toISOString(),
-            },
-        );
+
+        // Los tokens OAuth se guardan en SecureStore (Keychain/Keystore), nunca en Firestore.
+        // En Firestore solo persiste el ID de usuario de GOG para mostrar el estado de vinculación.
+        await Promise.all([
+            saveGogTokens(tokens),
+            setDoc(
+                doc(this.firestore, 'users', userId, 'platforms', 'gog'),
+                {
+                    externalUserId: gogUserId,
+                    linkedAt: linkedAt.toISOString(),
+                },
+            ),
+        ]);
+
         return new LinkedPlatform(Platform.GOG, gogUserId, linkedAt);
     }
 
@@ -73,7 +78,12 @@ export class PlatformRepositoryImpl implements IPlatformRepository {
         if (platform === Platform.UNKNOWN) return;
         const docId = PLATFORM_DOC_ID[platform as Exclude<Platform, Platform.UNKNOWN>];
 
-        // 1. Eliminar vinculación de plataforma
+        // 1. Eliminar tokens de SecureStore si es GOG (antes de borrar el doc de Firestore)
+        if (platform === Platform.GOG) {
+            await clearGogTokens();
+        }
+
+        // 2. Eliminar vinculación de plataforma
         await deleteDoc(doc(this.firestore, 'users', userId, 'platforms', docId));
 
         // 2. Eliminar juegos de esa plataforma de la biblioteca usando writeBatch

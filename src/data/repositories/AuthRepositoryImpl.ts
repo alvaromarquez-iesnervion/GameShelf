@@ -90,11 +90,16 @@ export class AuthRepositoryImpl implements IAuthRepository {
 
         const uid = firebaseUser.uid;
 
-        // 1. Borrar subcolecciones de Firestore con writeBatch
+        // 1. Borrar cuenta de Firebase Auth primero.
+        //    Si falla (p.ej. auth/requires-recent-login), no se toca ningún
+        //    dato de Firestore y el usuario puede reintentar con reautenticación.
+        await deleteUser(firebaseUser);
+
+        // 2. Borrar subcolecciones de Firestore con writeBatch
         const subCollections = ['library', 'wishlist', 'platforms'];
         for (const col of subCollections) {
             const snap = await getDocs(collection(this.firestore, 'users', uid, col));
-            
+
             // Firestore batches tienen límite de 500 ops
             const batches: Promise<void>[] = [];
             let currentBatch = writeBatch(this.firestore);
@@ -103,30 +108,27 @@ export class AuthRepositoryImpl implements IAuthRepository {
             for (const docSnap of snap.docs) {
                 currentBatch.delete(docSnap.ref);
                 opsInBatch++;
-                
+
                 if (opsInBatch === 500) {
                     batches.push(currentBatch.commit());
                     currentBatch = writeBatch(this.firestore);
                     opsInBatch = 0;
                 }
             }
-            
+
             if (opsInBatch > 0) {
                 batches.push(currentBatch.commit());
             }
-            
+
             await Promise.all(batches);
         }
 
-        // 2. Borrar settings/notifications
+        // 3. Borrar settings/notifications
         await deleteDoc(doc(this.firestore, 'users', uid, 'settings', 'notifications'))
             .catch(() => { /* puede no existir */ });
 
-        // 3. Borrar documento raíz del usuario
+        // 4. Borrar documento raíz del usuario
         await deleteDoc(doc(this.firestore, 'users', uid));
-
-        // 4. Borrar cuenta de Firebase Auth
-        await deleteUser(firebaseUser);
     }
 
     async resetPassword(email: string): Promise<void> {

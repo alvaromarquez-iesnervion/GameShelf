@@ -6,10 +6,10 @@ import {
     doc,
     getDoc,
     getDocs,
-    setDoc,
     writeBatch,
     updateDoc,
 } from 'firebase/firestore';
+import { loadGogTokens, saveGogTokens } from '../utils/GogTokenStore';
 import { IGameRepository } from '../../domain/interfaces/repositories/IGameRepository';
 import { ISteamApiService } from '../../domain/interfaces/services/ISteamApiService';
 import { IEpicGamesApiService } from '../../domain/interfaces/services/IEpicGamesApiService';
@@ -134,34 +134,17 @@ export class GameRepositoryImpl implements IGameRepository {
             const allGames = await this.getLibraryGames(userId);
             return allGames.filter(g => g.getPlatform() === Platform.EPIC_GAMES);
         } else if (platform === Platform.GOG) {
-            // 1. Leer tokens de Firestore
-            const gogDoc = await getDoc(
-                doc(this.firestore, 'users', userId, 'platforms', 'gog'),
-            );
-            if (!gogDoc.exists()) return [];
+            // 1. Leer tokens desde SecureStore del dispositivo
+            const stored = await loadGogTokens();
+            if (!stored) return [];
 
-            const docData = gogDoc.data();
-            let accessToken = docData['accessToken'] as string;
-            const refreshToken = docData['refreshToken'] as string;
-            const expiresAtStr = docData['expiresAt'] as string | undefined;
+            let accessToken = stored.accessToken;
 
             // 2. Renovar token si ha expirado (con margen de 60 s)
-            if (expiresAtStr) {
-                const expiresAt = new Date(expiresAtStr);
-                if (expiresAt.getTime() - Date.now() < 60_000) {
-                    const renewed = await this.gogApiService.refreshToken(refreshToken);
-                    accessToken = renewed.accessToken;
-                    // Actualizar tokens en Firestore
-                    await setDoc(
-                        doc(this.firestore, 'users', userId, 'platforms', 'gog'),
-                        {
-                            ...docData,
-                            accessToken: renewed.accessToken,
-                            refreshToken: renewed.refreshToken,
-                            expiresAt: renewed.expiresAt.toISOString(),
-                        },
-                    );
-                }
+            if (stored.expiresAt.getTime() - Date.now() < 60_000) {
+                const renewed = await this.gogApiService.refreshToken(stored.refreshToken);
+                accessToken = renewed.accessToken;
+                await saveGogTokens(renewed);
             }
 
             // 3. Obtener biblioteca de GOG

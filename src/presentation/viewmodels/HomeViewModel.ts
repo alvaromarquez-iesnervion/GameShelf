@@ -22,12 +22,15 @@ export class HomeViewModel {
     private _isSearching: boolean = false;
     private _errorMessage: string | null = null;
     private _lastHomeLoadTime: number = 0;
+    // Contador monótonamente creciente para descartar respuestas de búsquedas obsoletas.
+    // No es observable: es estado de control interno, no de presentación.
+    private _searchRequestId: number = 0;
 
     constructor(
         @inject(TYPES.IHomeUseCase)
         private readonly homeUseCase: IHomeUseCase,
     ) {
-        makeAutoObservable(this);
+        makeAutoObservable<HomeViewModel, '_searchRequestId'>(this, { _searchRequestId: false });
     }
 
     get popularGames(): Game[] { return this._popularGames; }
@@ -84,17 +87,24 @@ export class HomeViewModel {
             return;
         }
 
+        // Capturar el ID de esta búsqueda antes del await para poder detectar
+        // si una búsqueda más reciente la ha dejado obsoleta cuando llegue la respuesta.
+        const requestId = ++this._searchRequestId;
+
         runInAction(() => { this._searchQuery = query; });
 
         await withLoading(this, '_isSearching', '_errorMessage', async () => {
             const results = await this.homeUseCase.searchGames(query, userId);
             runInAction(() => {
+                if (requestId !== this._searchRequestId) return;
                 this._searchResults = results;
             });
         });
     }
 
     clearSearch(): void {
+        // Invalidar cualquier búsqueda en vuelo para que su respuesta no sobreescriba el estado limpio.
+        this._searchRequestId++;
         this._searchResults = [];
         this._searchQuery = '';
     }

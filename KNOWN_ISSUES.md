@@ -6,24 +6,27 @@ Open issues only. Resolved items have been removed. Severities: CRITICAL, HIGH, 
 
 ## 1. Security
 
-### [CRITICAL] S-01 · Account deletion order causes irrecoverable data loss
-**File:** `src/data/repositories/AuthRepositoryImpl.ts:87-129`
-`deleteAccount()` deletes all Firestore data first, then calls `deleteUser()` last. If `deleteUser()` fails (common: `auth/requires-recent-login`), all data is gone but the auth account still exists. User can still log in to an empty account with no recovery path.
-**Fix:** Attempt `deleteUser()` first (or re-authenticate), then delete Firestore data. Alternatively, use a Cloud Function with admin SDK for atomic deletion.
+### ~~[CRITICAL] S-01 · Account deletion order causes irrecoverable data loss~~
+~~**File:** `src/data/repositories/AuthRepositoryImpl.ts:87-129`~~
+~~`deleteAccount()` deletes all Firestore data first, then calls `deleteUser()` last. If `deleteUser()` fails (common: `auth/requires-recent-login`), all data is gone but the auth account still exists. User can still log in to an empty account with no recovery path.~~
+~~**Fix:** Attempt `deleteUser()` first (or re-authenticate), then delete Firestore data. Alternatively, use a Cloud Function with admin SDK for atomic deletion.~~
+**RESUELTO:** `deleteUser()` se llama ahora antes de borrar datos de Firestore.
 
 ---
 
-### [CRITICAL] S-02 · GOG client_secret shipped in client bundle (contradicts documented architecture)
-**File:** `src/data/services/GogApiServiceImpl.ts:12`
-The `IGogApiService` interface explicitly documents that "El intercambio de tokens se delega a una Cloud Function para no exponer el client_secret en el bundle movil." The implementation does the opposite — calls `auth.gog.com/token` directly with the secret embedded. Additionally, tokens are sent via URL query parameters (RFC 6749 §2.3.1 violation).
-**Fix:** Route token exchange through a Cloud Function as documented, or update the interface docs to reflect reality.
+### ~~[CRITICAL] S-02 · GOG client_secret shipped in client bundle (contradicts documented architecture)~~
+~~**File:** `src/data/services/GogApiServiceImpl.ts:12`~~
+~~The `IGogApiService` interface explicitly documents that "El intercambio de tokens se delega a una Cloud Function para no exponer el client_secret en el bundle movil." The implementation does the opposite — calls `auth.gog.com/token` directly with the secret embedded. Additionally, tokens are sent via URL query parameters (RFC 6749 §2.3.1 violation).~~
+~~**Fix:** Route token exchange through a Cloud Function as documented, or update the interface docs to reflect reality.~~
+**DECISIÓN:** Las credenciales de GOG (`client_id` / `client_secret`) son públicamente conocidas y están presentes en los repos públicos de Heroic, Playnite y Lutris. No son un secreto privativo de esta app. Se ha actualizado la documentación de `IGogApiService` para reflejar la implementación real. No se creará Cloud Function.
 
 ---
 
-### [CRITICAL] S-03 · GOG OAuth tokens stored as plain text in Firestore
-**File:** `src/data/repositories/PlatformRepositoryImpl.ts:57-68`
-`accessToken` and `refreshToken` are stored as plain-text fields in `users/{userId}/platforms/gog`. Any Firestore Security Rules misconfiguration exposes all users' tokens.
-**Fix:** Encrypt tokens before storage, or move token management to a server-side component.
+### ~~[CRITICAL] S-03 · GOG OAuth tokens stored as plain text in Firestore~~
+~~**File:** `src/data/repositories/PlatformRepositoryImpl.ts:57-68`~~
+~~`accessToken` and `refreshToken` are stored as plain-text fields in `users/{userId}/platforms/gog`. Any Firestore Security Rules misconfiguration exposes all users' tokens.~~
+~~**Fix:** Encrypt tokens before storage, or move token management to a server-side component.~~
+**RESUELTO:** Tokens migrados a `expo-secure-store` (Keychain/Keystore del SO). Firestore solo guarda `externalUserId` y `linkedAt`. `GameRepositoryImpl` lee y renueva tokens exclusivamente desde SecureStore.
 
 ---
 
@@ -83,10 +86,11 @@ None validate that `userId` is non-empty. An empty userId creates documents at `
 
 ## 2. Data Integrity & Race Conditions
 
-### [CRITICAL] D-01 · Race condition: stale search results overwrite current
-**File:** `src/presentation/viewmodels/HomeViewModel.ts:78-95`
-No cancellation of previous in-flight searches. If user types "Halo" then "Zelda", the "Halo" response may arrive last and overwrite results.
-**Fix:** Add a monotonic request counter or `AbortController`. Discard results if `_searchQuery` changed.
+### ~~[CRITICAL] D-01 · Race condition: stale search results overwrite current~~
+~~**File:** `src/presentation/viewmodels/HomeViewModel.ts:78-95`~~
+~~No cancellation of previous in-flight searches. If user types "Halo" then "Zelda", the "Halo" response may arrive last and overwrite results.~~
+~~**Fix:** Add a monotonic request counter or `AbortController`. Discard results if `_searchQuery` changed.~~
+**RESUELTO:** Contador `_searchRequestId` (no observable) incrementado antes de cada `await`; la respuesta solo se aplica si el ID coincide con el actual. `clearSearch()` también incrementa el contador para invalidar búsquedas en vuelo.
 
 ---
 
@@ -564,7 +568,7 @@ Already imported as the first line of `index.ts` per project constraints.
 
 | Severity | Count | Top actions |
 |----------|-------|-------------|
-| Critical | 4 | Account deletion ordering; GOG secret in bundle; GOG tokens plaintext; search race condition |
+| Critical | 0 | Todos resueltos o cerrados con decisión documentada |
 | High | 16 | Input validation; API timeouts/retries; Epic token refresh; library sync bug; Firestore pagination |
 | Medium | 35 | DI stale state; error handling; DRY violations; accessibility; Firestore optimizations |
 | Low | 8 | Memory cleanup; haptics; style conventions |

@@ -8,11 +8,12 @@ import { GogAuthToken } from '../../dtos/GogAuthToken';
  *   1. El usuario abre getAuthUrl() en el navegador
  *   2. GOG redirige a embed.gog.com/on_login_success?code=…
  *   3. La app captura el code y llama exchangeAuthCode()
- *   4. Los tokens se almacenan en Firestore; getUserGames() los usa para
+ *   4. Los tokens se almacenan en SecureStore del dispositivo; getUserGames() los usa para
  *      obtener la biblioteca via embed.gog.com/account/getFilteredProducts
  *
- * El intercambio de tokens se delega a una Cloud Function para no exponer
- * el client_secret en el bundle móvil.
+ * El client_id y client_secret son las credenciales OAuth públicamente conocidas
+ * de GOG Galaxy (las mismas que usan Heroic, Playnite y Lutris en sus repos públicos).
+ * No son secretos privativos de esta app.
  *
  * AVISO: usa API interna de GOG. Puede cambiar sin previo aviso.
  */
@@ -22,14 +23,13 @@ export interface IGogApiService {
 
     /**
      * Intercambia un authorization code por tokens de acceso.
-     * Llama a la Cloud Function gogTokenExchange para mantener el
-     * client_secret fuera del bundle.
+     * Llama directamente a auth.gog.com/token con las credenciales públicas de GOG Galaxy.
      */
     exchangeAuthCode(code: string): Promise<GogAuthToken>;
 
     /**
-     * Renueva el access token usando el refresh token almacenado.
-     * Llama a la Cloud Function gogTokenRefresh.
+     * Renueva el access token usando el refresh token almacenado en SecureStore.
+     * Llama directamente a auth.gog.com/token.
      */
     refreshToken(refreshToken: string): Promise<GogAuthToken>;
 
