@@ -8,6 +8,8 @@ import {
     getDocs,
     collection,
     writeBatch,
+    query,
+    where,
 } from 'firebase/firestore';
 import { IPlatformRepository } from '../../domain/interfaces/repositories/IPlatformRepository';
 import { LinkedPlatform } from '../../domain/entities/LinkedPlatform';
@@ -89,32 +91,31 @@ export class PlatformRepositoryImpl implements IPlatformRepository {
         if (platform === Platform.UNKNOWN) return;
         const docId = PLATFORM_DOC_ID[platform as Exclude<Platform, Platform.UNKNOWN>];
 
-        // 1. Eliminar tokens de SecureStore si corresponde (antes de borrar el doc de Firestore)
+        // 1. Limpiar tokens de SecureStore primero (antes de cualquier operación Firestore)
         if (platform === Platform.GOG) {
             await clearGogTokens();
         } else if (platform === Platform.EPIC_GAMES) {
             await clearEpicTokens();
         }
 
-        // 2. Eliminar vinculación de plataforma
-        await deleteDoc(doc(this.firestore, 'users', userId, 'platforms', docId));
-
-        // 2. Eliminar juegos de esa plataforma de la biblioteca usando writeBatch
-        // (atómico y eficiente — Firestore admite hasta 500 ops por batch)
+        // 2. Batch-delete juegos de esta plataforma usando where() para evitar leer toda la biblioteca
         const librarySnap = await getDocs(
-            collection(this.firestore, 'users', userId, 'library'),
-        );
-        const toDelete = librarySnap.docs.filter(
-            d => d.data().platform === platform,
+            query(
+                collection(this.firestore, 'users', userId, 'library'),
+                where('platform', '==', platform),
+            ),
         );
 
         // Procesar en lotes de 500 (límite de Firestore por batch)
         const BATCH_LIMIT = 500;
-        for (let i = 0; i < toDelete.length; i += BATCH_LIMIT) {
+        for (let i = 0; i < librarySnap.docs.length; i += BATCH_LIMIT) {
             const batch = writeBatch(this.firestore);
-            toDelete.slice(i, i + BATCH_LIMIT).forEach(d => batch.delete(d.ref));
+            librarySnap.docs.slice(i, i + BATCH_LIMIT).forEach(d => batch.delete(d.ref));
             await batch.commit();
         }
+
+        // 3. Eliminar vinculación de plataforma (después de eliminar los juegos)
+        await deleteDoc(doc(this.firestore, 'users', userId, 'platforms', docId));
     }
 
     async getLinkedPlatforms(userId: string): Promise<LinkedPlatform[]> {
@@ -122,18 +123,21 @@ export class PlatformRepositoryImpl implements IPlatformRepository {
             collection(this.firestore, 'users', userId, 'platforms'),
         );
 
-        return snap.docs.map(d => {
+        return snap.docs.flatMap(d => {
             const data = d.data();
-            // El docId ('steam' | 'epic_games') mapea al enum
+            // El docId ('steam' | 'epic_games' | 'gog') mapea al enum
             const platform = Object.entries(PLATFORM_DOC_ID).find(
                 ([, docId]) => docId === d.id,
             )?.[0] as Platform | undefined;
 
-            return new LinkedPlatform(
-                platform ?? Platform.STEAM,
+            // Omitir documentos con ID desconocido para evitar un fallback incorrecto
+            if (!platform) return [];
+
+            return [new LinkedPlatform(
+                platform,
                 data.externalUserId ?? '',
                 data.linkedAt ? new Date(data.linkedAt) : new Date(),
-            );
+            )];
         });
     }
 }

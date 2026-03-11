@@ -1,10 +1,15 @@
 import 'reflect-metadata';
 import { injectable } from 'inversify';
 import axios from 'axios';
+import { addAxiosRetryInterceptor } from '../utils/httpRetry';
+import { TtlCache } from '../utils/ttlCache';
 import { IIsThereAnyDealService, ItadGameInfo } from '../../domain/interfaces/services/IIsThereAnyDealService';
 import { Deal } from '../../domain/entities/Deal';
 import { SearchResult } from '../../domain/entities/SearchResult';
 import { ITAD_API_BASE_URL, ITAD_API_KEY } from '../config/ApiConstants';
+
+const itadAxios = axios.create({ timeout: 8_000 });
+addAxiosRetryInterceptor(itadAxios);
 
 interface ItadPriceEntry {
     shop: { id: string; name: string };
@@ -41,8 +46,12 @@ interface ItadGameInfoResponse {
  *
  * Términos: no modificar datos, mencionar/enlazar IsThereAnyDeal.
  */
+const GAME_INFO_TTL_MS = 15 * 60 * 1000; // 15 minutes
+
 @injectable()
 export class IsThereAnyDealServiceImpl implements IIsThereAnyDealService {
+
+    private readonly gameInfoCache = new TtlCache<string, ItadGameInfo | null>();
 
     private get authParams() {
         return { key: ITAD_API_KEY };
@@ -50,7 +59,7 @@ export class IsThereAnyDealServiceImpl implements IIsThereAnyDealService {
 
     async lookupGameId(title: string): Promise<string | null> {
         try {
-            const response = await axios.post(
+            const response = await itadAxios.post(
                 `${ITAD_API_BASE_URL}/games/lookup/v1`,
                 [title],
                 { params: this.authParams },
@@ -67,7 +76,7 @@ export class IsThereAnyDealServiceImpl implements IIsThereAnyDealService {
         if (titles.length === 0) return resultMap;
 
         try {
-            const response = await axios.post(
+            const response = await itadAxios.post(
                 `${ITAD_API_BASE_URL}/games/lookup/v1`,
                 titles,
                 { params: this.authParams },
@@ -89,7 +98,7 @@ export class IsThereAnyDealServiceImpl implements IIsThereAnyDealService {
 
     async lookupGameIdBySteamAppId(steamAppId: string): Promise<string | null> {
         try {
-            const response = await axios.post(
+            const response = await itadAxios.post(
                 `${ITAD_API_BASE_URL}/games/lookup/id/shop/v1`,
                 { shop: 'steam', ids: [`app/${steamAppId}`] },
                 { params: this.authParams },
@@ -104,7 +113,7 @@ export class IsThereAnyDealServiceImpl implements IIsThereAnyDealService {
 
     async getPricesForGame(itadGameId: string): Promise<Deal[]> {
         try {
-            const response = await axios.post(
+            const response = await itadAxios.post(
                 `${ITAD_API_BASE_URL}/games/prices/v2`,
                 [itadGameId],
                 { params: this.authParams },
@@ -124,7 +133,7 @@ export class IsThereAnyDealServiceImpl implements IIsThereAnyDealService {
         if (itadGameIds.length === 0) return resultMap;
 
         try {
-            const response = await axios.post(
+            const response = await itadAxios.post(
                 `${ITAD_API_BASE_URL}/games/prices/v2`,
                 itadGameIds,
                 { params: this.authParams },
@@ -149,7 +158,7 @@ export class IsThereAnyDealServiceImpl implements IIsThereAnyDealService {
 
     async getHistoricalLow(itadGameId: string): Promise<Deal | null> {
         try {
-            const response = await axios.post(
+            const response = await itadAxios.post(
                 `${ITAD_API_BASE_URL}/games/historylow/v1`,
                 [itadGameId],
                 { params: this.authParams },
@@ -171,7 +180,7 @@ export class IsThereAnyDealServiceImpl implements IIsThereAnyDealService {
 
     async searchGames(query: string): Promise<SearchResult[]> {
         try {
-            const response = await axios.get(
+            const response = await itadAxios.get(
                 `${ITAD_API_BASE_URL}/games/search/v1`,
                 { params: { ...this.authParams, title: query, limit: 20 } },
             );
@@ -202,20 +211,26 @@ export class IsThereAnyDealServiceImpl implements IIsThereAnyDealService {
     }
 
     async getGameInfo(itadGameId: string): Promise<ItadGameInfo | null> {
+        const cached = this.gameInfoCache.get(itadGameId);
+        if (cached !== undefined) return cached;
+
         try {
-            const response = await axios.get(
+            const response = await itadAxios.get(
                 `${ITAD_API_BASE_URL}/games/info/v2`,
                 { params: { ...this.authParams, id: itadGameId } },
             );
             const data: ItadGameInfoResponse = response.data;
-            
-            return {
+
+            const result: ItadGameInfo = {
                 id: data.id,
                 title: data.title,
                 steamAppId: data.appid ?? null,
                 coverUrl: data.assets?.banner300 ?? data.assets?.banner400 ?? '',
             };
+            this.gameInfoCache.set(itadGameId, result, GAME_INFO_TTL_MS);
+            return result;
         } catch {
+            this.gameInfoCache.set(itadGameId, null, GAME_INFO_TTL_MS);
             return null;
         }
     }

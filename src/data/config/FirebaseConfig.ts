@@ -24,6 +24,17 @@ let authInstance: Auth;
 let firestoreInstance: Firestore;
 
 export function initializeFirebase(): FirebaseApp {
+    // Validate required configuration keys before attempting initialization
+    const requiredKeys: (keyof typeof firebaseConfig)[] = ['apiKey', 'projectId', 'appId'];
+    for (const key of requiredKeys) {
+        if (!firebaseConfig[key]) {
+            throw new Error(
+                `Firebase: la variable de entorno EXPO_PUBLIC_FIREBASE_${key.toUpperCase()} es obligatoria pero no está definida. ` +
+                'Copia .env.example → .env y rellena los valores.',
+            );
+        }
+    }
+
     const alreadyInitialized = getApps().length > 0;
 
     // Evita reinicializar si ya se llamó (útil en hot reload de desarrollo)

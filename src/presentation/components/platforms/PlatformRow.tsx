@@ -7,6 +7,13 @@ import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { spacing, radius } from '../../theme/spacing';
 
+const PLATFORM_NAMES: Record<PlatformEnum, string> = {
+    [PlatformEnum.STEAM]: 'Steam',
+    [PlatformEnum.EPIC_GAMES]: 'Epic Games',
+    [PlatformEnum.GOG]: 'GOG',
+    [PlatformEnum.UNKNOWN]: 'Desconocido',
+};
+
 export interface PlatformRowProps {
     platform: PlatformEnum;
     linked: boolean;
@@ -21,7 +28,9 @@ export const PlatformRow: React.FC<PlatformRowProps> = ({
     loading,
     onLink,
     onUnlink,
-}) => (
+}) => {
+    const platformName = PLATFORM_NAMES[platform] ?? platform;
+    return (
     <View style={styles.row}>
         <PlatformBadge platform={platform} />
         <View style={styles.rowMeta}>
@@ -34,6 +43,9 @@ export const PlatformRow: React.FC<PlatformRowProps> = ({
             onPress={linked ? onUnlink : onLink}
             disabled={loading}
             activeOpacity={0.75}
+            accessibilityRole="button"
+            accessibilityLabel={`${platformName} — ${linked ? 'Desvincular' : 'Vincular'}`}
+            accessibilityState={{ disabled: loading }}
         >
             <Feather
                 name={linked ? 'link-2' : 'link'}
@@ -45,7 +57,8 @@ export const PlatformRow: React.FC<PlatformRowProps> = ({
             </Text>
         </TouchableOpacity>
     </View>
-);
+    );
+};
 
 const styles = StyleSheet.create({
     row: {

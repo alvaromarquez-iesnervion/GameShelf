@@ -42,6 +42,7 @@ export class PlatformLinkUseCase implements IPlatformLinkUseCase {
         callbackUrl: string,
         params: Record<string, string>,
     ): Promise<LinkedPlatform> {
+        if (!userId?.trim()) throw new Error('userId requerido');
         // 1. Verificar respuesta OpenID con Steam
         const isValid = await this.steamService.verifyOpenIdResponse(params);
         if (!isValid) {
@@ -71,6 +72,7 @@ export class PlatformLinkUseCase implements IPlatformLinkUseCase {
     }
 
     async linkSteamById(userId: string, profileUrlOrId: string): Promise<LinkedPlatform> {
+        if (!userId?.trim()) throw new Error('userId requerido');
         // 1. Validar que el input sea un SteamID64 numérico o una URL de steamcommunity.com
         const trimmed = profileUrlOrId.trim();
         const isSteamId64 = /^\d{17}$/.test(trimmed);
@@ -101,6 +103,7 @@ export class PlatformLinkUseCase implements IPlatformLinkUseCase {
     }
 
     async linkEpicByAuthCode(userId: string, authCode: string): Promise<LinkedPlatform> {
+        if (!userId?.trim()) throw new Error('userId requerido');
         // 1. Intercambiar el authorization code por un access token
         const token = await this.epicService.exchangeAuthCode(authCode);
 
@@ -128,6 +131,7 @@ export class PlatformLinkUseCase implements IPlatformLinkUseCase {
     }
 
     async linkEpic(userId: string, fileContent: string): Promise<LinkedPlatform> {
+        if (!userId?.trim()) throw new Error('userId requerido');
         // 1. Parsear el JSON del export GDPR de Epic
         // Devuelve array de Game con itadGameId enriquecido
         const epicGames = await this.epicService.parseExportedLibrary(fileContent);
@@ -158,6 +162,7 @@ export class PlatformLinkUseCase implements IPlatformLinkUseCase {
     }
 
     async linkGogByCode(userId: string, code: string): Promise<LinkedPlatform> {
+        if (!userId?.trim()) throw new Error('userId requerido');
         // 1. Intercambiar el authorization code por tokens OAuth2
         const token = await this.gogService.exchangeAuthCode(code);
 
@@ -171,10 +176,12 @@ export class PlatformLinkUseCase implements IPlatformLinkUseCase {
     }
 
     async unlinkPlatform(userId: string, platform: Platform): Promise<void> {
+        if (!userId?.trim()) throw new Error('userId requerido');
         return this.platformRepository.unlinkPlatform(userId, platform);
     }
 
     async getLinkedPlatforms(userId: string): Promise<LinkedPlatform[]> {
+        if (!userId?.trim()) throw new Error('userId requerido');
         return this.platformRepository.getLinkedPlatforms(userId);
     }
 }

@@ -242,3 +242,4 @@ export const PlatformLinkScreen: React.FC = observer(() => {
         </View>
     );
 });
+PlatformLinkScreen.displayName = 'PlatformLinkScreen';

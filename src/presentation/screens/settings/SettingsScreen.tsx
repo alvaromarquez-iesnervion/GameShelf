@@ -5,6 +5,7 @@ import { observer } from 'mobx-react-lite';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as Haptics from 'expo-haptics';
+import Constants from 'expo-constants';
 import { useInjection } from '../../../di/hooks/useInjection';
 import { AuthViewModel } from '../../viewmodels/AuthViewModel';
 import { SettingsViewModel } from '../../viewmodels/SettingsViewModel';
@@ -161,7 +162,8 @@ export const SettingsScreen: React.FC = observer(() => {
                 </Text>
             </TouchableOpacity>
 
-            <Text style={styles.version}>GameShelf v1.0.0 (OLED Edition)</Text>
+            <Text style={styles.version}>{`GameShelf v${Constants.expoConfig?.version ?? '1.0.0'} (OLED Edition)`}</Text>
         </ScrollView>
     );
 });
+SettingsScreen.displayName = 'SettingsScreen';

@@ -18,6 +18,7 @@ export class WishlistUseCase implements IWishlistUseCase {
     ) {}
 
     async getWishlist(userId: string): Promise<WishlistItem[]> {
+        if (!userId?.trim()) throw new Error('userId requerido');
         const items = await this.wishlistRepository.getWishlist(userId);
 
         if (items.length === 0) return items;
@@ -56,10 +57,14 @@ export class WishlistUseCase implements IWishlistUseCase {
     }
 
     async addToWishlist(userId: string, item: WishlistItem): Promise<void> {
+        if (!userId?.trim()) throw new Error('userId requerido');
+        const alreadyAdded = await this.wishlistRepository.isInWishlist(userId, item.getGameId());
+        if (alreadyAdded) return;
         return this.wishlistRepository.addToWishlist(userId, item);
     }
 
     async removeFromWishlist(userId: string, itemId: string): Promise<void> {
+        if (!userId?.trim()) throw new Error('userId requerido');
         return this.wishlistRepository.removeFromWishlist(userId, itemId);
     }
 }

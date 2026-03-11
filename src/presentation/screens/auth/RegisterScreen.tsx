@@ -25,6 +25,8 @@ import { styles } from './RegisterScreen.styles';
 
 type Nav = NativeStackNavigationProp<AuthStackParamList, 'Register'>;
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export const RegisterScreen: React.FC = observer(() => {
     const authVm = useInjection<AuthViewModel>(TYPES.AuthViewModel);
     const navigation = useNavigation<Nav>();
@@ -40,6 +42,11 @@ export const RegisterScreen: React.FC = observer(() => {
         setLocalError(null);
         if (!email.trim() || !password.trim()) {
             setLocalError('Rellena todos los campos');
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+            return;
+        }
+        if (!EMAIL_REGEX.test(email.trim())) {
+            setLocalError('El formato del correo no es válido');
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
             return;
         }

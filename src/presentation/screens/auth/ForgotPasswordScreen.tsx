@@ -24,6 +24,8 @@ import { styles } from './ForgotPasswordScreen.styles';
 
 type Nav = NativeStackNavigationProp<AuthStackParamList, 'ForgotPassword'>;
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export const ForgotPasswordScreen: React.FC = observer(() => {
     const authVm = useInjection<AuthViewModel>(TYPES.AuthViewModel);
     const navigation = useNavigation<Nav>();
@@ -33,12 +35,12 @@ export const ForgotPasswordScreen: React.FC = observer(() => {
     const [emailSent, setEmailSent] = useState(false);
 
     const handleReset = useCallback(async () => {
-        if (!email.trim()) return;
+        if (!email.trim() || !EMAIL_REGEX.test(email.trim())) return;
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        const success = await authVm.resetPassword(email.trim());
-        if (success) {
-            setEmailSent(true);
-        }
+        // Always show success state regardless of outcome to prevent email enumeration
+        await authVm.resetPassword(email.trim());
+        authVm.clearError();
+        setEmailSent(true);
     }, [email, authVm]);
 
     const handleBack = useCallback(() => {
@@ -73,10 +75,9 @@ export const ForgotPasswordScreen: React.FC = observer(() => {
                         <View style={styles.successIcon}>
                             <Feather name="mail" size={36} color={colors.success} />
                         </View>
-                        <Text style={styles.title}>Correo enviado</Text>
+                        <Text style={styles.title}>Solicitud enviada</Text>
                         <Text style={styles.subtitle}>
-                            Hemos enviado un enlace de recuperación a{'\n'}
-                            <Text style={styles.emailHighlight}>{email}</Text>
+                            Si el correo existe en nuestra base de datos, recibirás un enlace de recuperación en breve.
                         </Text>
                         <Text style={styles.hintText}>
                             Revisa tu bandeja de entrada y sigue las instrucciones. Si no lo ves, comprueba la carpeta de spam.

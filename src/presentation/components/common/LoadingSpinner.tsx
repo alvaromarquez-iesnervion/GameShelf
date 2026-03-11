@@ -16,7 +16,7 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
     fullScreen = true,
 }) => {
     return (
-        <View style={[styles.container, !fullScreen && styles.inline]}>
+        <View style={[styles.container, !fullScreen && styles.inline]} accessibilityRole="progressbar" accessibilityLabel="Cargando...">
             <ActivityIndicator size={size} color={colors.primary} />
             {message && (
                 <Text style={styles.message}>{message}</Text>

@@ -6,6 +6,7 @@ import { User } from '../../domain/entities/User';
 import { TYPES } from '../../di/types';
 import { withLoading } from './BaseViewModel';
 import { isGuestUser } from '../../core/utils/guestUtils';
+import { mapFirebaseError } from '../../core/utils/firebaseErrors';
 
 /**
  * ViewModel para autenticación.
@@ -48,7 +49,12 @@ export class AuthViewModel {
 
     async login(email: string, password: string): Promise<boolean> {
         const result = await withLoading(this, '_isLoading', '_errorMessage', async () => {
-            const user = await this.authUseCase.login(email, password);
+            let user;
+            try {
+                user = await this.authUseCase.login(email, password);
+            } catch (e) {
+                throw new Error(mapFirebaseError(e));
+            }
             runInAction(() => {
                 this._currentUser = user;
             });
@@ -59,7 +65,12 @@ export class AuthViewModel {
 
     async register(email: string, password: string): Promise<boolean> {
         const result = await withLoading(this, '_isLoading', '_errorMessage', async () => {
-            const user = await this.authUseCase.register(email, password);
+            let user;
+            try {
+                user = await this.authUseCase.register(email, password);
+            } catch (e) {
+                throw new Error(mapFirebaseError(e));
+            }
             runInAction(() => {
                 this._currentUser = user;
             });
@@ -120,7 +131,11 @@ export class AuthViewModel {
 
     async resetPassword(email: string): Promise<boolean> {
         const result = await withLoading(this, '_isLoading', '_errorMessage', async () => {
-            await this.authUseCase.resetPassword(email);
+            try {
+                await this.authUseCase.resetPassword(email);
+            } catch (e) {
+                throw new Error(mapFirebaseError(e));
+            }
             return true;
         });
         return result ?? false;

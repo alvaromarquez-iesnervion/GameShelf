@@ -14,9 +14,8 @@ export const RootNavigator: React.FC = observer(() => {
     const syncStartedRef = useRef(false);
 
     useEffect(() => {
-        authVm.checkAuthState();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+        authVm.checkAuthState().catch(e => console.warn('[RootNavigator] checkAuthState failed:', e));
+    }, [authVm]);
 
     // Disparar carga de biblioteca una sola vez cuando el usuario pasa a autenticado
     useEffect(() => {
@@ -33,8 +32,7 @@ export const RootNavigator: React.FC = observer(() => {
             syncStartedRef.current = false;
             libraryVm.resetSyncState();
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [authVm.isAuthenticated]);
+    }, [authVm.isAuthenticated, authVm.currentUser, authVm.isGuest, libraryVm]);
 
     if (authVm.isLoading && !authVm.isAuthenticated) {
         return <LoadingSpinner />;
@@ -42,3 +40,4 @@ export const RootNavigator: React.FC = observer(() => {
 
     return authVm.isAuthenticated ? <MainTabNavigator /> : <AuthStack />;
 });
+RootNavigator.displayName = 'RootNavigator';

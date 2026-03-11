@@ -1,9 +1,12 @@
 import 'reflect-metadata';
 import { injectable } from 'inversify';
 import axios from 'axios';
+import { TtlCache } from '../utils/ttlCache';
 import { IHowLongToBeatService } from '../../domain/interfaces/services/IHowLongToBeatService';
 import { HltbResult } from '../../domain/entities/HltbResult';
 import { HLTB_INIT_URL, HLTB_SEARCH_URL } from '../config/ApiConstants';
+
+const RESULT_TTL_MS = 15 * 60 * 1000; // 15 minutes
 
 // Estructura relevante de un resultado de HLTB
 interface HltbGameEntry {
@@ -38,6 +41,8 @@ const HLTB_TOKEN_TTL_MS = 30 * 60 * 1000;
 @injectable()
 export class HowLongToBeatServiceImpl implements IHowLongToBeatService {
 
+    private readonly resultCache = new TtlCache<string, HltbResult | null>();
+
     private readonly browserHeaders = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         'Referer': 'https://howlongtobeat.com',
@@ -48,10 +53,14 @@ export class HowLongToBeatServiceImpl implements IHowLongToBeatService {
     private _tokenExpiresAt: number = 0;
 
     async getGameDuration(gameTitle: string): Promise<HltbResult | null> {
+        const cached = this.resultCache.get(gameTitle);
+        if (cached !== undefined) return cached;
+
+        let result: HltbResult | null;
         try {
             const token = await this.fetchToken();
             if (!token) return null;
-            return await this.search(gameTitle, token);
+            result = await this.search(gameTitle, token);
         } catch (err: unknown) {
             // Si el token expiró (403), invalidar caché, refrescar y reintentar una vez
             const status = (err as { response?: { status?: number } }).response?.status;
@@ -60,13 +69,17 @@ export class HowLongToBeatServiceImpl implements IHowLongToBeatService {
                 try {
                     const freshToken = await this.fetchToken();
                     if (!freshToken) return null;
-                    return await this.search(gameTitle, freshToken);
+                    result = await this.search(gameTitle, freshToken);
                 } catch {
                     return null;
                 }
+            } else {
+                return null;
             }
-            return null;
         }
+
+        this.resultCache.set(gameTitle, result, RESULT_TTL_MS);
+        return result;
     }
 
     private async fetchToken(): Promise<string | null> {

@@ -1,33 +1,19 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { BlurView } from 'expo-blur';
-import { StyleSheet, Platform } from 'react-native';
 import { SettingsStackParamList } from './navigationTypes';
 import { SettingsScreen } from '../../presentation/screens/settings/SettingsScreen';
 import { PlatformLinkScreen } from '../../presentation/screens/settings/PlatformLinkScreen';
 import { NotificationSettingsScreen } from '../../presentation/screens/settings/NotificationSettingsScreen';
 import { ProfileScreen } from '../../presentation/screens/profile/ProfileScreen';
 import { colors } from '../../presentation/theme/colors';
+import { makeBlurHeader } from './sharedScreenOptions';
 
 const Stack = createNativeStackNavigator<SettingsStackParamList>();
-
-const blurHeader = () =>
-    Platform.OS === 'ios' ? (
-        <BlurView intensity={80} tint="dark" style={StyleSheet.absoluteFill} />
-    ) : null;
 
 export const SettingsStack: React.FC = () => {
     return (
         <Stack.Navigator
-            screenOptions={{
-                headerTransparent: true,
-                headerBackground: blurHeader,
-                headerStyle: {
-                    backgroundColor: Platform.OS === 'ios' ? 'transparent' : colors.surface,
-                },
-                headerTintColor: colors.textPrimary,
-                contentStyle: { backgroundColor: colors.background },
-            }}
+            screenOptions={makeBlurHeader(colors)}
         >
             <Stack.Screen
                 name="Settings"

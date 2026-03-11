@@ -25,7 +25,7 @@ export const PlatformIcon: React.FC<PlatformIconProps> = ({ platform, size = 18 
                 <MaterialCommunityIcons
                     name="steam"
                     size={size}
-                    color="#fff"
+                    color={colors.onPrimary}
                 />
             </View>
         );

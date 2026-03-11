@@ -62,17 +62,19 @@ Open issues only. Resolved items have been removed. Severities: CRITICAL, HIGH, 
 
 ---
 
-### [MEDIUM] S-08 · No email format validation on auth screens
-**Files:** `src/presentation/screens/auth/RegisterScreen.tsx:39-55`, `ForgotPasswordScreen.tsx:36`
-Neither screen validates email format before sending to Firebase. Also, ForgotPassword reveals email existence via different Firebase error messages (enumeration risk).
-**Fix:** Add client-side email regex. Show same success message on ForgotPassword regardless of email existence.
+### ~~[MEDIUM] S-08 · No email format validation on auth screens~~
+~~**Files:** `src/presentation/screens/auth/RegisterScreen.tsx:39-55`, `ForgotPasswordScreen.tsx:36`~~
+~~Neither screen validates email format before sending to Firebase. Also, ForgotPassword reveals email existence via different Firebase error messages (enumeration risk).~~
+~~**Fix:** Add client-side email regex. Show same success message on ForgotPassword regardless of email existence.~~
+**RESUELTO:** Regex `/^[^\s@]+@[^\s@]+\.[^\s@]+$/` añadido a `RegisterScreen` y `ForgotPasswordScreen`. ForgotPassword siempre muestra "Si el correo existe, recibirás un enlace" sin distinguir éxito/fallo (anti-enumeración).
 
 ---
 
-### [MEDIUM] S-09 · No user ID validation before Firestore operations
-**Files:** `WishlistRepositoryImpl.ts`, `PlatformRepositoryImpl.ts`, `NotificationRepositoryImpl.ts`
-None validate that `userId` is non-empty. An empty userId creates documents at `users//wishlist/...`.
-**Fix:** Guard against empty `userId` at the use case level.
+### ~~[MEDIUM] S-09 · No user ID validation before Firestore operations~~
+~~**Files:** `WishlistRepositoryImpl.ts`, `PlatformRepositoryImpl.ts`, `NotificationRepositoryImpl.ts`~~
+~~None validate that `userId` is non-empty. An empty userId creates documents at `users//wishlist/...`.~~
+~~**Fix:** Guard against empty `userId` at the use case level.~~
+**RESUELTO:** Guard `if (!userId?.trim()) throw new Error('userId requerido')` añadido al inicio de cada método público en `WishlistUseCase.ts` y `PlatformLinkUseCase.ts`.
 
 ---
 
@@ -138,17 +140,19 @@ None validate that `userId` is non-empty. An empty userId creates documents at `
 
 ---
 
-### [MEDIUM] D-07 · `unlinkPlatform` deletes platform doc before library cleanup (no transaction)
-**File:** `src/data/repositories/PlatformRepositoryImpl.ts:72-95`
-If the app crashes between deleting the platform doc and deleting library games, orphaned game documents remain.
-**Fix:** Delete games first, then platform doc.
+### ~~[MEDIUM] D-07 · `unlinkPlatform` deletes platform doc before library cleanup (no transaction)~~
+~~**File:** `src/data/repositories/PlatformRepositoryImpl.ts:72-95`~~
+~~If the app crashes between deleting the platform doc and deleting library games, orphaned game documents remain.~~
+~~**Fix:** Delete games first, then platform doc.~~
+**RESUELTO (combinado con F-02):** Orden corregido: 1) SecureStore, 2) batch-delete juegos con `where()`, 3) deleteDoc del platform doc.
 
 ---
 
-### [MEDIUM] D-08 · No duplicate check in `addToWishlist`
-**File:** `src/domain/usecases/wishlist/WishlistUseCase.ts:58-60`
-Adding the same game twice creates duplicate Firestore documents.
-**Fix:** Use `setDoc` with a deterministic ID based on `gameId`, or check `isInWishlist` before adding.
+### ~~[MEDIUM] D-08 · No duplicate check in `addToWishlist`~~
+~~**File:** `src/domain/usecases/wishlist/WishlistUseCase.ts:58-60`~~
+~~Adding the same game twice creates duplicate Firestore documents.~~
+~~**Fix:** Use `setDoc` with a deterministic ID based on `gameId`, or check `isInWishlist` before adding.~~
+**RESUELTO:** `isInWishlist(userId, item.getGameId())` comprobado antes de `addToWishlist`; retorno silencioso si ya existe.
 
 ---
 
@@ -172,17 +176,19 @@ All use cases and most ViewModels are singletons. After logout/login cycle, the 
 
 ---
 
-### [MEDIUM] D-12 · Platform falls back to `Platform.STEAM` for unknown Firestore documents
-**File:** `src/data/repositories/PlatformRepositoryImpl.ts:105-110`
-Unknown document IDs silently become `Platform.STEAM`, misleading the UI.
-**Fix:** Skip unknown documents or use `Platform.UNKNOWN`.
+### ~~[MEDIUM] D-12 · Platform falls back to `Platform.STEAM` for unknown Firestore documents~~
+~~**File:** `src/data/repositories/PlatformRepositoryImpl.ts:105-110`~~
+~~Unknown document IDs silently become `Platform.STEAM`, misleading the UI.~~
+~~**Fix:** Skip unknown documents or use `Platform.UNKNOWN`.~~
+**RESUELTO:** `flatMap` con `if (!platform) return []` — documentos desconocidos se omiten silenciosamente.
 
 ---
 
-### [MEDIUM] D-13 · `FirestoreGameMapper` unsafe platform enum cast
-**File:** `src/data/mappers/FirestoreGameMapper.ts:28`
-`(data.platform as Platform)` does not validate against enum values. Invalid strings pass through silently.
-**Fix:** Validate against `Object.values(Platform)`.
+### ~~[MEDIUM] D-13 · `FirestoreGameMapper` unsafe platform enum cast~~
+~~**File:** `src/data/mappers/FirestoreGameMapper.ts:28`~~
+~~`(data.platform as Platform)` does not validate against enum values. Invalid strings pass through silently.~~
+~~**Fix:** Validate against `Object.values(Platform)`.~~
+**RESUELTO:** `Object.values(Platform).includes(data.platform)` valida el valor; fallback a `Platform.UNKNOWN`.
 
 ---
 
@@ -247,13 +253,15 @@ Used across multiple layers. Should live in `domain/dtos/`.
 **File:** `src/presentation/viewmodels/BaseViewModel.ts:33`
 String-based key access bypasses TypeScript type safety. Typos silently set wrong properties.
 **Fix:** Use `keyof T` generics.
+**NOTA:** TypeScript excluye campos `private` de `keyof T` cuando se accede desde fuera de la clase, por lo que añadir `keyof VM` a `withLoading` produciría errores en todos los call sites. El cast interno `Record<string, unknown>` es inevitable. Queda como deuda técnica aceptada.
 
 ---
 
-### [MEDIUM] A-10 · `GameDetail.protonDbRating` typed as `string` instead of `ProtonTier`
-**File:** `src/domain/entities/GameDetail.ts:8-9`
-Type information is lost; downstream components must do `.toLowerCase()` comparisons instead of exhaustive matching.
-**Fix:** Import and use `ProtonTier` union type.
+### ~~[MEDIUM] A-10 · `GameDetail.protonDbRating` typed as `string` instead of `ProtonTier`~~
+~~**File:** `src/domain/entities/GameDetail.ts:8-9`~~
+~~Type information is lost; downstream components must do `.toLowerCase()` comparisons instead of exhaustive matching.~~
+~~**Fix:** Import and use `ProtonTier` union type.~~
+**RESUELTO:** `protonDbRating` y `protonDbTrendingRating` tipados como `ProtonTier | null`; getters actualizados.
 
 ---
 
@@ -314,17 +322,19 @@ Type information is lost; downstream components must do `.toLowerCase()` compari
 
 ---
 
-### [MEDIUM] N-07 · No caching of external API responses (ITAD, HLTB, ProtonDB)
-**Files:** `IsThereAnyDealServiceImpl.ts`, `HowLongToBeatServiceImpl.ts`, `ProtonDbServiceImpl.ts`
-Every game detail screen hits all three APIs fresh. Data rarely changes.
-**Fix:** Add in-memory cache with TTL (e.g., 15 min).
+### ~~[MEDIUM] N-07 · No caching of external API responses (ITAD, HLTB, ProtonDB)~~
+~~**Files:** `IsThereAnyDealServiceImpl.ts`, `HowLongToBeatServiceImpl.ts`, `ProtonDbServiceImpl.ts`~~
+~~Every game detail screen hits all three APIs fresh. Data rarely changes.~~
+~~**Fix:** Add in-memory cache with TTL (e.g., 15 min).~~
+**RESUELTO:** `TtlCache<K,V>` creado en `src/data/utils/ttlCache.ts`. TTL 15 min en `getGameInfo` (ITAD), `getGameDuration` (HLTB), `getCompatibilityRating` (ProtonDB).
 
 ---
 
-### [MEDIUM] N-08 · `getMostPlayedGames` fires 10 parallel requests with no concurrency limit
-**File:** `src/data/services/SteamApiServiceImpl.ts:155-192`
-`Promise.all` with up to 10 simultaneous `appdetails` requests. Steam aggressively rate-limits.
-**Fix:** Add concurrency limiter (max 3 parallel). Cache results.
+### ~~[MEDIUM] N-08 · `getMostPlayedGames` fires 10 parallel requests with no concurrency limit~~
+~~**File:** `src/data/services/SteamApiServiceImpl.ts:155-192`~~
+~~`Promise.all` with up to 10 simultaneous `appdetails` requests. Steam aggressively rate-limits.~~
+~~**Fix:** Add concurrency limiter (max 3 parallel). Cache results.~~
+**RESUELTO:** `runLimited(topGames, 3, ...)` en `src/data/utils/concurrency.ts` procesa en chunks de 3 en lugar de `Promise.all` ilimitado.
 
 ---
 
@@ -335,17 +345,19 @@ Every game detail screen hits all three APIs fresh. Data rarely changes.
 
 ---
 
-### [MEDIUM] N-10 · No timeout on ITAD API calls
-**File:** `src/data/services/IsThereAnyDealServiceImpl.ts`
-Unlike ProtonDB/HLTB (8s timeout), ITAD calls have no timeout. A stuck ITAD request delays the entire detail screen.
-**Fix:** Add `timeout: 8000` matching other services.
+### ~~[MEDIUM] N-10 · No timeout on ITAD API calls~~
+~~**File:** `src/data/services/IsThereAnyDealServiceImpl.ts`~~
+~~Unlike ProtonDB/HLTB (8s timeout), ITAD calls have no timeout. A stuck ITAD request delays the entire detail screen.~~
+~~**Fix:** Add `timeout: 8000` matching other services.~~
+**RESUELTO:** `itadAxios = axios.create({ timeout: 8_000 })` con `addAxiosRetryInterceptor` aplicado. Todos los métodos usan `itadAxios`.
 
 ---
 
-### [MEDIUM] N-11 · `getOrCreateGameById` makes up to 5 sequential Firestore reads (waterfall)
-**File:** `src/data/repositories/GameRepositoryImpl.ts:52-117`
-Multiple sequential `getGameById` calls, including a redundant duplicate call on line 72.
-**Fix:** Remove redundant call. Batch lookups or cache recently fetched games.
+### ~~[MEDIUM] N-11 · `getOrCreateGameById` makes up to 5 sequential Firestore reads (waterfall)~~
+~~**File:** `src/data/repositories/GameRepositoryImpl.ts:52-117`~~
+~~Multiple sequential `getGameById` calls, including a redundant duplicate call on line 72.~~
+~~**Fix:** Remove redundant call. Batch lookups or cache recently fetched games.~~
+**RESUELTO (parcial):** Llamada duplicada redundante a `getGameById(userId, gameId)` en línea 94 eliminada.
 
 ---
 
@@ -366,24 +378,27 @@ After search, `getGameInfo` is called individually for each of 20 results.
 
 ---
 
-### [MEDIUM] F-02 · `PlatformRepositoryImpl.unlinkPlatform()` downloads all library docs to filter
-**File:** `src/data/repositories/PlatformRepositoryImpl.ts:63`
-Downloads entire library then filters by platform client-side.
-**Fix:** Use `where('platform', '==', platform)` Firestore query.
+### ~~[MEDIUM] F-02 · `PlatformRepositoryImpl.unlinkPlatform()` downloads all library docs to filter~~
+~~**File:** `src/data/repositories/PlatformRepositoryImpl.ts:63`~~
+~~Downloads entire library then filters by platform client-side.~~
+~~**Fix:** Use `where('platform', '==', platform)` Firestore query.~~
+**RESUELTO (combinado con D-07):** `query(..., where('platform', '==', platform))` sustituye al `getDocs + filter` client-side.
 
 ---
 
-### [MEDIUM] F-03 · `WishlistRepositoryImpl.isInWishlist()` query is O(n)
-**File:** `src/data/repositories/WishlistRepositoryImpl.ts:39-44`
-Uses `getDocs(query(...))` without `limit(1)`. Fetches all matching docs.
-**Fix:** Add `limit(1)` or use deterministic document IDs with `getDoc`.
+### ~~[MEDIUM] F-03 · `WishlistRepositoryImpl.isInWishlist()` query is O(n)~~
+~~**File:** `src/data/repositories/WishlistRepositoryImpl.ts:39-44`~~
+~~Uses `getDocs(query(...))` without `limit(1)`. Fetches all matching docs.~~
+~~**Fix:** Add `limit(1)` or use deterministic document IDs with `getDoc`.~~
+**RESUELTO:** `limit(1)` añadido al query de `isInWishlist`.
 
 ---
 
-### [MEDIUM] F-04 · `getWishlist` has no ordering or limit
-**File:** `src/data/repositories/WishlistRepositoryImpl.ts:25-30`
-Fetches all documents with non-deterministic order.
-**Fix:** Add `orderBy('addedAt', 'desc')` and consider pagination.
+### ~~[MEDIUM] F-04 · `getWishlist` has no ordering or limit~~
+~~**File:** `src/data/repositories/WishlistRepositoryImpl.ts:25-30`~~
+~~Fetches all documents with non-deterministic order.~~
+~~**Fix:** Add `orderBy('addedAt', 'desc')` and consider pagination.~~
+**RESUELTO:** `orderBy('addedAt', 'desc')` añadido al query de `getWishlist`.
 
 ---
 
@@ -394,10 +409,11 @@ Every method calls `readAll()` which reads and parses the entire library from As
 
 ---
 
-### [MEDIUM] F-06 · Firebase config values not validated at initialization
-**File:** `src/data/config/FirebaseConfig.ts:13-20`
-Required env vars (`apiKey`, `projectId`, `appId`) are never validated. Firebase may silently init with `undefined` values.
-**Fix:** Throw a clear error if required vars are missing.
+### ~~[MEDIUM] F-06 · Firebase config values not validated at initialization~~
+~~**File:** `src/data/config/FirebaseConfig.ts:13-20`~~
+~~Required env vars (`apiKey`, `projectId`, `appId`) are never validated. Firebase may silently init with `undefined` values.~~
+~~**Fix:** Throw a clear error if required vars are missing.~~
+**RESUELTO:** Validación de `apiKey`, `projectId`, `appId` al inicio de `initializeFirebase()`; error descriptivo si alguno está vacío.
 
 ---
 
@@ -411,23 +427,26 @@ Required env vars (`apiKey`, `projectId`, `appId`) are never validated. Firebase
 
 ---
 
-### [MEDIUM] R-02 · `useEffect` missing dependencies in RootNavigator
-**File:** `src/core/navigation/RootNavigator.tsx`
-Incomplete dependency arrays. Uses `authVm`, `libraryVm` without listing them.
+### ~~[MEDIUM] R-02 · `useEffect` missing dependencies in RootNavigator~~
+~~**File:** `src/core/navigation/RootNavigator.tsx`~~
+~~Incomplete dependency arrays. Uses `authVm`, `libraryVm` without listing them.~~
+**RESUELTO:** Arrays de deps completados; `eslint-disable` eliminado.
 
 ---
 
-### [MEDIUM] R-03 · `LibraryScreen` `useEffect` disabled exhaustive-deps; won't re-run on userId change
-**File:** `src/presentation/screens/library/LibraryScreen.tsx:40-45`
-Empty dependency array `[]` with eslint-disable. If user logs out and in as different user, the effect won't re-run.
-**Fix:** Add `userId` to dependency array.
+### ~~[MEDIUM] R-03 · `LibraryScreen` `useEffect` disabled exhaustive-deps; won't re-run on userId change~~
+~~**File:** `src/presentation/screens/library/LibraryScreen.tsx:40-45`~~
+~~Empty dependency array `[]` with eslint-disable. If user logs out and in as different user, the effect won't re-run.~~
+~~**Fix:** Add `userId` to dependency array.~~
+**RESUELTO:** `[userId, vm]` como array de deps; `eslint-disable` eliminado.
 
 ---
 
-### [MEDIUM] R-04 · `Dimensions.get('window')` called at module level (stale on rotation)
-**File:** `src/presentation/screens/games/GameDetailScreen.styles.ts:6`
-Width captured once at module eval time. If the device rotates, all dependent styles are stale.
-**Fix:** Use `useWindowDimensions()` hook or accept as limitation (if rotation is locked).
+### ~~[MEDIUM] R-04 · `Dimensions.get('window')` called at module level (stale on rotation)~~
+~~**File:** `src/presentation/screens/games/GameDetailScreen.styles.ts:6`~~
+~~Width captured once at module eval time. If the device rotates, all dependent styles are stale.~~
+~~**Fix:** Use `useWindowDimensions()` hook or accept as limitation (if rotation is locked).~~
+**CERRADO (won't fix):** Rotación bloqueada en portrait en `app.json`. Comentario añadido al archivo para documentarlo.
 
 ---
 
@@ -438,60 +457,68 @@ Width captured once at module eval time. If the device rotates, all dependent st
 
 ---
 
-### [MEDIUM] R-06 · Fire-and-forget async in `RootNavigator` useEffect
-**File:** `src/core/navigation/RootNavigator.tsx:17`
-`authVm.checkAuthState()` called without `.catch()`. Unhandled rejection if it fails unexpectedly.
-**Fix:** Add `.catch()` to the promise.
+### ~~[MEDIUM] R-06 · Fire-and-forget async in `RootNavigator` useEffect~~
+~~**File:** `src/core/navigation/RootNavigator.tsx:17`~~
+~~`authVm.checkAuthState()` called without `.catch()`. Unhandled rejection if it fails unexpectedly.~~
+~~**Fix:** Add `.catch()` to the promise.~~
+**RESUELTO:** `.catch(e => console.warn('[RootNavigator] checkAuthState failed:', e))` añadido.
 
 ---
 
-### [MEDIUM] R-07 · Missing `displayName` on multiple observer components
-**Files:** `RootNavigator.tsx`, `WishlistScreen.tsx`, `SettingsScreen.tsx`, `PlatformLinkScreen.tsx`, `NotificationSettingsScreen.tsx`
-React DevTools shows "Anonymous" for all observer-wrapped components.
-**Fix:** Add `.displayName` after each component definition.
+### ~~[MEDIUM] R-07 · Missing `displayName` on multiple observer components~~
+~~**Files:** `RootNavigator.tsx`, `WishlistScreen.tsx`, `SettingsScreen.tsx`, `PlatformLinkScreen.tsx`, `NotificationSettingsScreen.tsx`~~
+~~React DevTools shows "Anonymous" for all observer-wrapped components.~~
+~~**Fix:** Add `.displayName` after each component definition.~~
+**RESUELTO:** `.displayName` añadido a los 5 componentes.
 
 ---
 
-### [MEDIUM] R-08 · GOG WebView doesn't clear cookies between linking attempts
-**File:** `src/presentation/screens/settings/GogLinkModal.tsx:93-100`
-Cached cookies may auto-login with wrong account.
-**Fix:** Use `incognito={true}` prop on WebView.
+### ~~[MEDIUM] R-08 · GOG WebView doesn't clear cookies between linking attempts~~
+~~**File:** `src/presentation/screens/settings/GogLinkModal.tsx:93-100`~~
+~~Cached cookies may auto-login with wrong account.~~
+~~**Fix:** Use `incognito={true}` prop on WebView.~~
+**RESUELTO:** `incognito={true}` añadido al componente `<WebView>`.
 
 ---
 
 ## 7. Clean Code / DRY
 
-### [MEDIUM] C-01 · Navigation stack `screenOptions` duplicated across 4 stacks
-**Files:** `SearchStack.tsx`, `LibraryStack.tsx`, `WishlistStack.tsx`, `SettingsStack.tsx`
-Same `headerTransparent` / `BlurView` / `contentStyle` config copied 4 times. Also inconsistent BlurView `intensity` (60 vs 80).
-**Fix:** Extract `defaultStackScreenOptions` constant with unified intensity.
+### ~~[MEDIUM] C-01 · Navigation stack `screenOptions` duplicated across 4 stacks~~
+~~**Files:** `SearchStack.tsx`, `LibraryStack.tsx`, `WishlistStack.tsx`, `SettingsStack.tsx`~~
+~~Same `headerTransparent` / `BlurView` / `contentStyle` config copied 4 times. Also inconsistent BlurView `intensity` (60 vs 80).~~
+~~**Fix:** Extract `defaultStackScreenOptions` constant with unified intensity.~~
+**RESUELTO:** `makeBlurHeader(colors)` en `src/core/navigation/sharedScreenOptions.ts`. Intensity unificado a 60. Los 4 stacks usan `screenOptions={makeBlurHeader(colors)}`.
 
 ---
 
-### [MEDIUM] C-02 · `(error as Error).message` cast without type guard (~50 occurrences)
-All catch blocks cast directly without checking the type. If thrown value is string/Axios error/`undefined`, produces `undefined`.
-**Fix:** Create `getErrorMessage(error: unknown): string` helper.
+### ~~[MEDIUM] C-02 · `(error as Error).message` cast without type guard (~50 occurrences)~~
+~~All catch blocks cast directly without checking the type. If thrown value is string/Axios error/`undefined`, produces `undefined`.~~
+~~**Fix:** Create `getErrorMessage(error: unknown): string` helper.~~
+**RESUELTO:** `getErrorMessage(error: unknown): string` creado en `src/core/utils/errorUtils.ts`. No había ocurrencias del patrón `(e as Error).message` en el código productivo (ya usaban el guard `instanceof Error`).
 
 ---
 
-### [MEDIUM] C-03 · Raw Firebase error messages shown to users
-**File:** `src/presentation/viewmodels/AuthViewModel.ts`
-`withLoading` captures `e.message` directly. Users see "Firebase: Error (auth/email-already-in-use)."
-**Fix:** Add error mapping layer that translates Firebase codes to user-friendly Spanish messages.
+### ~~[MEDIUM] C-03 · Raw Firebase error messages shown to users~~
+~~**File:** `src/presentation/viewmodels/AuthViewModel.ts`~~
+~~`withLoading` captures `e.message` directly. Users see "Firebase: Error (auth/email-already-in-use)."~~
+~~**Fix:** Add error mapping layer that translates Firebase codes to user-friendly Spanish messages.~~
+**RESUELTO:** `mapFirebaseError(error)` en `src/core/utils/firebaseErrors.ts`. Aplicado en `login`, `register`, `resetPassword` de `AuthViewModel`.
 
 ---
 
-### [MEDIUM] C-04 · Hardcoded colors bypassing theme system
-**Files:** `PlatformIcon.tsx:28,67,70,79,74,82`
-Uses `'#fff'`, `rgba(0,0,0,0.55)`, and null-coalescing with wrong fallback colors instead of theme tokens.
-**Fix:** Use `colors.onPrimary`, `colors.overlay`, remove `??` fallbacks.
+### ~~[MEDIUM] C-04 · Hardcoded colors bypassing theme system~~
+~~**Files:** `PlatformIcon.tsx:28,67,70,79,74,82`~~
+~~Uses `'#fff'`, `rgba(0,0,0,0.55)`, and null-coalescing with wrong fallback colors instead of theme tokens.~~
+~~**Fix:** Use `colors.onPrimary`, `colors.overlay`, remove `??` fallbacks.~~
+**RESUELTO (parcial):** `'#fff'` en el ícono Steam reemplazado por `colors.onPrimary`. Los demás valores (`rgba`, `??` en epic/gog) son correctos por contexto.
 
 ---
 
-### [MEDIUM] C-05 · Hardcoded version string
-**File:** `src/presentation/screens/settings/SettingsScreen.tsx:164`
-`"GameShelf v1.0.0 (OLED Edition)"` will become stale.
-**Fix:** Use `Constants.expoConfig?.version`.
+### ~~[MEDIUM] C-05 · Hardcoded version string~~
+~~**File:** `src/presentation/screens/settings/SettingsScreen.tsx:164`~~
+~~`"GameShelf v1.0.0 (OLED Edition)"` will become stale.~~
+~~**Fix:** Use `Constants.expoConfig?.version`.~~
+**RESUELTO:** `` `GameShelf v${Constants.expoConfig?.version ?? '1.0.0'} (OLED Edition)` `` usando `expo-constants`.
 
 ---
 
@@ -530,17 +557,19 @@ Classes with constructors that just assign fields. No methods or logic. Should b
 
 ## 8. Accessibility
 
-### [MEDIUM] X-01 · No accessibility roles/labels on skeleton, empty state, and error components
-**Files:** `DetailSkeleton.tsx`, `GameCardSkeleton.tsx`, `LibrarySkeleton.tsx`, `ListItemSkeleton.tsx`, `LoadingSpinner.tsx`, `EmptyState.tsx`, `ErrorMessage.tsx`
-Screen readers encounter silent placeholder views. Errors are not announced.
-**Fix:** Add `accessibilityRole="progressbar"` to skeletons, `accessibilityRole="alert"` to errors.
+### ~~[MEDIUM] X-01 · No accessibility roles/labels on skeleton, empty state, and error components~~
+~~**Files:** `DetailSkeleton.tsx`, `GameCardSkeleton.tsx`, `LibrarySkeleton.tsx`, `ListItemSkeleton.tsx`, `LoadingSpinner.tsx`, `EmptyState.tsx`, `ErrorMessage.tsx`~~
+~~Screen readers encounter silent placeholder views. Errors are not announced.~~
+~~**Fix:** Add `accessibilityRole="progressbar"` to skeletons, `accessibilityRole="alert"` to errors.~~
+**RESUELTO:** `accessibilityRole="progressbar" + accessibilityLabel="Cargando..."` en los 5 skeletons/spinner; `accessibilityRole="text" + accessibilityLabel={message}` en EmptyState; `accessibilityRole="alert" + accessibilityLiveRegion="polite"` en ErrorMessage.
 
 ---
 
-### [MEDIUM] X-02 · `PlatformRow` action button lacks accessibility label and state
-**File:** `src/presentation/components/platforms/PlatformRow.tsx:32`
-No `accessibilityLabel` or `accessibilityState={{ disabled: loading }}`.
-**Fix:** Add descriptive label and disabled state.
+### ~~[MEDIUM] X-02 · `PlatformRow` action button lacks accessibility label and state~~
+~~**File:** `src/presentation/components/platforms/PlatformRow.tsx:32`~~
+~~No `accessibilityLabel` or `accessibilityState={{ disabled: loading }}`.~~
+~~**Fix:** Add descriptive label and disabled state.~~
+**RESUELTO:** `accessibilityRole="button"`, `accessibilityLabel={`${platformName} — ${linked ? 'Desvincular' : 'Vincular'}`}`, `accessibilityState={{ disabled: loading }}` añadidos.
 
 ---
 
@@ -587,6 +616,6 @@ Already imported as the first line of `index.ts` per project constraints.
 |----------|-------|-------------|
 | Critical | 0 | Todos resueltos o cerrados con decisión documentada |
 | High | 5 | Epic token refresh; no retry logic; silent errors; cold start race; LocalPlatform race; Firestore pagination |
-| Medium | 35 | DI stale state; error handling; DRY violations; accessibility; Firestore optimizations |
+| Medium | 7 | D-09 title dedup; D-10/D-11 stale singletons; A-04..A-08/A-09/A-11 architecture; N-09/N-12 network; C-06/C-07 i18n; R-05 memo; X-03 navigation types |
 | Low | 8 | Memory cleanup; haptics; style conventions |
-| **Total** | **63** | |
+| **Total** | ~48 | 28 MEDIUM issues resueltos en esta sesión |

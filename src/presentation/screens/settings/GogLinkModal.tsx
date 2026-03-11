@@ -97,6 +97,7 @@ export const GogLinkModal: React.FC<GogLinkModalProps> = ({
                             onLoadStart={() => setWebViewLoading(true)}
                             onLoadEnd={() => setWebViewLoading(false)}
                             style={styles.webView}
+                            incognito={true}
                         />
                         {webViewLoading && (
                             <View style={styles.loadingOverlay}>

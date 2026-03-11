@@ -56,3 +56,4 @@ export const NotificationSettingsScreen: React.FC = observer(() => {
         </View>
     );
 });
+NotificationSettingsScreen.displayName = 'NotificationSettingsScreen';

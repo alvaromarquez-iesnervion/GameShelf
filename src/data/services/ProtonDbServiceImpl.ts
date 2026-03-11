@@ -1,9 +1,12 @@
 import 'reflect-metadata';
 import { injectable } from 'inversify';
 import axios from 'axios';
+import { TtlCache } from '../utils/ttlCache';
 import { IProtonDbService } from '../../domain/interfaces/services/IProtonDbService';
 import { ProtonDbRating, ProtonTier } from '../../domain/entities/ProtonDbRating';
 import { PROTONDB_API_URL, BROWSER_HEADERS } from '../config/ApiConstants';
+
+const RATING_TTL_MS = 15 * 60 * 1000; // 15 minutes
 
 // Estructura real de la respuesta de ProtonDB
 interface ProtonDbResponse {
@@ -40,8 +43,13 @@ function toProtonTier(value: string | undefined | null): ProtonTier {
 @injectable()
 export class ProtonDbServiceImpl implements IProtonDbService {
 
+    private readonly ratingCache = new TtlCache<string, ProtonDbRating | null>();
+
     async getCompatibilityRating(steamAppId: string): Promise<ProtonDbRating | null> {
         if (!/^\d+$/.test(steamAppId)) return null;
+
+        const cached = this.ratingCache.get(steamAppId);
+        if (cached !== undefined) return cached;
 
         try {
             const response = await axios.get<ProtonDbResponse>(
@@ -57,13 +65,12 @@ export class ProtonDbServiceImpl implements IProtonDbService {
             const data = response.data;
             const tier = toProtonTier(data.tier);
             const trendingTier = toProtonTier(data.trendingTier ?? data.tier);
-            return new ProtonDbRating(
-                tier,
-                trendingTier,
-                data.total ?? 0,
-            );
+            const result = new ProtonDbRating(tier, trendingTier, data.total ?? 0);
+            this.ratingCache.set(steamAppId, result, RATING_TTL_MS);
+            return result;
         } catch {
             // Endpoint no garantizado: 404 si el juego no está, o error de red/bloqueo
+            this.ratingCache.set(steamAppId, null, RATING_TTL_MS);
             return null;
         }
     }

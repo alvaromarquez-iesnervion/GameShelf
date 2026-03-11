@@ -1,15 +1,16 @@
 import 'reflect-metadata';
 import { injectable } from 'inversify';
 import axios from 'axios';
-
-const steamAxios = axios.create({ timeout: 15_000 });
 import { addAxiosRetryInterceptor } from '../utils/httpRetry';
-addAxiosRetryInterceptor(steamAxios);
+import { runLimited } from '../utils/concurrency';
 import { ISteamApiService } from '../../domain/interfaces/services/ISteamApiService';
 import { Game } from '../../domain/entities/Game';
 import { Platform } from '../../domain/enums/Platform';
 import { SteamGameMetadata } from '../../domain/dtos/SteamGameMetadata';
 import { STEAM_API_BASE_URL, STEAM_OPENID_URL, STEAM_CDN_BASE, STEAM_API_KEY } from '../config/ApiConstants';
+
+const steamAxios = axios.create({ timeout: 15_000 });
+addAxiosRetryInterceptor(steamAxios);
 
 interface SteamOwnedGame {
     appid: number;
@@ -156,7 +157,7 @@ export class SteamApiServiceImpl implements ISteamApiService {
         
         if (topGames.length === 0) return [];
         
-        const gameDetailsPromises = topGames.map(async (chart) => {
+        const games = await runLimited(topGames, 3, async (chart) => {
             try {
                 const detailsResponse = await steamAxios.get(
                     'https://store.steampowered.com/api/appdetails',
@@ -164,7 +165,7 @@ export class SteamApiServiceImpl implements ISteamApiService {
                 );
                 const details: SteamAppDetails = detailsResponse.data?.[chart.appid];
                 if (!details?.success || !details.data) return null;
-                
+
                 return new Game(
                     chart.appid.toString(),
                     details.data.name,
@@ -182,8 +183,6 @@ export class SteamApiServiceImpl implements ISteamApiService {
                 return null;
             }
         });
-        
-        const games = await Promise.all(gameDetailsPromises);
         return games.filter((g): g is Game => g !== null);
     }
 

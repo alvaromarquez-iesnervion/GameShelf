@@ -6,7 +6,12 @@ import { spacing, radius } from '../../theme/spacing';
 
 export const DetailSkeleton: React.FC = () => {
     return (
-        <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+        <ScrollView
+            style={styles.container}
+            showsVerticalScrollIndicator={false}
+            accessibilityRole="progressbar"
+            accessibilityLabel="Cargando..."
+        >
             {/* Immersive cover placeholder — matches GameDetailScreen 450px height */}
             <Shimmer width="100%" height={450} borderRadius={0} />
             <View style={styles.content}>

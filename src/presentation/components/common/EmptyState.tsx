@@ -17,7 +17,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
     iconSize = 32,
 }) => {
     return (
-        <View style={styles.container}>
+        <View style={styles.container} accessibilityRole="text" accessibilityLabel={message}>
             <View style={styles.iconWrap}>
                 <Feather name={icon} size={iconSize} color={colors.textTertiary} />
             </View>

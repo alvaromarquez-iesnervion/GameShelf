@@ -9,6 +9,8 @@ import {
     deleteDoc,
     query,
     where,
+    limit,
+    orderBy,
 } from 'firebase/firestore';
 import { IWishlistRepository } from '../../domain/interfaces/repositories/IWishlistRepository';
 import { WishlistItem } from '../../domain/entities/WishlistItem';
@@ -24,7 +26,10 @@ export class WishlistRepositoryImpl implements IWishlistRepository {
 
     async getWishlist(userId: string): Promise<WishlistItem[]> {
         const snap = await getDocs(
-            collection(this.firestore, 'users', userId, 'wishlist'),
+            query(
+                collection(this.firestore, 'users', userId, 'wishlist'),
+                orderBy('addedAt', 'desc'),
+            ),
         );
         return snap.docs.map(d => FirestoreWishlistMapper.toDomain(d.id, d.data()));
     }
@@ -42,6 +47,7 @@ export class WishlistRepositoryImpl implements IWishlistRepository {
         const q = query(
             collection(this.firestore, 'users', userId, 'wishlist'),
             where('gameId', '==', gameId),
+            limit(1),
         );
         const snap = await getDocs(q);
         return !snap.empty;

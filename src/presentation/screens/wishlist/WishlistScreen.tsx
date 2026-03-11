@@ -102,3 +102,4 @@ export const WishlistScreen: React.FC = observer(() => {
         </View>
     );
 });
+WishlistScreen.displayName = 'WishlistScreen';

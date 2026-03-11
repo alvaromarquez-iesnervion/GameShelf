@@ -3,6 +3,7 @@ import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { spacing, radius, layout } from '../../theme/spacing';
 
+// Portrait-only app — rotation locked in app.json, so module-level Dimensions is safe
 const { width } = Dimensions.get('window');
 
 // Hero image dimensions — portrait ratio (2:3) for games that have portraitCoverUrl,

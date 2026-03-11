@@ -6,7 +6,7 @@ import { spacing, radius } from '../../theme/spacing';
 
 export const ListItemSkeleton: React.FC = () => {
     return (
-        <View style={styles.card}>
+        <View style={styles.card} accessibilityRole="progressbar" accessibilityLabel="Cargando...">
             <Shimmer width={72} height={96} borderRadius={0} />
             <View style={styles.info}>
                 <Shimmer width={160} height={14} borderRadius={radius.xs} />

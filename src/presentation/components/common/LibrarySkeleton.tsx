@@ -9,7 +9,7 @@ const NUM_CARDS = 12;
 
 export const LibrarySkeleton: React.FC = () => {
     return (
-        <View style={styles.container}>
+        <View style={styles.container} accessibilityRole="progressbar" accessibilityLabel="Cargando...">
             {/* Large title placeholder */}
             <Shimmer width={180} height={34} borderRadius={radius.sm} style={styles.titleBar} />
             {/* Search bar placeholder */}

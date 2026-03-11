@@ -20,12 +20,16 @@ import { Platform } from '../../domain/enums/Platform';
 export class FirestoreGameMapper {
 
     static toDomain(docId: string, data: DocumentData): Game {
+        const validPlatforms = Object.values(Platform);
+        const platform: Platform = validPlatforms.includes(data.platform)
+            ? (data.platform as Platform)
+            : Platform.UNKNOWN;
         return new Game(
             docId,
             data.title ?? '',
             data.description ?? '',
             data.coverUrl ?? '',
-            (data.platform as Platform) ?? Platform.STEAM,
+            platform,
             data.steamAppId ?? null,
             data.itadGameId ?? null,
             data.playtime ?? 0,

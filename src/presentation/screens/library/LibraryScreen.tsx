@@ -41,8 +41,7 @@ export const LibraryScreen: React.FC = observer(() => {
         if (userId && vm.games.length === 0 && !vm.isLoading && !vm.isSyncing) {
             vm.loadLibrary(userId);
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [userId, vm]);
 
     // Estado local del input para que la UI sea inmediata.
     // El VM solo se actualiza tras el debounce para evitar recomputes en cada keystroke.

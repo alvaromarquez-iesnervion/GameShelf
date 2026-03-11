@@ -10,7 +10,7 @@ const CARD_HEIGHT = Math.round(CARD_WIDTH * 1.5);
 
 export const GameCardSkeleton: React.FC = () => {
     return (
-        <View style={styles.card}>
+        <View style={styles.card} accessibilityRole="progressbar" accessibilityLabel="Cargando...">
             <Shimmer width={CARD_WIDTH} height={CARD_HEIGHT} borderRadius={0} />
             <View style={styles.info}>
                 <Shimmer width={90} height={12} borderRadius={radius.xs} />

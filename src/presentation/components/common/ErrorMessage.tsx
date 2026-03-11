@@ -12,7 +12,7 @@ interface ErrorMessageProps {
 
 export const ErrorMessage: React.FC<ErrorMessageProps> = ({ message, onRetry }) => {
     return (
-        <View style={styles.container}>
+        <View style={styles.container} accessibilityRole="alert" accessibilityLiveRegion="polite">
             <View style={styles.iconWrap}>
                 <Feather name="alert-circle" size={28} color={colors.error} />
             </View>

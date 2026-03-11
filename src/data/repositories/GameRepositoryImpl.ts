@@ -89,10 +89,6 @@ export class GameRepositoryImpl implements IGameRepository {
         const looksLikeSteamAppId = /^\d+$/.test(gameId);
         if (looksLikeSteamAppId) {
             const resolvedSteamAppId = steamAppId ?? parseInt(gameId, 10);
-            // Intentar biblioteca una vez más con el valor numérico como string
-            try {
-                return await this.getGameById(userId, gameId);
-            } catch { /* no en biblioteca */ }
 
             const itadId = await this.itadService.lookupGameIdBySteamAppId(gameId);
             const info = itadId ? await this.itadService.getGameInfo(itadId) : null;

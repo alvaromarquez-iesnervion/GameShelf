@@ -1,12 +1,13 @@
 import { Game } from './Game';
 import { Deal } from './Deal';
 import { SteamGameMetadata } from '../dtos/SteamGameMetadata';
+import { ProtonTier } from './ProtonDbRating';
 
 export class GameDetail {
 
     private game: Game;
-    private protonDbRating: string | null;
-    private protonDbTrendingRating: string | null;
+    private protonDbRating: ProtonTier | null;
+    private protonDbTrendingRating: ProtonTier | null;
     private protonDbReportCount: number | null;
     private howLongToBeatMain: number | null;
     private howLongToBeatMainExtra: number | null;
@@ -16,8 +17,8 @@ export class GameDetail {
 
     constructor(
         game: Game,
-        protonDbRating: string | null,
-        protonDbTrendingRating: string | null,
+        protonDbRating: ProtonTier | null,
+        protonDbTrendingRating: ProtonTier | null,
         protonDbReportCount: number | null,
         howLongToBeatMain: number | null,
         howLongToBeatMainExtra: number | null,
@@ -37,9 +38,8 @@ export class GameDetail {
     }
 
     getGame(): Game { return this.game; }
-    // Valores posibles: "platinum" | "gold" | "silver" | "bronze" | "borked" | null
-    getProtonDbRating(): string | null { return this.protonDbRating; }
-    getProtonDbTrendingRating(): string | null { return this.protonDbTrendingRating; }
+    getProtonDbRating(): ProtonTier | null { return this.protonDbRating; }
+    getProtonDbTrendingRating(): ProtonTier | null { return this.protonDbTrendingRating; }
     /** Total community reports on ProtonDB. null if ProtonDB did not return data. */
     getProtonDbReportCount(): number | null { return this.protonDbReportCount; }
     // Horas decimales (ej: 52.5). null si la API de HLTB falla o no hay datos.
