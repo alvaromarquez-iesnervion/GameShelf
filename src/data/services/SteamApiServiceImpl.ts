@@ -3,6 +3,8 @@ import { injectable } from 'inversify';
 import axios from 'axios';
 
 const steamAxios = axios.create({ timeout: 15_000 });
+import { addAxiosRetryInterceptor } from '../utils/httpRetry';
+addAxiosRetryInterceptor(steamAxios);
 import { ISteamApiService } from '../../domain/interfaces/services/ISteamApiService';
 import { Game } from '../../domain/entities/Game';
 import { Platform } from '../../domain/enums/Platform';
@@ -175,19 +177,9 @@ export class SteamApiServiceImpl implements ISteamApiService {
                     null,
                     `${STEAM_CDN_BASE}/${chart.appid}/library_600x900.jpg`,
                 );
-            } catch {
-                return new Game(
-                    chart.appid.toString(),
-                    `Game ${chart.appid}`,
-                    '',
-                    `${STEAM_CDN_BASE}/${chart.appid}/header.jpg`,
-                    Platform.STEAM,
-                    chart.appid,
-                    null,
-                    0,
-                    null,
-                    `${STEAM_CDN_BASE}/${chart.appid}/library_600x900.jpg`,
-                );
+            } catch (err) {
+                console.warn(`[SteamApiService] getMostPlayedGames: falló detalle para appid ${chart.appid}`, err);
+                return null;
             }
         });
         

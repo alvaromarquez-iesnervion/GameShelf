@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import { injectable, inject } from 'inversify';
-import { IGameRepository } from '../../domain/interfaces/repositories/IGameRepository';
+import { IGameRepository, LibraryPage } from '../../domain/interfaces/repositories/IGameRepository';
 import { Game } from '../../domain/entities/Game';
 import { SearchResult } from '../../domain/entities/SearchResult';
 import { Platform } from '../../domain/enums/Platform';
@@ -23,6 +23,10 @@ export class GuestAwareGameRepository implements IGameRepository {
 
     getLibraryGames(userId: string): Promise<Game[]> {
         return this.repo(userId).getLibraryGames(userId);
+    }
+
+    getLibraryGamesPage(userId: string, pageSize: number, cursor?: string): Promise<LibraryPage> {
+        return this.repo(userId).getLibraryGamesPage(userId, pageSize, cursor);
     }
 
     getGameById(userId: string, gameId: string): Promise<Game> {

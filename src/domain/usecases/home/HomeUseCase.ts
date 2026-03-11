@@ -19,7 +19,8 @@ export class HomeUseCase implements IHomeUseCase {
     async getPopularGames(limit: number = 10): Promise<Game[]> {
         try {
             return await this.steamService.getMostPlayedGames(limit);
-        } catch {
+        } catch (err) {
+            console.warn('[HomeUseCase] getPopularGames falló:', err);
             return [];
         }
     }
@@ -33,7 +34,8 @@ export class HomeUseCase implements IHomeUseCase {
         const steamId = steamPlatform.getExternalUserId();
         try {
             return await this.steamService.getRecentlyPlayedGames(steamId);
-        } catch {
+        } catch (err) {
+            console.warn('[HomeUseCase] getRecentlyPlayed falló (steamId:', steamId, '):', err);
             return [];
         }
     }

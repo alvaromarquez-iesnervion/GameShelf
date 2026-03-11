@@ -4,7 +4,8 @@
       "Bash(cd C:/Users/alvar/Documents/GameShelf && npx tsc --noEmit 2>&1 | head -60)",
       "Bash(cd C:/Users/alvar/Documents/GameShelf && npm run lint 2>&1 | tail -20)",
       "Bash(cd C:/Users/alvar/Documents/GameShelf && npm run lint 2>&1 | tail -10)",
-      "WebFetch(domain:raw.githubusercontent.com)"
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "mcp__ide__getDiagnostics"
     ]
   }
 }

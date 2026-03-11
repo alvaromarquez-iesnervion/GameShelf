@@ -106,10 +106,11 @@ None validate that `userId` is non-empty. An empty userId creates documents at `
 
 ---
 
-### [HIGH] D-03 · `getCurrentUser()` race condition on cold start
-**File:** `src/data/repositories/AuthRepositoryImpl.ts:71-85`
-Uses synchronous `auth.currentUser` which may be `null` before Firebase restores the session. User briefly sees login screen on cold start.
-**Fix:** Use `onAuthStateChanged` or `auth.authStateReady()` to wait for auth initialization.
+### ~~[HIGH] D-03 · `getCurrentUser()` race condition on cold start~~
+~~**File:** `src/data/repositories/AuthRepositoryImpl.ts:71-85`~~
+~~Uses synchronous `auth.currentUser` which may be `null` before Firebase restores the session. User briefly sees login screen on cold start.~~
+~~**Fix:** Use `onAuthStateChanged` or `auth.authStateReady()` to wait for auth initialization.~~
+**RESUELTO:** `await this.auth.authStateReady()` añadido al inicio de `getCurrentUser()`. Espera a que Firebase restaure la sesión persistida antes de leer `auth.currentUser`.
 
 ---
 
@@ -121,10 +122,11 @@ Uses synchronous `auth.currentUser` which may be `null` before Firebase restores
 
 ---
 
-### [HIGH] D-05 · Race condition in `LocalPlatformRepository` read-modify-write
-**File:** `src/data/repositories/LocalPlatformRepository.ts:35-40`
-Every `link*` method does `readAll()` then `writeAll()` with no locking. Concurrent operations can overwrite each other.
-**Fix:** Implement a mutex or atomic read-modify-write pattern.
+### ~~[HIGH] D-05 · Race condition in `LocalPlatformRepository` read-modify-write~~
+~~**File:** `src/data/repositories/LocalPlatformRepository.ts:35-40`~~
+~~Every `link*` method does `readAll()` then `writeAll()` with no locking. Concurrent operations can overwrite each other.~~
+~~**Fix:** Implement a mutex or atomic read-modify-write pattern.~~
+**RESUELTO:** Mutex de promesa encadenada (`_queue`) implementado en `withMutex()`. Serializa todas las operaciones read-modify-write en FIFO sin bloquear el event loop.
 
 ---
 
@@ -272,17 +274,19 @@ Type information is lost; downstream components must do `.toLowerCase()` compari
 
 ---
 
-### [HIGH] N-02 · No retry logic for transient failures
-**Files:** All three service implementations
-No retries for network blips, 429, 502/503/504. Mobile networks are inherently unreliable.
-**Fix:** Add axios interceptor with exponential backoff for retryable status codes.
+### ~~[HIGH] N-02 · No retry logic for transient failures~~
+~~**Files:** All three service implementations~~
+~~No retries for network blips, 429, 502/503/504. Mobile networks are inherently unreliable.~~
+~~**Fix:** Add axios interceptor with exponential backoff for retryable status codes.~~
+**RESUELTO:** `src/data/utils/httpRetry.ts` — `addAxiosRetryInterceptor` aplicado a `steamAxios`/`epicAxios`; `fetchWithRetry` usado en `GogApiServiceImpl`. Backoff exponencial (1s→2s→4s, máx 30s), respeta `Retry-After`, reintenta en red caída y 429/502/503/504.
 
 ---
 
-### [HIGH] N-03 · Epic auth token has no refresh mechanism
-**File:** `src/data/services/EpicGamesApiServiceImpl.ts`
-Epic tokens expire (~6h) but `refresh_token` is never captured. User must re-authenticate manually. GOG properly implements refresh.
-**Fix:** Capture and store `refresh_token`; implement refresh flow.
+### ~~[HIGH] N-03 · Epic auth token has no refresh mechanism~~
+~~**File:** `src/data/services/EpicGamesApiServiceImpl.ts`~~
+~~Epic tokens expire (~6h) but `refresh_token` is never captured. User must re-authenticate manually. GOG properly implements refresh.~~
+~~**Fix:** Capture and store `refresh_token`; implement refresh flow.~~
+**RESUELTO:** `EpicAuthToken` añadido `refreshToken`. `EpicTokenStore` (SecureStore) creado siguiendo el patrón de `GogTokenStore`. `refreshToken()` implementado en el servicio. `PlatformRepositoryImpl.linkEpicPlatform` guarda tokens; `unlinkPlatform` los limpia. `GameRepositoryImpl.syncLibrary` para Epic carga/refresca token y re-fetchea biblioteca.
 
 ---
 
@@ -294,10 +298,11 @@ Epic tokens expire (~6h) but `refresh_token` is never captured. User must re-aut
 
 ---
 
-### [HIGH] N-05 · Silent error swallowing hides real failures
-**Files:** `EpicGamesApiServiceImpl.ts:260`, `SteamApiServiceImpl.ts:176`, `HomeUseCase.ts:22-38`
-Multiple methods catch errors and return empty arrays/fallback data without logging. Impossible to distinguish "no results" from "service is down."
-**Fix:** Add logging/telemetry layer. Distinguish "no results" from "error" in VM state.
+### ~~[HIGH] N-05 · Silent error swallowing hides real failures~~
+~~**Files:** `EpicGamesApiServiceImpl.ts:260`, `SteamApiServiceImpl.ts:176`, `HomeUseCase.ts:22-38`~~
+~~Multiple methods catch errors and return empty arrays/fallback data without logging. Impossible to distinguish "no results" from "service is down."~~
+~~**Fix:** Add logging/telemetry layer. Distinguish "no results" from "error" in VM state.~~
+**RESUELTO:** `console.warn` con tag añadido en los tres puntos. En Steam `getMostPlayedGames`, el catch ya no devuelve un `Game` ficticio (`"Game 12345"`) — devuelve `null` que se filtra, eliminando datos falsos de la UI.
 
 ---
 
@@ -353,10 +358,11 @@ After search, `getGameInfo` is called individually for each of 20 results.
 
 ## 5. Firestore & Data Performance
 
-### [HIGH] F-01 · No pagination on `getLibraryGames`
-**File:** `src/data/repositories/GameRepositoryImpl.ts:35-40`
-`getDocs(collection(...))` fetches ALL library documents in one read. Users with thousands of Steam games download everything.
-**Fix:** Implement pagination with `limit()` and `startAfter()` cursors.
+### ~~[HIGH] F-01 · No pagination on `getLibraryGames`~~
+~~**File:** `src/data/repositories/GameRepositoryImpl.ts:35-40`~~
+~~`getDocs(collection(...))` fetches ALL library documents in one read. Users with thousands of Steam games download everything.~~
+~~**Fix:** Implement pagination with `limit()` and `startAfter()` cursors.~~
+**RESUELTO:** `getLibraryGamesPage(userId, pageSize, cursor?)` con `orderBy(documentId()) + limit + startAfter`. `LibraryViewModel` usa carga progresiva (200 docs/página): muestra la primera página inmediatamente, el resto carga en background con MobX actualizando la UI reactivamente.
 
 ---
 

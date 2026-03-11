@@ -13,7 +13,9 @@ import { IPlatformRepository } from '../../domain/interfaces/repositories/IPlatf
 import { LinkedPlatform } from '../../domain/entities/LinkedPlatform';
 import { Platform } from '../../domain/enums/Platform';
 import { GogAuthToken } from '../../domain/dtos/GogAuthToken';
+import { EpicAuthToken } from '../../domain/dtos/EpicAuthToken';
 import { saveGogTokens, clearGogTokens } from '../utils/GogTokenStore';
+import { saveEpicTokens, clearEpicTokens } from '../utils/EpicTokenStore';
 import { TYPES } from '../../di/types';
 
 // Mapa de enum a nombre de documento en Firestore (solo plataformas vinculables)
@@ -42,16 +44,25 @@ export class PlatformRepositoryImpl implements IPlatformRepository {
         return new LinkedPlatform(Platform.STEAM, steamId, linkedAt);
     }
 
-    async linkEpicPlatform(userId: string, epicAccountId?: string): Promise<LinkedPlatform> {
+    async linkEpicPlatform(userId: string, epicAccountId?: string, token?: EpicAuthToken): Promise<LinkedPlatform> {
         const linkedAt = new Date();
         const externalUserId = epicAccountId ?? 'imported';
-        await setDoc(
-            doc(this.firestore, 'users', userId, 'platforms', 'epic_games'),
-            {
-                externalUserId,
-                linkedAt: linkedAt.toISOString(),
-            },
-        );
+
+        // Los tokens OAuth se guardan en SecureStore (Keychain/Keystore), nunca en Firestore.
+        const writes: Promise<unknown>[] = [
+            setDoc(
+                doc(this.firestore, 'users', userId, 'platforms', 'epic_games'),
+                {
+                    externalUserId,
+                    linkedAt: linkedAt.toISOString(),
+                },
+            ),
+        ];
+        if (token) {
+            writes.push(saveEpicTokens(token));
+        }
+        await Promise.all(writes);
+
         return new LinkedPlatform(Platform.EPIC_GAMES, externalUserId, linkedAt);
     }
 
@@ -78,9 +89,11 @@ export class PlatformRepositoryImpl implements IPlatformRepository {
         if (platform === Platform.UNKNOWN) return;
         const docId = PLATFORM_DOC_ID[platform as Exclude<Platform, Platform.UNKNOWN>];
 
-        // 1. Eliminar tokens de SecureStore si es GOG (antes de borrar el doc de Firestore)
+        // 1. Eliminar tokens de SecureStore si corresponde (antes de borrar el doc de Firestore)
         if (platform === Platform.GOG) {
             await clearGogTokens();
+        } else if (platform === Platform.EPIC_GAMES) {
+            await clearEpicTokens();
         }
 
         // 2. Eliminar vinculación de plataforma

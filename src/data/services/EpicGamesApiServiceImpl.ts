@@ -3,6 +3,8 @@ import { injectable, inject } from 'inversify';
 import axios from 'axios';
 
 const epicAxios = axios.create({ timeout: 15_000 });
+import { addAxiosRetryInterceptor } from '../utils/httpRetry';
+addAxiosRetryInterceptor(epicAxios);
 import { IEpicGamesApiService } from '../../domain/interfaces/services/IEpicGamesApiService';
 import { IIsThereAnyDealService } from '../../domain/interfaces/services/IIsThereAnyDealService';
 import { Game } from '../../domain/entities/Game';
@@ -49,6 +51,7 @@ interface EpicCatalogItem {
 // Respuesta raw del endpoint de token de Epic
 interface EpicTokenResponse {
     access_token: string;
+    refresh_token: string;
     account_id: string;
     displayName: string;
     expires_at: string; // ISO 8601
@@ -157,12 +160,49 @@ export class EpicGamesApiServiceImpl implements IEpicGamesApiService {
             );
         }
 
-        const { access_token, account_id, displayName, expires_at } = response.data;
+        const { access_token, refresh_token, account_id, displayName, expires_at } = response.data;
         return new EpicAuthToken(
             access_token,
             account_id,
             displayName,
             new Date(expires_at),
+            refresh_token,
+        );
+    }
+
+    async refreshToken(refreshToken: string): Promise<EpicAuthToken> {
+        const credentials = btoa(`${EPIC_AUTH_CLIENT_ID}:${EPIC_AUTH_CLIENT_SECRET}`);
+
+        let response;
+        try {
+            response = await epicAxios.post<EpicTokenResponse>(
+                EPIC_AUTH_TOKEN_URL,
+                `grant_type=refresh_token&refresh_token=${encodeURIComponent(refreshToken)}`,
+                {
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'Authorization': `basic ${credentials}`,
+                    },
+                },
+            );
+        } catch (err: unknown) {
+            const axiosErr = err as { response?: { data?: { errorMessage?: string } } };
+            const epicMsg = axiosErr.response?.data?.errorMessage;
+            if (epicMsg) {
+                throw new Error(`Epic Games (refresh): ${epicMsg}`);
+            }
+            throw new Error(
+                'No se pudo renovar el token de Epic Games. Vuelve a vinicular tu cuenta.',
+            );
+        }
+
+        const { access_token, refresh_token: newRefreshToken, account_id, displayName, expires_at } = response.data;
+        return new EpicAuthToken(
+            access_token,
+            account_id,
+            displayName,
+            new Date(expires_at),
+            newRefreshToken,
         );
     }
 
@@ -259,7 +299,8 @@ export class EpicGamesApiServiceImpl implements IEpicGamesApiService {
                     false,
                 );
             });
-        } catch {
+        } catch (err) {
+            console.warn('[EpicGamesApiService] searchCatalog falló:', err);
             return [];
         }
     }

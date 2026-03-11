@@ -14,6 +14,8 @@ export class EpicAuthToken {
         public readonly displayName: string,
         /** Fecha y hora de expiración del access token. */
         public readonly expiresAt: Date,
+        /** Token de refresco. Permite obtener un nuevo access token sin re-autenticar. */
+        public readonly refreshToken: string = '',
     ) {}
 
     /** True si el token ha expirado o expirará en los próximos 60 segundos. */

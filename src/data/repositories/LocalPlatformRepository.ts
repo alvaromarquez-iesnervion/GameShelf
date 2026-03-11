@@ -5,6 +5,7 @@ import { IPlatformRepository } from '../../domain/interfaces/repositories/IPlatf
 import { LinkedPlatform } from '../../domain/entities/LinkedPlatform';
 import { Platform } from '../../domain/enums/Platform';
 import { GogAuthToken } from '../../domain/dtos/GogAuthToken';
+import { EpicAuthToken } from '../../domain/dtos/EpicAuthToken';
 import { GUEST_KEY_PLATFORMS } from '../../core/utils/guestUtils';
 
 interface StoredPlatform {
@@ -15,6 +16,19 @@ interface StoredPlatform {
 
 @injectable()
 export class LocalPlatformRepository implements IPlatformRepository {
+
+    // Mutex: serializa las operaciones read-modify-write para evitar race conditions.
+    private _queue: Promise<void> = Promise.resolve();
+
+    private withMutex<T>(fn: () => Promise<T>): Promise<T> {
+        let release!: () => void;
+        const acquired = this._queue.then(() => fn());
+        this._queue = acquired.then(
+            () => { release?.(); },
+            () => { release?.(); },
+        );
+        return acquired;
+    }
 
     private async readAll(): Promise<LinkedPlatform[]> {
         const raw = await AsyncStorage.getItem(GUEST_KEY_PLATFORMS);
@@ -33,32 +47,40 @@ export class LocalPlatformRepository implements IPlatformRepository {
     }
 
     async linkSteamPlatform(_userId: string, steamId: string): Promise<LinkedPlatform> {
-        const linked = new LinkedPlatform(Platform.STEAM, steamId, new Date());
-        const current = await this.readAll();
-        const filtered = current.filter(p => p.getPlatform() !== Platform.STEAM);
-        await this.writeAll([...filtered, linked]);
-        return linked;
+        return this.withMutex(async () => {
+            const linked = new LinkedPlatform(Platform.STEAM, steamId, new Date());
+            const current = await this.readAll();
+            const filtered = current.filter(p => p.getPlatform() !== Platform.STEAM);
+            await this.writeAll([...filtered, linked]);
+            return linked;
+        });
     }
 
-    async linkEpicPlatform(_userId: string, epicAccountId?: string): Promise<LinkedPlatform> {
-        const linked = new LinkedPlatform(Platform.EPIC_GAMES, epicAccountId ?? 'imported', new Date());
-        const current = await this.readAll();
-        const filtered = current.filter(p => p.getPlatform() !== Platform.EPIC_GAMES);
-        await this.writeAll([...filtered, linked]);
-        return linked;
+    async linkEpicPlatform(_userId: string, epicAccountId?: string, _token?: EpicAuthToken): Promise<LinkedPlatform> {
+        return this.withMutex(async () => {
+            const linked = new LinkedPlatform(Platform.EPIC_GAMES, epicAccountId ?? 'imported', new Date());
+            const current = await this.readAll();
+            const filtered = current.filter(p => p.getPlatform() !== Platform.EPIC_GAMES);
+            await this.writeAll([...filtered, linked]);
+            return linked;
+        });
     }
 
     async linkGogPlatform(_userId: string, gogUserId: string, _tokens: GogAuthToken): Promise<LinkedPlatform> {
-        const linked = new LinkedPlatform(Platform.GOG, gogUserId, new Date());
-        const current = await this.readAll();
-        const filtered = current.filter(p => p.getPlatform() !== Platform.GOG);
-        await this.writeAll([...filtered, linked]);
-        return linked;
+        return this.withMutex(async () => {
+            const linked = new LinkedPlatform(Platform.GOG, gogUserId, new Date());
+            const current = await this.readAll();
+            const filtered = current.filter(p => p.getPlatform() !== Platform.GOG);
+            await this.writeAll([...filtered, linked]);
+            return linked;
+        });
     }
 
     async unlinkPlatform(_userId: string, platform: Platform): Promise<void> {
-        const current = await this.readAll();
-        await this.writeAll(current.filter(p => p.getPlatform() !== platform));
+        return this.withMutex(async () => {
+            const current = await this.readAll();
+            await this.writeAll(current.filter(p => p.getPlatform() !== platform));
+        });
     }
 
     async getLinkedPlatforms(_userId: string): Promise<LinkedPlatform[]> {

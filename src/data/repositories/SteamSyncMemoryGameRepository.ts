@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import { injectable, inject } from 'inversify';
-import { IGameRepository } from '../../domain/interfaces/repositories/IGameRepository';
+import { IGameRepository, LibraryPage } from '../../domain/interfaces/repositories/IGameRepository';
 import { IPlatformRepository } from '../../domain/interfaces/repositories/IPlatformRepository';
 import { ISteamApiService } from '../../domain/interfaces/services/ISteamApiService';
 import { IEpicGamesApiService } from '../../domain/interfaces/services/IEpicGamesApiService';
@@ -38,6 +38,11 @@ export class SteamSyncMemoryGameRepository implements IGameRepository {
 
     async getLibraryGames(userId: string): Promise<Game[]> {
         return [...(this.gamesByUser.get(userId) ?? [])];
+    }
+
+    async getLibraryGamesPage(userId: string, _pageSize: number, _cursor?: string): Promise<LibraryPage> {
+        // La biblioteca en memoria es siempre pequeña — se devuelve completa en una página.
+        return { games: await this.getLibraryGames(userId), nextCursor: null };
     }
 
     async getGameById(userId: string, gameId: string): Promise<Game> {

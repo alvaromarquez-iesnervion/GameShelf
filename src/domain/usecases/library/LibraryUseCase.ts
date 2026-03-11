@@ -1,5 +1,5 @@
 import { ILibraryUseCase } from '../../interfaces/usecases/library/ILibraryUseCase';
-import { IGameRepository } from '../../interfaces/repositories/IGameRepository';
+import { IGameRepository, LibraryPage } from '../../interfaces/repositories/IGameRepository';
 import { IPlatformRepository } from '../../interfaces/repositories/IPlatformRepository';
 import { Game } from '../../entities/Game';
 import { LinkedPlatform } from '../../entities/LinkedPlatform';
@@ -24,6 +24,10 @@ export class LibraryUseCase implements ILibraryUseCase {
 
     async getLibrary(userId: string): Promise<Game[]> {
         return this.gameRepository.getLibraryGames(userId);
+    }
+
+    async getLibraryPage(userId: string, pageSize: number, cursor?: string): Promise<LibraryPage> {
+        return this.gameRepository.getLibraryGamesPage(userId, pageSize, cursor);
     }
 
     async syncLibrary(userId: string, platform: Platform): Promise<Game[]> {

@@ -45,6 +45,12 @@ export interface IEpicGamesApiService {
     /** Parsea el JSON del export GDPR de Epic. Devuelve los juegos encontrados. */
     parseExportedLibrary(fileContent: string): Promise<Game[]>;
 
+    /**
+     * Renueva el access token usando el refresh token almacenado.
+     * Devuelve un nuevo EpicAuthToken con tokens y expiración actualizados.
+     */
+    refreshToken(refreshToken: string): Promise<EpicAuthToken>;
+
     /** Búsqueda en catálogo público de Epic via GraphQL no oficial. */
     searchCatalog(query: string): Promise<SearchResult[]>;
 }

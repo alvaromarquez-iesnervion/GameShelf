@@ -1,6 +1,7 @@
 import 'reflect-metadata';
 import { injectable } from 'inversify';
 import { IGogApiService } from '../../domain/interfaces/services/IGogApiService';
+import { fetchWithRetry } from '../utils/httpRetry';
 import { GogAuthToken } from '../../domain/dtos/GogAuthToken';
 import { Game } from '../../domain/entities/Game';
 import { Platform } from '../../domain/enums/Platform';
@@ -29,19 +30,18 @@ interface GogProductsResponse {
 @injectable()
 export class GogApiServiceImpl implements IGogApiService {
 
-    /** Wrapper de fetch con timeout vía AbortController. */
-    private async fetchWithTimeout(
+    /** Wrapper de fetch con timeout y retry para errores transitorios. */
+    private fetchWithTimeout(
         url: string,
         options: RequestInit = {},
         timeoutMs: number = GOG_REQUEST_TIMEOUT_MS,
     ): Promise<Response> {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-        try {
-            return await fetch(url, { ...options, signal: controller.signal });
-        } finally {
-            clearTimeout(timeoutId);
-        }
+        return fetchWithRetry(() => {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+            return fetch(url, { ...options, signal: controller.signal })
+                .finally(() => clearTimeout(timeoutId));
+        });
     }
 
     getAuthUrl(): string {

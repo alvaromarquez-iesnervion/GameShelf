@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { injectable, inject } from 'inversify';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { IGameRepository } from '../../domain/interfaces/repositories/IGameRepository';
+import { IGameRepository, LibraryPage } from '../../domain/interfaces/repositories/IGameRepository';
 import { IPlatformRepository } from '../../domain/interfaces/repositories/IPlatformRepository';
 import { ISteamApiService } from '../../domain/interfaces/services/ISteamApiService';
 import { IIsThereAnyDealService } from '../../domain/interfaces/services/IIsThereAnyDealService';
@@ -76,6 +76,11 @@ export class LocalGameRepository implements IGameRepository {
 
     async getLibraryGames(_userId: string): Promise<Game[]> {
         return this.readAll();
+    }
+
+    async getLibraryGamesPage(_userId: string, _pageSize: number, _cursor?: string): Promise<LibraryPage> {
+        // La biblioteca local (modo invitado) es siempre pequeña — se devuelve completa en una página.
+        return { games: await this.readAll(), nextCursor: null };
     }
 
     async getGameById(_userId: string, gameId: string): Promise<Game> {

@@ -8,9 +8,15 @@ import {
     getDocs,
     writeBatch,
     updateDoc,
+    query,
+    orderBy,
+    limit,
+    startAfter,
+    documentId,
 } from 'firebase/firestore';
 import { loadGogTokens, saveGogTokens } from '../utils/GogTokenStore';
-import { IGameRepository } from '../../domain/interfaces/repositories/IGameRepository';
+import { loadEpicTokens, saveEpicTokens } from '../utils/EpicTokenStore';
+import { IGameRepository, LibraryPage } from '../../domain/interfaces/repositories/IGameRepository';
 import { ISteamApiService } from '../../domain/interfaces/services/ISteamApiService';
 import { IEpicGamesApiService } from '../../domain/interfaces/services/IEpicGamesApiService';
 import { IGogApiService } from '../../domain/interfaces/services/IGogApiService';
@@ -37,6 +43,22 @@ export class GameRepositoryImpl implements IGameRepository {
             collection(this.firestore, 'users', userId, 'library'),
         );
         return snap.docs.map(d => FirestoreGameMapper.toDomain(d.id, d.data()));
+    }
+
+    async getLibraryGamesPage(userId: string, pageSize: number, cursor?: string): Promise<LibraryPage> {
+        const colRef = collection(this.firestore, 'users', userId, 'library');
+        const q = cursor
+            ? query(colRef, orderBy(documentId()), limit(pageSize), startAfter(cursor))
+            : query(colRef, orderBy(documentId()), limit(pageSize));
+
+        const snap = await getDocs(q);
+        const games = snap.docs.map(d => FirestoreGameMapper.toDomain(d.id, d.data()));
+        const lastDoc = snap.docs[snap.docs.length - 1];
+
+        return {
+            games,
+            nextCursor: snap.docs.length === pageSize ? (lastDoc?.id ?? null) : null,
+        };
     }
 
     async getGameById(userId: string, gameId: string): Promise<Game> {
@@ -128,11 +150,22 @@ export class GameRepositoryImpl implements IGameRepository {
             const steamId = steamDoc.data().externalUserId as string;
             games = await this.steamApiService.getUserGames(steamId);
         } else if (platform === Platform.EPIC_GAMES) {
-            // Epic no tiene API: los juegos ya están en Firestore tras la importación.
-            // Devolver solo los juegos cuya plataforma sea Epic para no duplicar
-            // juegos de otras plataformas (ej. Steam) que también están en la biblioteca.
-            const allGames = await this.getLibraryGames(userId);
-            return allGames.filter(g => g.getPlatform() === Platform.EPIC_GAMES);
+            // Si hay token almacenado (flujo auth code), re-sincronizar desde la API de Epic.
+            // Si no (flujo GDPR), devolver los juegos ya almacenados en Firestore.
+            const stored = await loadEpicTokens();
+            if (!stored || !stored.refreshToken) {
+                const allGames = await this.getLibraryGames(userId);
+                return allGames.filter(g => g.getPlatform() === Platform.EPIC_GAMES);
+            }
+
+            let accessToken = stored.accessToken;
+            if (stored.isExpired()) {
+                const renewed = await this.epicGamesApiService.refreshToken(stored.refreshToken);
+                accessToken = renewed.accessToken;
+                await saveEpicTokens(renewed);
+            }
+
+            games = await this.epicGamesApiService.fetchLibrary(accessToken, stored.accountId);
         } else if (platform === Platform.GOG) {
             // 1. Leer tokens desde SecureStore del dispositivo
             const stored = await loadGogTokens();

@@ -9,6 +9,8 @@ import { SortCriteria } from '../../domain/enums/SortCriteria';
 import { TYPES } from '../../di/types';
 import { withLoading } from './BaseViewModel';
 
+const LIBRARY_PAGE_SIZE = 200;
+
 export interface MergedLibraryGame {
     game: Game;
     platforms: Platform[];
@@ -116,16 +118,37 @@ export class LibraryViewModel {
     }
 
     async loadLibrary(userId: string): Promise<void> {
-        await withLoading(this, '_isLoading', '_errorMessage', async () => {
-            const [games, platforms] = await Promise.all([
-                this.libraryUseCase.getLibrary(userId),
+        runInAction(() => {
+            this._isLoading = true;
+            this._errorMessage = null;
+            this._games = [];
+        });
+        try {
+            // Primera página y plataformas en paralelo — la UI se muestra en cuanto llegan
+            const [firstPage, platforms] = await Promise.all([
+                this.libraryUseCase.getLibraryPage(userId, LIBRARY_PAGE_SIZE),
                 this.libraryUseCase.getLinkedPlatforms(userId),
             ]);
             runInAction(() => {
-                this._games = games;
+                this._games = firstPage.games;
                 this._linkedPlatforms = platforms;
+                this._isLoading = false;
             });
-        });
+
+            // Páginas restantes en background — MobX actualiza la UI reactivamente
+            let cursor = firstPage.nextCursor;
+            while (cursor !== null) {
+                const page = await this.libraryUseCase.getLibraryPage(userId, LIBRARY_PAGE_SIZE, cursor);
+                runInAction(() => { this._games = [...this._games, ...page.games]; });
+                cursor = page.nextCursor;
+            }
+        } catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            runInAction(() => {
+                this._errorMessage = message;
+                this._isLoading = false;
+            });
+        }
     }
 
     async syncLibrary(userId: string, platform: Platform): Promise<void> {
@@ -172,16 +195,24 @@ export class LibraryViewModel {
         });
 
         try {
-            // Carga rápida desde Firestore (lo que ya está guardado)
-            const [games, platforms] = await Promise.all([
-                this.libraryUseCase.getLibrary(userId),
+            // Primera página + plataformas en paralelo (respuesta rápida)
+            const [firstPage, platforms] = await Promise.all([
+                this.libraryUseCase.getLibraryPage(userId, LIBRARY_PAGE_SIZE),
                 this.libraryUseCase.getLinkedPlatforms(userId),
             ]);
             runInAction(() => {
-                this._games = games;
+                this._games = firstPage.games;
                 this._linkedPlatforms = platforms;
                 this._isLoading = false;
             });
+
+            // Páginas restantes en background antes de comenzar el sync de plataformas
+            let cursor = firstPage.nextCursor;
+            while (cursor !== null) {
+                const page = await this.libraryUseCase.getLibraryPage(userId, LIBRARY_PAGE_SIZE, cursor);
+                runInAction(() => { this._games = [...this._games, ...page.games]; });
+                cursor = page.nextCursor;
+            }
 
             if (platforms.length === 0) return;
 

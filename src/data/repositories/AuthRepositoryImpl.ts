@@ -76,6 +76,10 @@ export class AuthRepositoryImpl implements IAuthRepository {
     }
 
     async getCurrentUser(): Promise<User | null> {
+        // Esperar a que Firebase restaure la sesión persistida antes de leer auth.currentUser.
+        // authStateReady() resuelve una sola vez al arranque; las llamadas posteriores son inmediatas.
+        await this.auth.authStateReady();
+
         const firebaseUser = this.auth.currentUser;
         if (!firebaseUser) return null;
 

@@ -2,9 +2,21 @@ import { Game } from '../../entities/Game';
 import { SearchResult } from '../../entities/SearchResult';
 import { Platform } from '../../enums/Platform';
 
+/** Resultado de una página de biblioteca. nextCursor es null en la última página. */
+export interface LibraryPage {
+    games: Game[];
+    nextCursor: string | null;
+}
+
 export interface IGameRepository {
     /** Lee la biblioteca desde caché Firestore. Rápido. */
     getLibraryGames(userId: string): Promise<Game[]>;
+    /**
+     * Lee la biblioteca en páginas ordenadas por ID de documento.
+     * @param pageSize Número máximo de juegos por página (recomendado: 200).
+     * @param cursor   ID del último documento de la página anterior (undefined = primera página).
+     */
+    getLibraryGamesPage(userId: string, pageSize: number, cursor?: string): Promise<LibraryPage>;
     /** Obtiene un juego concreto de la biblioteca del usuario en Firestore. */
     getGameById(userId: string, gameId: string): Promise<Game>;
     /**

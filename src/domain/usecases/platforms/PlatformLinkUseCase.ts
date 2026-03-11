@@ -116,8 +116,8 @@ export class PlatformLinkUseCase implements IPlatformLinkUseCase {
         // 3. Almacenar juegos en el repositorio (en memoria, para sincronización posterior)
         await this.gameRepository.storeEpicGames(userId, epicGames);
 
-        // 4. Marcar Epic como vinculado (guardamos el accountId real, no "imported")
-        const linked = await this.platformRepository.linkEpicPlatform(userId, token.accountId);
+        // 4. Marcar Epic como vinculado y guardar tokens en SecureStore
+        const linked = await this.platformRepository.linkEpicPlatform(userId, token.accountId, token);
 
         // 5. Sincronizar la biblioteca Epic (no bloqueante)
         this.gameRepository.syncLibrary(userId, Platform.EPIC_GAMES).catch(() => {

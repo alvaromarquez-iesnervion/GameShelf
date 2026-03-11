@@ -4,6 +4,7 @@ import { IPlatformRepository } from '../../domain/interfaces/repositories/IPlatf
 import { LinkedPlatform } from '../../domain/entities/LinkedPlatform';
 import { Platform } from '../../domain/enums/Platform';
 import { GogAuthToken } from '../../domain/dtos/GogAuthToken';
+import { EpicAuthToken } from '../../domain/dtos/EpicAuthToken';
 
 /**
  * Implementación en memoria de IPlatformRepository.
@@ -26,7 +27,7 @@ export class MemoryPlatformRepository implements IPlatformRepository {
         return linked;
     }
 
-    async linkEpicPlatform(userId: string, epicAccountId?: string): Promise<LinkedPlatform> {
+    async linkEpicPlatform(userId: string, epicAccountId?: string, _token?: EpicAuthToken): Promise<LinkedPlatform> {
         const externalId = epicAccountId ?? 'imported';
         const linked = new LinkedPlatform(Platform.EPIC_GAMES, externalId, new Date());
         this.upsert(userId, linked);

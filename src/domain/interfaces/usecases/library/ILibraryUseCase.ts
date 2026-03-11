@@ -1,10 +1,16 @@
 import { Game } from '../../../entities/Game';
 import { LinkedPlatform } from '../../../entities/LinkedPlatform';
 import { Platform } from '../../../enums/Platform';
+import { LibraryPage } from '../../repositories/IGameRepository';
 
 export interface ILibraryUseCase {
     /** Devuelve todos los juegos de la biblioteca desde caché Firestore. */
     getLibrary(userId: string): Promise<Game[]>;
+    /**
+     * Devuelve una página de la biblioteca ordenada por ID.
+     * Usar para carga progresiva en la pantalla de biblioteca.
+     */
+    getLibraryPage(userId: string, pageSize: number, cursor?: string): Promise<LibraryPage>;
     /**
      * Lanza sincronización con la API de la plataforma indicada y actualiza Firestore.
      * Itera todas las plataformas vinculadas si no se especifica platform.
