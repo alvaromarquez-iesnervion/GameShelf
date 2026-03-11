@@ -1,6 +1,8 @@
 import 'reflect-metadata';
 import { injectable } from 'inversify';
 import axios from 'axios';
+
+const steamAxios = axios.create({ timeout: 15_000 });
 import { ISteamApiService } from '../../domain/interfaces/services/ISteamApiService';
 import { Game } from '../../domain/entities/Game';
 import { Platform } from '../../domain/enums/Platform';
@@ -97,14 +99,14 @@ export class SteamApiServiceImpl implements ISteamApiService {
     async verifyOpenIdResponse(params: Record<string, string>): Promise<boolean> {
         const verifyParams = { ...params, 'openid.mode': 'check_authentication' };
         const body = new URLSearchParams(verifyParams).toString();
-        const response = await axios.post(STEAM_OPENID_URL, body, {
+        const response = await steamAxios.post(STEAM_OPENID_URL, body, {
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         });
         return response.data?.includes('is_valid:true') ?? false;
     }
 
     async getUserGames(steamId: string): Promise<Game[]> {
-        const response = await axios.get(
+        const response = await steamAxios.get(
             `${STEAM_API_BASE_URL}/IPlayerService/GetOwnedGames/v1/`,
             {
                 params: {
@@ -122,7 +124,7 @@ export class SteamApiServiceImpl implements ISteamApiService {
     }
 
     async getRecentlyPlayedGames(steamId: string): Promise<Game[]> {
-        const response = await axios.get(
+        const response = await steamAxios.get(
             `${STEAM_API_BASE_URL}/IPlayerService/GetRecentlyPlayedGames/v1/`,
             {
                 params: {
@@ -138,7 +140,7 @@ export class SteamApiServiceImpl implements ISteamApiService {
     }
 
     async getMostPlayedGames(limit: number = 10): Promise<Game[]> {
-        const chartsResponse = await axios.get(
+        const chartsResponse = await steamAxios.get(
             `${STEAM_API_BASE_URL}/ISteamChartsService/GetMostPlayedGames/v1/`,
             {
                 params: {
@@ -154,7 +156,7 @@ export class SteamApiServiceImpl implements ISteamApiService {
         
         const gameDetailsPromises = topGames.map(async (chart) => {
             try {
-                const detailsResponse = await axios.get(
+                const detailsResponse = await steamAxios.get(
                     'https://store.steampowered.com/api/appdetails',
                     { params: { appids: chart.appid } },
                 );
@@ -194,7 +196,7 @@ export class SteamApiServiceImpl implements ISteamApiService {
     }
 
     async checkProfileVisibility(steamId: string): Promise<boolean> {
-        const response = await axios.get(
+        const response = await steamAxios.get(
             `${STEAM_API_BASE_URL}/ISteamUser/GetPlayerSummaries/v2/`,
             {
                 params: { key: STEAM_API_KEY, steamids: steamId },
@@ -220,7 +222,7 @@ export class SteamApiServiceImpl implements ISteamApiService {
         const vanityName = vanityMatch ? vanityMatch[1] : input;
 
         // Llamada a ISteamUser/ResolveVanityURL/v1
-        const response = await axios.get(
+        const response = await steamAxios.get(
             `${STEAM_API_BASE_URL}/ISteamUser/ResolveVanityURL/v1/`,
             { params: { key: STEAM_API_KEY, vanityurl: vanityName } },
         );
@@ -237,7 +239,7 @@ export class SteamApiServiceImpl implements ISteamApiService {
 
     async searchSteamAppId(title: string): Promise<number | null> {
         try {
-            const response = await axios.get(
+            const response = await steamAxios.get(
                 'https://store.steampowered.com/api/storesearch/',
                 { params: { term: title, cc: 'us', l: 'en' } },
             );
@@ -278,7 +280,7 @@ export class SteamApiServiceImpl implements ISteamApiService {
     }
 
     async getSteamAppDetails(appId: number): Promise<SteamGameMetadata | null> {
-        const response = await axios.get(
+        const response = await steamAxios.get(
             'https://store.steampowered.com/api/appdetails',
             { params: { appids: appId } },
         );

@@ -32,6 +32,9 @@ interface HltbGameEntry {
  *
  * AVISO: La API es interna (no documentada) y puede cambiar sin previo aviso.
  */
+// TTL del token de sesión de HLTB (30 minutos — conservador para evitar 403 en sesiones largas)
+const HLTB_TOKEN_TTL_MS = 30 * 60 * 1000;
+
 @injectable()
 export class HowLongToBeatServiceImpl implements IHowLongToBeatService {
 
@@ -41,18 +44,35 @@ export class HowLongToBeatServiceImpl implements IHowLongToBeatService {
         'Origin': 'https://howlongtobeat.com',
     };
 
+    private _cachedToken: string | null = null;
+    private _tokenExpiresAt: number = 0;
+
     async getGameDuration(gameTitle: string): Promise<HltbResult | null> {
         try {
             const token = await this.fetchToken();
             if (!token) return null;
-
             return await this.search(gameTitle, token);
-        } catch {
+        } catch (err: unknown) {
+            // Si el token expiró (403), invalidar caché, refrescar y reintentar una vez
+            const status = (err as { response?: { status?: number } }).response?.status;
+            if (status === 403) {
+                this._cachedToken = null;
+                try {
+                    const freshToken = await this.fetchToken();
+                    if (!freshToken) return null;
+                    return await this.search(gameTitle, freshToken);
+                } catch {
+                    return null;
+                }
+            }
             return null;
         }
     }
 
     private async fetchToken(): Promise<string | null> {
+        if (this._cachedToken && Date.now() < this._tokenExpiresAt) {
+            return this._cachedToken;
+        }
         try {
             const response = await axios.get(
                 `${HLTB_INIT_URL}?t=${Date.now()}`,
@@ -61,7 +81,12 @@ export class HowLongToBeatServiceImpl implements IHowLongToBeatService {
                     timeout: 8000,
                 },
             );
-            return response.data?.token ?? null;
+            const token: string | null = response.data?.token ?? null;
+            if (token) {
+                this._cachedToken = token;
+                this._tokenExpiresAt = Date.now() + HLTB_TOKEN_TTL_MS;
+            }
+            return token;
         } catch {
             return null;
         }

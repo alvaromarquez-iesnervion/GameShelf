@@ -1,6 +1,8 @@
 import 'reflect-metadata';
 import { injectable, inject } from 'inversify';
 import axios from 'axios';
+
+const epicAxios = axios.create({ timeout: 15_000 });
 import { IEpicGamesApiService } from '../../domain/interfaces/services/IEpicGamesApiService';
 import { IIsThereAnyDealService } from '../../domain/interfaces/services/IIsThereAnyDealService';
 import { Game } from '../../domain/entities/Game';
@@ -242,7 +244,7 @@ export class EpicGamesApiServiceImpl implements IEpicGamesApiService {
         };
 
         try {
-            const response = await axios.post(EPIC_GRAPHQL_URL, graphqlQuery, {
+            const response = await epicAxios.post(EPIC_GRAPHQL_URL, graphqlQuery, {
                 headers: { 'Content-Type': 'application/json' },
             });
             const elements = response.data?.data?.Catalog?.searchStore?.elements ?? [];
@@ -279,7 +281,7 @@ export class EpicGamesApiServiceImpl implements IEpicGamesApiService {
 
             let response;
             try {
-                response = await axios.get<EpicLibraryResponse>(
+                response = await epicAxios.get<EpicLibraryResponse>(
                     `${EPIC_LIBRARY_URL}/library/api/public/items`,
                     {
                         params,
@@ -366,7 +368,7 @@ export class EpicGamesApiServiceImpl implements IEpicGamesApiService {
 
         let response;
         try {
-            response = await axios.get<Record<string, EpicCatalogItem>>(
+            response = await epicAxios.get<Record<string, EpicCatalogItem>>(
                 `${EPIC_CATALOG_URL}/${namespace}/bulk/items`,
                 {
                     params,

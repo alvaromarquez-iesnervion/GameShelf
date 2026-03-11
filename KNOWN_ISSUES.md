@@ -128,10 +128,11 @@ Every `link*` method does `readAll()` then `writeAll()` with no locking. Concurr
 
 ---
 
-### [HIGH] D-06 · Race condition in `GameDetailScreen` (no request cancellation)
-**File:** `src/presentation/screens/games/GameDetailScreen.tsx:107-110`
-`loadGameDetail` has no cancellation mechanism. Rapid navigation between games can show data for the wrong game.
-**Fix:** Add a load ID counter in the ViewModel; ignore stale results.
+### ~~[HIGH] D-06 · Race condition in `GameDetailScreen` (no request cancellation)~~
+~~**File:** `src/presentation/screens/games/GameDetailScreen.tsx:107-110`~~
+~~`loadGameDetail` has no cancellation mechanism. Rapid navigation between games can show data for the wrong game.~~
+~~**Fix:** Add a load ID counter in the ViewModel; ignore stale results.~~
+**RESUELTO:** `_loadId` (no observable) añadido a `GameDetailViewModel`; `clear()` también incrementa el contador.
 
 ---
 
@@ -263,10 +264,11 @@ Type information is lost; downstream components must do `.toLowerCase()` compari
 
 ## 4. API & Network
 
-### [HIGH] N-01 · No timeout on HTTP requests across all services
-**Files:** `SteamApiServiceImpl.ts`, `EpicGamesApiServiceImpl.ts`, `GogApiServiceImpl.ts`
-None configure timeouts. Axios defaults to infinite wait. A slow API hangs the app with no recourse.
-**Fix:** Configure global axios instance with 15-30s timeout. Use `AbortController` for `fetch`.
+### ~~[HIGH] N-01 · No timeout on HTTP requests across all services~~
+~~**Files:** `SteamApiServiceImpl.ts`, `EpicGamesApiServiceImpl.ts`, `GogApiServiceImpl.ts`~~
+~~None configure timeouts. Axios defaults to infinite wait. A slow API hangs the app with no recourse.~~
+~~**Fix:** Configure global axios instance with 15-30s timeout. Use `AbortController` for `fetch`.~~
+**RESUELTO:** `steamAxios`/`epicAxios` con `timeout: 15_000` en los servicios axios. `GogApiServiceImpl` usa `fetchWithTimeout` con `AbortController` (15 s).
 
 ---
 
@@ -284,10 +286,11 @@ Epic tokens expire (~6h) but `refresh_token` is never captured. User must re-aut
 
 ---
 
-### [HIGH] N-04 · HLTB token fetched on every call + no 403 retry
-**File:** `src/data/services/HowLongToBeatServiceImpl.ts:44-53`
-Every `getGameDuration` call fetches a new token (doubles requests). The documented 403 auto-refresh is not implemented.
-**Fix:** Cache token with TTL; implement 403 retry.
+### ~~[HIGH] N-04 · HLTB token fetched on every call + no 403 retry~~
+~~**File:** `src/data/services/HowLongToBeatServiceImpl.ts:44-53`~~
+~~Every `getGameDuration` call fetches a new token (doubles requests). The documented 403 auto-refresh is not implemented.~~
+~~**Fix:** Cache token with TTL; implement 403 retry.~~
+**RESUELTO:** Token cacheado con TTL de 30 min (`_cachedToken`/`_tokenExpiresAt`). On 403: cache invalidada, token refrescado, búsqueda reintentada una vez.
 
 ---
 
@@ -298,10 +301,11 @@ Multiple methods catch errors and return empty arrays/fallback data without logg
 
 ---
 
-### [HIGH] N-06 · GOG `getUserGames` does not paginate
-**File:** `src/data/services/GogApiServiceImpl.ts:96-130`
-Only fetches first page. Users with 50+ GOG games see incomplete library.
-**Fix:** Add pagination loop similar to Epic's `fetchAllLibraryRecords`.
+### ~~[HIGH] N-06 · GOG `getUserGames` does not paginate~~
+~~**File:** `src/data/services/GogApiServiceImpl.ts:96-130`~~
+~~Only fetches first page. Users with 50+ GOG games see incomplete library.~~
+~~**Fix:** Add pagination loop similar to Epic's `fetchAllLibraryRecords`.~~
+**RESUELTO:** Loop `do/while` paginando por `page`/`totalPages` hasta consumir todas las páginas.
 
 ---
 
@@ -576,7 +580,7 @@ Already imported as the first line of `index.ts` per project constraints.
 | Severity | Count | Top actions |
 |----------|-------|-------------|
 | Critical | 0 | Todos resueltos o cerrados con decisión documentada |
-| High | 9 | API timeouts/retries; Epic token refresh; HLTB token cache; silent errors; GOG pagination; cold start race; GameDetail race; LocalPlatform race; Firestore pagination |
+| High | 5 | Epic token refresh; no retry logic; silent errors; cold start race; LocalPlatform race; Firestore pagination |
 | Medium | 35 | DI stale state; error handling; DRY violations; accessibility; Firestore optimizations |
 | Low | 8 | Memory cleanup; haptics; style conventions |
 | **Total** | **63** | |

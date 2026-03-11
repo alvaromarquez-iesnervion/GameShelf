@@ -7,6 +7,7 @@ import { Platform } from '../../domain/enums/Platform';
 
 const GOG_AUTH_BASE = 'https://auth.gog.com';
 const GOG_EMBED_BASE = 'https://embed.gog.com';
+const GOG_REQUEST_TIMEOUT_MS = 15_000;
 const GOG_CLIENT_ID = '46899977096215655';
 // Credenciales públicamente conocidas (usadas por Heroic, Playnite, Lutris)
 const GOG_CLIENT_SECRET = '9d85c43b1482497dbbce61f6e4aa173a433796eeae2ca8c5f6129f2dc4de46d9';
@@ -19,8 +20,29 @@ const GOG_TOKEN_URL = `${GOG_AUTH_BASE}/token`;
  * Llama directamente a auth.gog.com con las credenciales OAuth2 públicamente
  * conocidas (las mismas que usan Heroic, Playnite y Lutris).
  */
+interface GogProductsResponse {
+    products?: { id: number; title: string; image: string; slug?: string }[];
+    totalPages?: number;
+    page?: number;
+}
+
 @injectable()
 export class GogApiServiceImpl implements IGogApiService {
+
+    /** Wrapper de fetch con timeout vía AbortController. */
+    private async fetchWithTimeout(
+        url: string,
+        options: RequestInit = {},
+        timeoutMs: number = GOG_REQUEST_TIMEOUT_MS,
+    ): Promise<Response> {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+        try {
+            return await fetch(url, { ...options, signal: controller.signal });
+        } finally {
+            clearTimeout(timeoutId);
+        }
+    }
 
     getAuthUrl(): string {
         const params = new URLSearchParams({
@@ -41,7 +63,7 @@ export class GogApiServiceImpl implements IGogApiService {
             code,
         });
 
-        const response = await fetch(`${GOG_TOKEN_URL}?${params.toString()}`);
+        const response = await this.fetchWithTimeout(`${GOG_TOKEN_URL}?${params.toString()}`);
 
         if (!response.ok) {
             const text = await response.text().catch(() => '');
@@ -71,7 +93,7 @@ export class GogApiServiceImpl implements IGogApiService {
             refresh_token: refreshToken,
         });
 
-        const response = await fetch(`${GOG_TOKEN_URL}?${params.toString()}`);
+        const response = await this.fetchWithTimeout(`${GOG_TOKEN_URL}?${params.toString()}`);
 
         if (!response.ok) {
             const text = await response.text().catch(() => '');
@@ -94,28 +116,29 @@ export class GogApiServiceImpl implements IGogApiService {
     }
 
     async getUserGames(accessToken: string): Promise<Game[]> {
-        const url = `${GOG_EMBED_BASE}/account/getFilteredProducts?mediaType=1&sortBy=title`;
-        const response = await fetch(url, {
-            headers: {
-                Authorization: `Bearer ${accessToken}`,
-                'User-Agent': 'GOG Galaxy Client',
-            },
-        });
-
-        if (!response.ok) {
-            throw new Error(`GOG getFilteredProducts falló (${response.status})`);
-        }
-
-        const data = await response.json() as {
-            products?: {
-                id: number;
-                title: string;
-                image: string;
-                slug?: string;
-            }[];
+        const headers = {
+            Authorization: `Bearer ${accessToken}`,
+            'User-Agent': 'GOG Galaxy Client',
         };
+        const allProducts: NonNullable<GogProductsResponse['products']> = [];
+        let page = 1;
+        let totalPages = 1;
 
-        return (data.products ?? []).map(p => new Game(
+        do {
+            const url = `${GOG_EMBED_BASE}/account/getFilteredProducts?mediaType=1&sortBy=title&page=${page}`;
+            const response = await this.fetchWithTimeout(url, { headers });
+
+            if (!response.ok) {
+                throw new Error(`GOG getFilteredProducts falló (${response.status})`);
+            }
+
+            const data = await response.json() as GogProductsResponse;
+            allProducts.push(...(data.products ?? []));
+            totalPages = data.totalPages ?? 1;
+            page++;
+        } while (page <= totalPages);
+
+        return allProducts.map(p => new Game(
             `gog_${p.id}`,
             p.title,
             '',
