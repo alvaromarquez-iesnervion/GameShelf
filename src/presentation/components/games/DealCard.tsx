@@ -24,8 +24,9 @@ export const DealCard: React.FC<DealCardProps> = ({
     onPress,
 }) => {
     const handlePress = () => {
+        if (!url.startsWith('https://')) return;
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        Linking.openURL(url);
+        Linking.openURL(url).catch(() => {});
         onPress?.();
     };
 

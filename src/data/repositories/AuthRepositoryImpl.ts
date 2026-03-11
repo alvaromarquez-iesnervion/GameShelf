@@ -36,12 +36,19 @@ export class AuthRepositoryImpl implements IAuthRepository {
         const displayName = email.split('@')[0];
         const createdAt = new Date();
 
-        await setDoc(doc(this.firestore, 'users', uid), {
-            email,
-            displayName,
-            createdAt: createdAt.toISOString(),
-            notificationsEnabled: false,
-        });
+        try {
+            await setDoc(doc(this.firestore, 'users', uid), {
+                email,
+                displayName,
+                createdAt: createdAt.toISOString(),
+                notificationsEnabled: false,
+            });
+        } catch (firestoreError) {
+            // Si falla la creación del documento, eliminar la cuenta de Auth para
+            // evitar que quede huérfana (email ocupado, sin documento Firestore).
+            await deleteUser(credential.user).catch(() => {});
+            throw firestoreError;
+        }
 
         return new User(uid, email, displayName, createdAt);
     }

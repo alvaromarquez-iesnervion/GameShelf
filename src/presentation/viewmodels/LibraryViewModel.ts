@@ -130,9 +130,15 @@ export class LibraryViewModel {
 
     async syncLibrary(userId: string, platform: Platform): Promise<void> {
         await withLoading(this, '_isSyncing', '_errorMessage', async () => {
-            const games = await this.libraryUseCase.syncLibrary(userId, platform);
+            await this.libraryUseCase.syncLibrary(userId, platform);
+            // Recargar la biblioteca completa para no perder juegos de otras plataformas.
+            const [games, platforms] = await Promise.all([
+                this.libraryUseCase.getLibrary(userId),
+                this.libraryUseCase.getLinkedPlatforms(userId),
+            ]);
             runInAction(() => {
                 this._games = games;
+                this._linkedPlatforms = platforms;
             });
         });
     }

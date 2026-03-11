@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { View, FlatList, TextInput, Platform, Text, ScrollView, TouchableOpacity, StyleSheet, ListRenderItemInfo } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
@@ -63,6 +63,12 @@ export const SearchScreen: React.FC = observer(() => {
     const handleRetry = useCallback(() => {
         vm.loadHomeData(userId);
     }, [vm, userId]);
+
+    useEffect(() => {
+        return () => {
+            if (debounceRef.current) clearTimeout(debounceRef.current);
+        };
+    }, []);
 
     useFocusEffect(handleLoadHomeData);
 

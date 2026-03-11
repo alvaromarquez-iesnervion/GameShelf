@@ -25,8 +25,8 @@ export const EPIC_LIBRARY_URL = 'https://library-service.live.use1a.on.epicgames
 // Catálogo de Epic — enriquecimiento de título e imágenes dado namespace + catalogItemId (requiere Bearer token)
 // Soporta hasta 50 IDs por llamada (param ?id= repetido)
 export const EPIC_CATALOG_URL = 'https://catalog-public-service-prod06.ol.epicgames.com/catalog/api/shared/namespace';
-export const EPIC_AUTH_CLIENT_ID = process.env.EXPO_PUBLIC_EPIC_CLIENT_ID ?? '34a02cf8f4414e29b15921876da36f9a';
-export const EPIC_AUTH_CLIENT_SECRET = process.env.EXPO_PUBLIC_EPIC_CLIENT_SECRET ?? 'daafbccc737745039dffe53d94fc76cf';
+export const EPIC_AUTH_CLIENT_ID = process.env.EXPO_PUBLIC_EPIC_CLIENT_ID ?? '';
+export const EPIC_AUTH_CLIENT_SECRET = process.env.EXPO_PUBLIC_EPIC_CLIENT_SECRET ?? '';
 // URL que el usuario abre en el navegador para iniciar sesión en Epic y obtener el auth code
 export const EPIC_AUTH_REDIRECT_URL = `https://www.epicgames.com/id/api/redirect?clientId=${EPIC_AUTH_CLIENT_ID}&responseType=code`;
 

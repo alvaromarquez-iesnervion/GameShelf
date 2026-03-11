@@ -30,31 +30,35 @@ Open issues only. Resolved items have been removed. Severities: CRITICAL, HIGH, 
 
 ---
 
-### [HIGH] S-04 · Epic client credentials hardcoded as fallback defaults
-**File:** `src/data/config/ApiConstants.ts:28-29`
-`EPIC_AUTH_CLIENT_ID` and `EPIC_AUTH_CLIENT_SECRET` have hardcoded fallback values. Even if publicly known, embedding secrets as defaults normalizes insecure patterns and prevents rotation without app release.
-**Fix:** Remove fallback defaults. Require env vars; fail explicitly if missing.
+### ~~[HIGH] S-04 · Epic client credentials hardcoded as fallback defaults~~
+~~**File:** `src/data/config/ApiConstants.ts:28-29`~~
+~~`EPIC_AUTH_CLIENT_ID` and `EPIC_AUTH_CLIENT_SECRET` have hardcoded fallback values. Even if publicly known, embedding secrets as defaults normalizes insecure patterns and prevents rotation without app release.~~
+~~**Fix:** Remove fallback defaults. Require env vars; fail explicitly if missing.~~
+**RESUELTO:** Fallbacks reemplazados por `''`. El app falla explícitamente si las env vars no están configuradas.
 
 ---
 
-### [HIGH] S-05 · No input validation on Steam profile URL/ID
-**File:** `src/domain/usecases/platforms/PlatformLinkUseCase.ts:73-93`
-User input is passed directly to `steamService.resolveSteamId()` with only `.trim()`. Could enable SSRF or path traversal via a malicious URL.
-**Fix:** Validate against known patterns (numeric SteamID64, `steamcommunity.com/id/` or `/profiles/` URLs) before API call.
+### ~~[HIGH] S-05 · No input validation on Steam profile URL/ID~~
+~~**File:** `src/domain/usecases/platforms/PlatformLinkUseCase.ts:73-93`~~
+~~User input is passed directly to `steamService.resolveSteamId()` with only `.trim()`. Could enable SSRF or path traversal via a malicious URL.~~
+~~**Fix:** Validate against known patterns (numeric SteamID64, `steamcommunity.com/id/` or `/profiles/` URLs) before API call.~~
+**RESUELTO:** Validación con regex antes de llamar a `resolveSteamId`. Acepta SteamID64 (17 dígitos) o URLs `steamcommunity.com/id/` y `/profiles/`; rechaza cualquier otro input con error descriptivo.
 
 ---
 
-### [HIGH] S-06 · `Linking.openURL` called without URL validation
-**File:** `src/presentation/components/games/DealCard.tsx:28`
-Deal URLs from the ITAD API are opened without checking the scheme. A compromised API response could inject `javascript:`, custom scheme, or phishing URLs.
-**Fix:** Validate URL starts with `https://` and wrap in try/catch.
+### ~~[HIGH] S-06 · `Linking.openURL` called without URL validation~~
+~~**File:** `src/presentation/components/games/DealCard.tsx:28`~~
+~~Deal URLs from the ITAD API are opened without checking the scheme. A compromised API response could inject `javascript:`, custom scheme, or phishing URLs.~~
+~~**Fix:** Validate URL starts with `https://` and wrap in try/catch.~~
+**RESUELTO:** Guard `url.startsWith('https://')` antes de abrir; `.catch(() => {})` en `openURL`.
 
 ---
 
-### [HIGH] S-07 · `steamAppId` interpolated into URL without validation
-**File:** `src/data/services/ProtonDbServiceImpl.ts:46`
-`steamAppId` is interpolated directly into a URL with no numeric validation, enabling potential path traversal.
-**Fix:** Add `if (!/^\d+$/.test(steamAppId)) return null;` guard.
+### ~~[HIGH] S-07 · `steamAppId` interpolated into URL without validation~~
+~~**File:** `src/data/services/ProtonDbServiceImpl.ts:46`~~
+~~`steamAppId` is interpolated directly into a URL with no numeric validation, enabling potential path traversal.~~
+~~**Fix:** Add `if (!/^\d+$/.test(steamAppId)) return null;` guard.~~
+**RESUELTO:** Guard `!/^\d+$/.test(steamAppId)` añadido al inicio del método.
 
 ---
 
@@ -94,10 +98,11 @@ None validate that `userId` is non-empty. An empty userId creates documents at `
 
 ---
 
-### [HIGH] D-02 · `deleteAccount` register: partial failure leaves orphaned auth
-**File:** `src/data/repositories/AuthRepositoryImpl.ts:33-46`
-If `createUserWithEmailAndPassword` succeeds but `setDoc` fails, the auth account exists without a Firestore document. User cannot register again (email taken) and cannot log in (no Firestore doc).
-**Fix:** If `setDoc` fails, delete the newly created auth user before re-throwing.
+### ~~[HIGH] D-02 · `deleteAccount` register: partial failure leaves orphaned auth~~
+~~**File:** `src/data/repositories/AuthRepositoryImpl.ts:33-46`~~
+~~If `createUserWithEmailAndPassword` succeeds but `setDoc` fails, the auth account exists without a Firestore document. User cannot register again (email taken) and cannot log in (no Firestore doc).~~
+~~**Fix:** If `setDoc` fails, delete the newly created auth user before re-throwing.~~
+**RESUELTO:** `setDoc` envuelto en try/catch; si falla, se elimina `credential.user` antes de relanzar el error.
 
 ---
 
@@ -108,10 +113,11 @@ Uses synchronous `auth.currentUser` which may be `null` before Firebase restores
 
 ---
 
-### [HIGH] D-04 · `syncLibrary` replaces entire game list with single-platform subset
-**File:** `src/presentation/viewmodels/LibraryViewModel.ts:131-138`
-When syncing one platform, the ViewModel replaces `_games` with only that platform's games. All games from other platforms disappear until full reload.
-**Fix:** After sync, reload the full library via `getLibrary(userId)`.
+### ~~[HIGH] D-04 · `syncLibrary` replaces entire game list with single-platform subset~~
+~~**File:** `src/presentation/viewmodels/LibraryViewModel.ts:131-138`~~
+~~When syncing one platform, the ViewModel replaces `_games` with only that platform's games. All games from other platforms disappear until full reload.~~
+~~**Fix:** After sync, reload the full library via `getLibrary(userId)`.~~
+**RESUELTO:** Tras sync se llama a `getLibrary` + `getLinkedPlatforms` en paralelo y se actualiza el estado completo.
 
 ---
 
@@ -387,10 +393,11 @@ Required env vars (`apiKey`, `projectId`, `appId`) are never validated. Firebase
 
 ## 6. React / React Native
 
-### [HIGH] R-01 · Debounce timer not cleaned up on `SearchScreen` unmount
-**File:** `src/presentation/screens/search/SearchScreen.tsx:48,69-84`
-The `debounceRef` timer is never cleaned up. If it fires after unmount, it updates a stale ViewModel.
-**Fix:** Add cleanup `useEffect` with `clearTimeout`.
+### ~~[HIGH] R-01 · Debounce timer not cleaned up on `SearchScreen` unmount~~
+~~**File:** `src/presentation/screens/search/SearchScreen.tsx:48,69-84`~~
+~~The `debounceRef` timer is never cleaned up. If it fires after unmount, it updates a stale ViewModel.~~
+~~**Fix:** Add cleanup `useEffect` with `clearTimeout`.~~
+**RESUELTO:** `useEffect` con cleanup `clearTimeout(debounceRef.current)` añadido al montar el componente.
 
 ---
 
@@ -569,7 +576,7 @@ Already imported as the first line of `index.ts` per project constraints.
 | Severity | Count | Top actions |
 |----------|-------|-------------|
 | Critical | 0 | Todos resueltos o cerrados con decisión documentada |
-| High | 16 | Input validation; API timeouts/retries; Epic token refresh; library sync bug; Firestore pagination |
+| High | 9 | API timeouts/retries; Epic token refresh; HLTB token cache; silent errors; GOG pagination; cold start race; GameDetail race; LocalPlatform race; Firestore pagination |
 | Medium | 35 | DI stale state; error handling; DRY violations; accessibility; Firestore optimizations |
 | Low | 8 | Memory cleanup; haptics; style conventions |
 | **Total** | **63** | |

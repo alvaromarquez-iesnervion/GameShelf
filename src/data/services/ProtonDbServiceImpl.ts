@@ -41,6 +41,8 @@ function toProtonTier(value: string | undefined | null): ProtonTier {
 export class ProtonDbServiceImpl implements IProtonDbService {
 
     async getCompatibilityRating(steamAppId: string): Promise<ProtonDbRating | null> {
+        if (!/^\d+$/.test(steamAppId)) return null;
+
         try {
             const response = await axios.get<ProtonDbResponse>(
                 `${PROTONDB_API_URL}/${steamAppId}.json`,

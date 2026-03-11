@@ -71,8 +71,16 @@ export class PlatformLinkUseCase implements IPlatformLinkUseCase {
     }
 
     async linkSteamById(userId: string, profileUrlOrId: string): Promise<LinkedPlatform> {
-        // 1. Resolver el SteamID desde la URL/nombre de perfil
-        const steamId = await this.steamService.resolveSteamId(profileUrlOrId);
+        // 1. Validar que el input sea un SteamID64 numérico o una URL de steamcommunity.com
+        const trimmed = profileUrlOrId.trim();
+        const isSteamId64 = /^\d{17}$/.test(trimmed);
+        const isSteamUrl = /^https?:\/\/(www\.)?steamcommunity\.com\/(id|profiles)\//.test(trimmed);
+        if (!isSteamId64 && !isSteamUrl) {
+            throw new Error('Introduce un SteamID (17 dígitos) o una URL de perfil de Steam válida.');
+        }
+
+        // 2. Resolver el SteamID desde la URL/nombre de perfil
+        const steamId = await this.steamService.resolveSteamId(trimmed);
 
         // 2. Comprobar visibilidad del perfil (debe ser público)
         const isPublic = await this.steamService.checkProfileVisibility(steamId);
