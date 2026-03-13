@@ -1,5 +1,6 @@
 import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
-import { initializeAuth, indexedDBLocalPersistence, getAuth, Auth } from 'firebase/auth';
+import { initializeAuth, getAuth, Auth, getReactNativePersistence } from 'firebase/auth';
+import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
 import { getFirestore, Firestore } from 'firebase/firestore';
 
 /**
@@ -40,12 +41,12 @@ export function initializeFirebase(): FirebaseApp {
     // Evita reinicializar si ya se llamó (útil en hot reload de desarrollo)
     app = alreadyInitialized ? getApps()[0] : initializeApp(firebaseConfig);
 
-    // initializeAuth con indexedDBLocalPersistence persiste la sesión entre reinicios.
-    // Expo/React Native polyfifica IndexedDB. En hot reload la instancia ya existe,
+    // initializeAuth con getReactNativePersistence persiste la sesión entre reinicios via AsyncStorage.
+    // En hot reload la instancia ya existe,
     // por lo que usamos getAuth() para recuperarla sin lanzar "already initialized".
     authInstance = alreadyInitialized
         ? getAuth(app)
-        : initializeAuth(app, { persistence: indexedDBLocalPersistence });
+        : initializeAuth(app, { persistence: getReactNativePersistence(ReactNativeAsyncStorage) });
 
     firestoreInstance = getFirestore(app);
     return app;

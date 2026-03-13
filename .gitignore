@@ -42,4 +42,9 @@ app-example
 # generated native folders
 /ios
 /android
+
+# Claude Code / AI agents
+.claude/
+.agents/
+
 # Documentation — keep all .md files local only
