@@ -6,6 +6,7 @@ export class Deal {
     private originalPrice: number;
     private discountPercentage: number;
     private url: string;
+    private currency: string;
 
     constructor(
         id: string,
@@ -14,6 +15,7 @@ export class Deal {
         originalPrice: number,
         discountPercentage: number,
         url: string,
+        currency: string = 'USD',
     ) {
         this.id = id;
         this.storeName = storeName;
@@ -21,6 +23,7 @@ export class Deal {
         this.originalPrice = originalPrice;
         this.discountPercentage = discountPercentage;
         this.url = url;
+        this.currency = currency;
     }
 
     getId(): string { return this.id; }
@@ -29,4 +32,5 @@ export class Deal {
     getOriginalPrice(): number { return this.originalPrice; }
     getDiscountPercentage(): number { return this.discountPercentage; }
     getUrl(): string { return this.url; }
+    getCurrency(): string { return this.currency; }
 }

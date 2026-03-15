@@ -77,12 +77,12 @@ export class GogApiServiceImpl implements IGogApiService {
             user_id: string;
         };
 
-        return {
-            accessToken: data.access_token,
-            refreshToken: data.refresh_token,
-            expiresAt: new Date(Date.now() + data.expires_in * 1000),
-            userId: data.user_id,
-        };
+        return new GogAuthToken(
+            data.access_token,
+            data.refresh_token,
+            new Date(Date.now() + data.expires_in * 1000),
+            data.user_id,
+        );
     }
 
     async refreshToken(refreshToken: string): Promise<GogAuthToken> {
@@ -107,12 +107,12 @@ export class GogApiServiceImpl implements IGogApiService {
             user_id?: string;
         };
 
-        return {
-            accessToken: data.access_token,
-            refreshToken: data.refresh_token ?? refreshToken,
-            expiresAt: new Date(Date.now() + data.expires_in * 1000),
-            userId: data.user_id ?? '',
-        };
+        return new GogAuthToken(
+            data.access_token,
+            data.refresh_token ?? refreshToken,
+            new Date(Date.now() + data.expires_in * 1000),
+            data.user_id ?? '',
+        );
     }
 
     async getUserGames(accessToken: string): Promise<Game[]> {

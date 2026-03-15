@@ -3,6 +3,9 @@ import { IAuthRepository } from '../../interfaces/repositories/IAuthRepository';
 import { IGuestSessionRepository } from '../../interfaces/repositories/IGuestSessionRepository';
 import { User } from '../../entities/User';
 
+/** Nombre de pantalla para sesiones de invitado. Constante de dominio. */
+const GUEST_DISPLAY_NAME = 'Invitado';
+
 export class AuthUseCase implements IAuthUseCase {
     constructor(
         private readonly authRepository: IAuthRepository,
@@ -39,18 +42,24 @@ export class AuthUseCase implements IAuthUseCase {
 
         const guestId = await this.guestSessionRepository.loadGuestId();
         if (guestId) {
-            return new User(guestId, '', 'Invitado', new Date());
+            return new User(guestId, '', GUEST_DISPLAY_NAME, new Date());
         }
         return null;
     }
 
     async continueAsGuest(): Promise<User> {
         const guestId = await this.guestSessionRepository.getOrCreateGuestId();
-        return new User(guestId, '', 'Invitado', new Date());
+        return new User(guestId, '', GUEST_DISPLAY_NAME, new Date());
     }
 
     async deleteAccount(): Promise<void> {
-        await this.authRepository.deleteAccount();
+        // Obtener uid antes de borrar la cuenta de Auth (después no habrá sesión activa).
+        const user = await this.authRepository.getCurrentUser();
+        if (!user) throw new Error('No hay sesión activa');
+        // 1. Borrar Firebase Auth — si falla aquí, no se toca Firestore.
+        await this.authRepository.deleteAuthUser();
+        // 2. Limpiar todos los datos de Firestore del usuario.
+        await this.authRepository.deleteUserFirestoreData(user.getId());
     }
 
     async resetPassword(email: string): Promise<void> {

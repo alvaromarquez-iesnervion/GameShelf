@@ -61,11 +61,11 @@ export class SettingsViewModel {
             // Actualizar el perfil local
             if (this._profile) {
                 runInAction(() => {
-                    this._profile = new UserProfileDTO(
-                        this._profile!.user,
-                        this._profile!.linkedPlatforms,
-                        preferences,
-                    );
+                    this._profile = {
+                        user: this._profile!.user,
+                        linkedPlatforms: this._profile!.linkedPlatforms,
+                        notificationPreferences: preferences,
+                    };
                 });
             }
             return true;

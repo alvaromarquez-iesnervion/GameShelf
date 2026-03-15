@@ -33,7 +33,7 @@ export class SettingsUseCase implements ISettingsUseCase {
             throw new Error('No hay sesión activa. Por favor, inicia sesión.');
         }
 
-        return new UserProfileDTO(user, linkedPlatforms, notificationPreferences);
+        return { user, linkedPlatforms, notificationPreferences };
     }
 
     async updateNotificationPreferences(
@@ -44,6 +44,9 @@ export class SettingsUseCase implements ISettingsUseCase {
     }
 
     async deleteAccount(): Promise<void> {
-        return this.authRepository.deleteAccount();
+        const user = await this.authRepository.getCurrentUser();
+        if (!user) throw new Error('No hay sesión activa');
+        await this.authRepository.deleteAuthUser();
+        await this.authRepository.deleteUserFirestoreData(user.getId());
     }
 }

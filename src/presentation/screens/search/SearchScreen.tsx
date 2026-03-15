@@ -9,6 +9,7 @@ import * as Haptics from 'expo-haptics';
 import { useInjection } from '../../../di/hooks/useInjection';
 import { AuthViewModel } from '../../viewmodels/AuthViewModel';
 import { HomeViewModel } from '../../viewmodels/HomeViewModel';
+import { SearchViewModel } from '../../viewmodels/SearchViewModel';
 import { WishlistViewModel } from '../../viewmodels/WishlistViewModel';
 import { TYPES } from '../../../di/types';
 import { SearchStackParamList } from '../../../core/navigation/navigationTypes';
@@ -42,6 +43,7 @@ export const SearchScreen: React.FC = observer(() => {
     const insets = useSafeAreaInsets();
     const authVm = useInjection<AuthViewModel>(TYPES.AuthViewModel);
     const vm = useInjection<HomeViewModel>(TYPES.HomeViewModel);
+    const searchVm = useInjection<SearchViewModel>(TYPES.SearchViewModel);
     const wishlistVm = useInjection<WishlistViewModel>(TYPES.WishlistViewModel);
     const navigation = useNavigation<Nav>();
     const userId = authVm.currentUser?.getId() ?? '';
@@ -78,17 +80,14 @@ export const SearchScreen: React.FC = observer(() => {
         if (debounceRef.current) clearTimeout(debounceRef.current);
 
         if (!text.trim()) {
-            vm.clearSearch();
+            searchVm.clearSearch();
             return;
         }
 
         debounceRef.current = setTimeout(() => {
-            if (Platform.OS !== 'web' && text.length > 2) {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            }
-            vm.search(text, userId);
+            searchVm.search(text, userId);
         }, 400);
-    }, [userId, vm]);
+    }, [userId, searchVm]);
 
     const toggleWishlist = useCallback(async (result: { getId: () => string; getTitle: () => string; getCoverUrl: () => string; getIsOwned: () => boolean }) => {
         // No permitir modificar wishlist de juegos ya poseídos
@@ -222,7 +221,7 @@ export const SearchScreen: React.FC = observer(() => {
 
     const renderSearchResults = () => (
         <FlatList
-            data={vm.searchResults}
+            data={searchVm.results}
             keyExtractor={(item) => item.getId()}
             contentContainerStyle={styles.list}
             showsVerticalScrollIndicator={false}
@@ -264,9 +263,11 @@ export const SearchScreen: React.FC = observer(() => {
                 </View>
             </View>
 
-            {vm.isSearching ? (
+            {searchVm.isLoading ? (
                 <ListSkeleton />
-            ) : vm.errorMessage ? (
+            ) : inputText.trim().length > 0 && searchVm.errorMessage ? (
+                <ErrorMessage message={searchVm.errorMessage} onRetry={() => searchVm.search(inputText, userId)} />
+            ) : vm.errorMessage && inputText.trim().length === 0 ? (
                 <ErrorMessage message={vm.errorMessage} onRetry={handleRetry} />
             ) : inputText.trim().length > 0 ? (
                 renderSearchResults()

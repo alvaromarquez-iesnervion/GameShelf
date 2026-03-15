@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Alert, Platform } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { observer } from 'mobx-react-lite';
@@ -14,6 +14,8 @@ import { SettingsStackParamList } from '../../../core/navigation/navigationTypes
 import { ListSkeleton } from '../../components/common/ListItemSkeleton';
 import { colors } from '../../theme/colors';
 import { styles } from './SettingsScreen.styles';
+import { strings } from '../../../core/constants/strings';
+import { UserPreferencesStore, SUPPORTED_COUNTRIES, DEFAULT_COUNTRY } from '../../../data/utils/UserPreferencesStore';
 
 type Nav = NativeStackNavigationProp<SettingsStackParamList, 'Settings'>;
 
@@ -45,9 +47,15 @@ export const SettingsScreen: React.FC = observer(() => {
     const navigation = useNavigation<Nav>();
     const userId = authVm.currentUser?.getId() ?? '';
 
+    const [preferredCountry, setPreferredCountry] = useState(DEFAULT_COUNTRY);
+
     useEffect(() => {
         if (userId && !authVm.isGuest) vm.loadProfile(userId);
     }, [userId, vm, authVm.isGuest]);
+
+    useEffect(() => {
+        UserPreferencesStore.getCountry().then(setPreferredCountry);
+    }, []);
 
     const handleNavigateProfile = useCallback(() => {
         navigation.navigate('Profile');
@@ -61,21 +69,40 @@ export const SettingsScreen: React.FC = observer(() => {
         navigation.navigate('NotificationSettings');
     }, [navigation]);
 
+    const handleNotImplemented = useCallback((label: string) => {
+        Alert.alert(label, strings.comingSoon);
+    }, []);
+
+    const handleCurrencySelect = useCallback(() => {
+        const options = SUPPORTED_COUNTRIES.map(c => ({
+            text: `${c.label} (${c.currency})`,
+            onPress: async () => {
+                await UserPreferencesStore.setCountry(c.code);
+                setPreferredCountry(c.code);
+            },
+        }));
+        Alert.alert(
+            strings.preferredCurrency,
+            UserPreferencesStore.getCountryOption(preferredCountry).label,
+            [...options, { text: strings.cancel, style: 'cancel' as const }],
+        );
+    }, [preferredCountry]);
+
     const handleLogout = useCallback(() => {
         if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
         if (authVm.isGuest) {
             Alert.alert(
-                'Borrar datos de invitado',
-                'Se eliminarán todos los datos locales (biblioteca y plataformas vinculadas). ¿Continuar?',
+                strings.deleteGuestDataTitle,
+                strings.deleteGuestDataMessage,
                 [
-                    { text: 'Cancelar', style: 'cancel' },
-                    { text: 'Borrar todo', style: 'destructive', onPress: () => authVm.logout() },
+                    { text: strings.cancel, style: 'cancel' },
+                    { text: strings.deleteAll, style: 'destructive', onPress: () => authVm.logout() },
                 ],
             );
         } else {
-            Alert.alert('Cerrar sesión', '¿Estás seguro?', [
-                { text: 'Cancelar', style: 'cancel' },
-                { text: 'Salir', style: 'destructive', onPress: () => authVm.logout() },
+            Alert.alert(strings.logoutConfirmTitle, strings.logoutConfirmMessage, [
+                { text: strings.cancel, style: 'cancel' },
+                { text: strings.exit, style: 'destructive', onPress: () => authVm.logout() },
             ]);
         }
     }, [authVm]);
@@ -85,7 +112,7 @@ export const SettingsScreen: React.FC = observer(() => {
     return (
         <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
             <View style={styles.header}>
-                <Text style={styles.largeTitle}>Ajustes</Text>
+                <Text style={styles.largeTitle}>{strings.settingsTitle}</Text>
             </View>
 
             {/* Profile Section */}
@@ -95,8 +122,8 @@ export const SettingsScreen: React.FC = observer(() => {
                         <Feather name="user" size={24} color={colors.textTertiary} />
                     </View>
                     <View style={styles.profileInfo}>
-                        <Text style={styles.profileName}>Invitado</Text>
-                        <Text style={styles.profileEmail}>Sin cuenta</Text>
+                        <Text style={styles.profileName}>{strings.guest}</Text>
+                        <Text style={styles.profileEmail}>{strings.noAccount}</Text>
                     </View>
                 </View>
             ) : vm.profile ? (
@@ -116,10 +143,10 @@ export const SettingsScreen: React.FC = observer(() => {
             ) : null}
 
             <View style={styles.section}>
-                <Text style={styles.sectionTitle}>CUENTA Y PLATAFORMAS</Text>
+                <Text style={styles.sectionTitle}>{strings.sectionAccountPlatforms}</Text>
                 <View style={styles.group}>
                     <SettingRow
-                        label="Plataformas Vinculadas"
+                        label={strings.linkedPlatforms}
                         icon="monitor"
                         onPress={handleNavigatePlatformLink}
                         color={colors.primary}
@@ -127,7 +154,7 @@ export const SettingsScreen: React.FC = observer(() => {
                     />
                     {!authVm.isGuest && (
                         <SettingRow
-                            label="Notificaciones"
+                            label={strings.notifications}
                             icon="bell"
                             onPress={handleNavigateNotifications}
                             color={colors.iosRed}
@@ -138,19 +165,25 @@ export const SettingsScreen: React.FC = observer(() => {
             </View>
 
             <View style={styles.section}>
-                <Text style={styles.sectionTitle}>SOPORTE</Text>
+                <Text style={styles.sectionTitle}>{strings.sectionSupport}</Text>
                 <View style={styles.group}>
                     <SettingRow
-                        label="Centro de Ayuda"
+                        label={`${strings.preferredCurrency} · ${UserPreferencesStore.getCountryOption(preferredCountry).currency}`}
+                        icon="dollar-sign"
+                        onPress={handleCurrencySelect}
+                        color={colors.iosGreen}
+                    />
+                    <SettingRow
+                        label={strings.helpCenter}
                         icon="help-circle"
-                        onPress={() => {}}
+                        onPress={() => handleNotImplemented(strings.helpCenter)}
                         color={colors.iosPurple}
                     />
                     <SettingRow
-                        label="Privacidad"
+                        label={strings.privacy}
                         icon="lock"
-                        onPress={() => {}}
-                        color={colors.iosGreen}
+                        onPress={() => handleNotImplemented(strings.privacy)}
+                        color={colors.iosPurple}
                         isLast
                     />
                 </View>
@@ -158,7 +191,7 @@ export const SettingsScreen: React.FC = observer(() => {
 
             <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
                 <Text style={styles.logoutText}>
-                    {authVm.isGuest ? 'Borrar datos y salir' : 'Cerrar Sesión'}
+                    {authVm.isGuest ? strings.logoutGuest : strings.logoutRegistered}
                 </Text>
             </TouchableOpacity>
 

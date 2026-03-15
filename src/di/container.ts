@@ -1,4 +1,3 @@
-import 'reflect-metadata';
 import { Container } from 'inversify';
 import { TYPES } from './types';
 
@@ -12,6 +11,7 @@ import { INotificationRepository } from '../domain/interfaces/repositories/INoti
 
 // ─── Interfaces (servicios) ───────────────────────────────────────────────────
 import { ISteamApiService } from '../domain/interfaces/services/ISteamApiService';
+import { IPopularGamesService } from '../domain/interfaces/services/IPopularGamesService';
 import { IEpicGamesApiService } from '../domain/interfaces/services/IEpicGamesApiService';
 import { IGogApiService } from '../domain/interfaces/services/IGogApiService';
 import { IProtonDbService } from '../domain/interfaces/services/IProtonDbService';
@@ -75,6 +75,7 @@ import { GameDetailViewModel } from '../presentation/viewmodels/GameDetailViewMo
 import { SearchViewModel } from '../presentation/viewmodels/SearchViewModel';
 import { PlatformLinkViewModel } from '../presentation/viewmodels/PlatformLinkViewModel';
 import { SettingsViewModel } from '../presentation/viewmodels/SettingsViewModel';
+import { ProfileViewModel } from '../presentation/viewmodels/ProfileViewModel';
 
 // ─── Use case implementations ─────────────────────────────────────────────────
 import { AuthUseCase } from '../domain/usecases/auth/AuthUseCase';
@@ -136,6 +137,7 @@ if (useFirebase && useRealSteam) {
     // MODO PRODUCCIÓN: todo persiste en Firestore (usuarios autenticados)
     // Los wrappers guest-aware enrutan a AsyncStorage cuando userId empieza por "guest_"
     container.bind<ISteamApiService>(TYPES.ISteamApiService).to(SteamApiServiceImpl);
+    container.bind<IPopularGamesService>(TYPES.IPopularGamesService).toService(TYPES.ISteamApiService);
 
     // Concretas Firestore bajo símbolos privados
     container.bind<IPlatformRepository>(TYPES.FirestorePlatformRepository).to(PlatformRepositoryImpl);
@@ -149,11 +151,13 @@ if (useFirebase && useRealSteam) {
 } else if (useRealSteam) {
     // MODO STEAM SIN FIREBASE: Steam real, datos en memoria
     container.bind<ISteamApiService>(TYPES.ISteamApiService).to(SteamApiServiceImpl);
+    container.bind<IPopularGamesService>(TYPES.IPopularGamesService).toService(TYPES.ISteamApiService);
     container.bind<IPlatformRepository>(TYPES.IPlatformRepository).to(MemoryPlatformRepository);
     container.bind<IGameRepository>(TYPES.IGameRepository).to(SteamSyncMemoryGameRepository);
 } else {
     // MODO MOCK COMPLETO
     container.bind<ISteamApiService>(TYPES.ISteamApiService).to(MockSteamApiService);
+    container.bind<IPopularGamesService>(TYPES.IPopularGamesService).toService(TYPES.ISteamApiService);
     container.bind<IPlatformRepository>(TYPES.IPlatformRepository).to(MockPlatformRepository);
     container.bind<IGameRepository>(TYPES.IGameRepository).to(MockGameRepository);
 }
@@ -215,7 +219,7 @@ container.bind<IHomeUseCase>(TYPES.IHomeUseCase).toDynamicValue(ctx => new HomeU
     ctx.get<IGameRepository>(TYPES.IGameRepository),
     ctx.get<IPlatformRepository>(TYPES.IPlatformRepository),
     ctx.get<IWishlistRepository>(TYPES.IWishlistRepository),
-    ctx.get<ISteamApiService>(TYPES.ISteamApiService),
+    ctx.get<IPopularGamesService>(TYPES.IPopularGamesService),
 )).inSingletonScope();
 
 // ─── ViewModels ───────────────────────────────────────────────────────────────
@@ -231,5 +235,6 @@ container.bind<GameDetailViewModel>(TYPES.GameDetailViewModel).to(GameDetailView
 container.bind<SearchViewModel>(TYPES.SearchViewModel).to(SearchViewModel).inTransientScope();
 container.bind<PlatformLinkViewModel>(TYPES.PlatformLinkViewModel).to(PlatformLinkViewModel).inTransientScope();
 container.bind<SettingsViewModel>(TYPES.SettingsViewModel).to(SettingsViewModel).inTransientScope();
+container.bind<ProfileViewModel>(TYPES.ProfileViewModel).to(ProfileViewModel).inTransientScope();
 
 export { container };

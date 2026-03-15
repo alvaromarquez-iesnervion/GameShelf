@@ -2,7 +2,7 @@ import { IHomeUseCase } from '../../interfaces/usecases/home/IHomeUseCase';
 import { IGameRepository } from '../../interfaces/repositories/IGameRepository';
 import { IPlatformRepository } from '../../interfaces/repositories/IPlatformRepository';
 import { IWishlistRepository } from '../../interfaces/repositories/IWishlistRepository';
-import { ISteamApiService } from '../../interfaces/services/ISteamApiService';
+import { IPopularGamesService } from '../../interfaces/services/IPopularGamesService';
 import { Game } from '../../entities/Game';
 import { SearchResult } from '../../entities/SearchResult';
 import { Platform } from '../../enums/Platform';
@@ -13,12 +13,12 @@ export class HomeUseCase implements IHomeUseCase {
         private readonly gameRepository: IGameRepository,
         private readonly platformRepository: IPlatformRepository,
         private readonly wishlistRepository: IWishlistRepository,
-        private readonly steamService: ISteamApiService,
+        private readonly popularGamesService: IPopularGamesService,
     ) {}
 
     async getPopularGames(limit: number = 10): Promise<Game[]> {
         try {
-            return await this.steamService.getMostPlayedGames(limit);
+            return await this.popularGamesService.getMostPlayedGames(limit);
         } catch (err) {
             console.warn('[HomeUseCase] getPopularGames falló:', err);
             return [];
@@ -33,7 +33,7 @@ export class HomeUseCase implements IHomeUseCase {
 
         const steamId = steamPlatform.getExternalUserId();
         try {
-            return await this.steamService.getRecentlyPlayedGames(steamId);
+            return await this.popularGamesService.getRecentlyPlayedGames(steamId);
         } catch (err) {
             console.warn('[HomeUseCase] getRecentlyPlayed falló (steamId:', steamId, '):', err);
             return [];
@@ -81,30 +81,30 @@ export class HomeUseCase implements IHomeUseCase {
             ownedByGameId.set(g.getId(), arr);
         });
 
-        await Promise.allSettled(
+        const enriched = await Promise.all(
             results.map(async result => {
+                let r = result;
+
                 try {
-                    const inWishlist = await this.wishlistRepository.isInWishlist(
-                        userId,
-                        result.getId(),
-                    );
-                    result.setIsInWishlist(inWishlist);
+                    const inWishlist = await this.wishlistRepository.isInWishlist(userId, r.getId());
+                    r = r.withIsInWishlist(inWishlist);
                 } catch {
                 }
 
                 // Marcar como owned si el steamAppId o el id coincide con la biblioteca
-                const steamAppId = result.getSteamAppId();
+                const steamAppId = r.getSteamAppId();
                 const bySteam = steamAppId !== null ? ownedBySteamAppId.get(steamAppId) : undefined;
-                const byId = ownedByGameId.get(result.getId());
+                const byId = ownedByGameId.get(r.getId());
                 const allPlatforms = [...(bySteam ?? []), ...(byId ?? [])];
                 const unique = [...new Set(allPlatforms)];
                 if (unique.length > 0) {
-                    result.setIsOwned(true);
-                    unique.forEach(p => result.addOwnedPlatform(p));
+                    r = r.withIsOwned(true).withOwnedPlatforms(unique);
                 }
+
+                return r;
             }),
         );
 
-        return results;
+        return enriched;
     }
 }

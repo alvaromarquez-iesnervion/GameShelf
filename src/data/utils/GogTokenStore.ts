@@ -33,12 +33,7 @@ export async function loadGogTokens(): Promise<GogAuthToken | null> {
 
     if (!accessToken || !refreshToken || !expiresAtStr) return null;
 
-    return {
-        accessToken,
-        refreshToken,
-        expiresAt: new Date(expiresAtStr),
-        userId: userId ?? '',
-    };
+    return new GogAuthToken(accessToken, refreshToken, new Date(expiresAtStr), userId ?? '');
 }
 
 export async function clearGogTokens(): Promise<void> {

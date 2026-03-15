@@ -5,7 +5,7 @@ import { LinkedPlatform } from '../../domain/entities/LinkedPlatform';
 import { Platform } from '../../domain/enums/Platform';
 import { GogAuthToken } from '../../domain/dtos/GogAuthToken';
 import { TYPES } from '../../di/types';
-import { isGuestUser } from '../../core/utils/guestUtils';
+import { isGuestUser } from '../../domain/utils/guestUtils';
 
 @injectable()
 export class GuestAwarePlatformRepository implements IPlatformRepository {

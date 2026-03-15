@@ -166,6 +166,16 @@ export class SteamSyncMemoryGameRepository implements IGameRepository {
         // In-memory repository: update the game object directly if present
         const games = this.gamesByUser.get(_userId) ?? [];
         const game = games.find(g => g.getId() === _gameId);
-        if (game) game.setSteamAppId(_steamAppId);
+        if (game) {
+            const idx = games.indexOf(game);
+            games[idx] = game.withSteamAppId(_steamAppId);
+            this.gamesByUser.set(_userId, games);
+        }
+    }
+
+    /** Limpia los datos en memoria de un usuario (llamar al cerrar sesión). */
+    clearUser(userId: string): void {
+        this.gamesByUser.delete(userId);
+        this.epicGamesByUser.delete(userId);
     }
 }

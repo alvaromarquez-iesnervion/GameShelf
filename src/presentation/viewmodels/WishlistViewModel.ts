@@ -71,6 +71,15 @@ export class WishlistViewModel {
         return this._items.some(item => item.getGameId() === gameId);
     }
 
+    /** Limpia todo el estado al cerrar sesión para que el siguiente usuario empiece limpio. */
+    reset(): void {
+        runInAction(() => {
+            this._items = [];
+            this._isLoading = false;
+            this._errorMessage = null;
+        });
+    }
+
     clearError(): void {
         this._errorMessage = null;
     }

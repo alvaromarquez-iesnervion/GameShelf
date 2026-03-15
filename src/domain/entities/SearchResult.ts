@@ -36,8 +36,16 @@ export class SearchResult {
     getIsOwned(): boolean { return this.owned; }
     getOwnedPlatforms(): Platform[] { return this.ownedPlatforms; }
 
-    setIsInWishlist(value: boolean): void { this.isInWishlist = value; }
-    setSteamAppId(value: number | null): void { this.steamAppId = value; }
-    setIsOwned(value: boolean): void { this.owned = value; }
-    addOwnedPlatform(value: Platform): void { this.ownedPlatforms.push(value); }
+    withIsInWishlist(value: boolean): SearchResult {
+        return new SearchResult(this.id, this.title, this.coverUrl, value, this.steamAppId, this.owned, this.ownedPlatforms);
+    }
+    withSteamAppId(value: number | null): SearchResult {
+        return new SearchResult(this.id, this.title, this.coverUrl, this.isInWishlist, value, this.owned, this.ownedPlatforms);
+    }
+    withIsOwned(value: boolean): SearchResult {
+        return new SearchResult(this.id, this.title, this.coverUrl, this.isInWishlist, this.steamAppId, value, this.ownedPlatforms);
+    }
+    withOwnedPlatforms(platforms: Platform[]): SearchResult {
+        return new SearchResult(this.id, this.title, this.coverUrl, this.isInWishlist, this.steamAppId, this.owned, platforms);
+    }
 }

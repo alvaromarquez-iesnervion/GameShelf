@@ -4,19 +4,15 @@ import { Feather } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { observer } from 'mobx-react-lite';
 import { useInjection } from '../../../di/hooks/useInjection';
-import { AuthViewModel } from '../../viewmodels/AuthViewModel';
-import { LibraryViewModel } from '../../viewmodels/LibraryViewModel';
-import { WishlistViewModel } from '../../viewmodels/WishlistViewModel';
+import { ProfileViewModel } from '../../viewmodels/ProfileViewModel';
 import { TYPES } from '../../../di/types';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { colors } from '../../theme/colors';
 import { styles } from './ProfileScreen.styles';
 
 export const ProfileScreen: React.FC = observer(() => {
-    const authVm = useInjection<AuthViewModel>(TYPES.AuthViewModel);
-    const libraryVm = useInjection<LibraryViewModel>(TYPES.LibraryViewModel);
-    const wishlistVm = useInjection<WishlistViewModel>(TYPES.WishlistViewModel);
-    const user = authVm.currentUser;
+    const vm = useInjection<ProfileViewModel>(TYPES.ProfileViewModel);
+    const user = vm.user;
 
     if (!user) return <LoadingSpinner message="Cargando perfil..." />;
 
@@ -27,9 +23,9 @@ export const ProfileScreen: React.FC = observer(() => {
     });
 
     const stats = [
-        { icon: 'grid' as const, label: 'Biblioteca', value: libraryVm.games.length },
-        { icon: 'monitor' as const, label: 'Plataformas', value: libraryVm.linkedPlatforms.length },
-        { icon: 'heart' as const, label: 'Lista deseos', value: wishlistVm.items.length },
+        { icon: 'grid' as const, label: 'Biblioteca', value: vm.libraryCount },
+        { icon: 'monitor' as const, label: 'Plataformas', value: vm.platformCount },
+        { icon: 'heart' as const, label: 'Lista deseos', value: vm.wishlistCount },
     ];
 
     return (

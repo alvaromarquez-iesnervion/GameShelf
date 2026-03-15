@@ -48,8 +48,16 @@ export class Game {
     getPlaytime(): number { return this.playtime; }
     getLastPlayed(): Date | null { return this.lastPlayed; }
 
-    setItadGameId(id: string): void { this.itadGameId = id; }
-    setSteamAppId(id: number): void { this.steamAppId = id; }
-    setPlaytime(minutes: number): void { this.playtime = minutes; }
-    setLastPlayed(date: Date | null): void { this.lastPlayed = date; }
+    withItadGameId(id: string): Game {
+        return new Game(this.id, this.title, this.description, this.coverUrl, this.platform, this.steamAppId, id, this.playtime, this.lastPlayed, this.portraitCoverUrl);
+    }
+    withSteamAppId(id: number): Game {
+        return new Game(this.id, this.title, this.description, this.coverUrl, this.platform, id, this.itadGameId, this.playtime, this.lastPlayed, this.portraitCoverUrl);
+    }
+    withPlaytime(minutes: number): Game {
+        return new Game(this.id, this.title, this.description, this.coverUrl, this.platform, this.steamAppId, this.itadGameId, minutes, this.lastPlayed, this.portraitCoverUrl);
+    }
+    withLastPlayed(date: Date | null): Game {
+        return new Game(this.id, this.title, this.description, this.coverUrl, this.platform, this.steamAppId, this.itadGameId, this.playtime, date, this.portraitCoverUrl);
+    }
 }

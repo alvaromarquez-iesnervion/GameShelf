@@ -17,12 +17,14 @@ export class SearchViewModel {
     private _query: string = '';
     private _isLoading: boolean = false;
     private _errorMessage: string | null = null;
+    // No observable: estado de control interno para descartar respuestas obsoletas.
+    private _searchRequestId: number = 0;
 
     constructor(
         @inject(TYPES.ISearchUseCase)
         private readonly searchUseCase: ISearchUseCase,
     ) {
-        makeAutoObservable(this);
+        makeAutoObservable<SearchViewModel, '_searchRequestId'>(this, { _searchRequestId: false });
     }
 
     get results(): SearchResult[] {
@@ -43,24 +45,24 @@ export class SearchViewModel {
 
     async search(query: string, userId: string): Promise<void> {
         if (!query.trim()) {
-            runInAction(() => {
-                this._results = [];
-                this._query = '';
-            });
+            this.clearSearch();
             return;
         }
 
+        const requestId = ++this._searchRequestId;
         runInAction(() => { this._query = query; });
 
         await withLoading(this, '_isLoading', '_errorMessage', async () => {
             const results = await this.searchUseCase.searchGames(query, userId);
             runInAction(() => {
+                if (requestId !== this._searchRequestId) return;
                 this._results = results;
             });
         });
     }
 
-    clearResults(): void {
+    clearSearch(): void {
+        this._searchRequestId++;
         this._results = [];
         this._query = '';
     }

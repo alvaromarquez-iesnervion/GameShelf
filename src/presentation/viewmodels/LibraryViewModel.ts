@@ -77,7 +77,7 @@ export class LibraryViewModel {
                 ? `steam-${steamId}`
                 : itadId
                     ? `itad-${itadId}`
-                    : `title-${game.getTitle().toLowerCase()}`;
+                    : `id-${game.getId()}`;
 
             const existing = map.get(key);
             if (existing) {
@@ -240,13 +240,23 @@ export class LibraryViewModel {
         }
     }
 
-    /** Limpia el estado entre sesiones (logout → nuevo login/invitado en el mismo proceso). */
-    resetSyncState(): void {
+    /** Limpia todo el estado al cerrar sesión para que el siguiente usuario empiece limpio. */
+    reset(): void {
         runInAction(() => {
-            this._hasSynced = false;
             this._games = [];
             this._linkedPlatforms = [];
+            this._isLoading = false;
+            this._isSyncing = false;
+            this._searchQuery = '';
+            this._sortCriteria = SortCriteria.ALPHABETICAL;
+            this._errorMessage = null;
+            this._hasSynced = false;
         });
+    }
+
+    /** @deprecated Usar reset(). Conservado por compatibilidad con RootNavigator. */
+    resetSyncState(): void {
+        this.reset();
     }
 
     clearError(): void {

@@ -37,18 +37,19 @@ export class WishlistUseCase implements IWishlistUseCase {
             const itadIdToPrices = await this.itadService.getPricesForGamesBatch(validItadIds);
 
             // 4. Asignar mejores deals a cada item
-            items.forEach(item => {
+            for (let i = 0; i < items.length; i++) {
+                const item = items[i];
                 const itadId = titleToItadId.get(item.getTitle());
-                if (!itadId) return;
+                if (!itadId) continue;
 
                 const deals = itadIdToPrices.get(itadId) ?? [];
-                if (deals.length === 0) return;
+                if (deals.length === 0) continue;
 
                 const best = deals.reduce((max, d) =>
                     d.getDiscountPercentage() > max.getDiscountPercentage() ? d : max,
                 );
-                item.setBestDealPercentage(best.getDiscountPercentage());
-            });
+                items[i] = item.withBestDealPercentage(best.getDiscountPercentage());
+            }
         } catch {
             // Si falla el batch completo, los items quedan con bestDealPercentage original
         }

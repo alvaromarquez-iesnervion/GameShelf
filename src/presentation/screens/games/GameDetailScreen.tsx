@@ -23,6 +23,7 @@ import { Platform as GamePlatform } from '../../../domain/enums/Platform';
 import { ErrorMessage } from '../../components/common/ErrorMessage';
 import { DetailSkeleton } from '../../components/common/DetailSkeleton';
 import { WishlistItem } from '../../../domain/entities/WishlistItem';
+import { strings } from '../../../core/constants/strings';
 import { SteamGameMetadata } from '../../../domain/dtos/SteamGameMetadata';
 import { colors } from '../../theme/colors';
 import { spacing } from '../../theme/spacing';
@@ -323,7 +324,7 @@ export const GameDetailScreen: React.FC = observer(() => {
                     {!isOwned && detail.getDeals().length > 0 && (
                         <View style={styles.dealsSection}>
                             <View style={styles.sectionHeader}>
-                                <Text style={styles.sectionTitle}>Mejores Ofertas</Text>
+                                <Text style={styles.sectionTitle}>{strings.bestDeals}</Text>
                                 <Feather name="trending-down" size={18} color={colors.success} />
                             </View>
                             {detail.getDeals().map(deal => (
@@ -334,6 +335,7 @@ export const GameDetailScreen: React.FC = observer(() => {
                                     originalPrice={deal.getOriginalPrice()}
                                     discountPercentage={deal.getDiscountPercentage()}
                                     url={deal.getUrl()}
+                                    currency={deal.getCurrency()}
                                 />
                             ))}
                         </View>

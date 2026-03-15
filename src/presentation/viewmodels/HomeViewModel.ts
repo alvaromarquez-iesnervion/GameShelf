@@ -3,7 +3,6 @@ import { injectable, inject } from 'inversify';
 import { makeAutoObservable, runInAction } from 'mobx';
 import { IHomeUseCase } from '../../domain/interfaces/usecases/home/IHomeUseCase';
 import { Game } from '../../domain/entities/Game';
-import { SearchResult } from '../../domain/entities/SearchResult';
 import { TYPES } from '../../di/types';
 import { withLoading } from './BaseViewModel';
 
@@ -16,30 +15,21 @@ export class HomeViewModel {
     private _popularGames: Game[] = [];
     private _recentlyPlayed: Game[] = [];
     private _mostPlayed: Game[] = [];
-    private _searchResults: SearchResult[] = [];
-    private _searchQuery: string = '';
     private _isLoadingHome: boolean = false;
-    private _isSearching: boolean = false;
     private _errorMessage: string | null = null;
     private _lastHomeLoadTime: number = 0;
-    // Contador monótonamente creciente para descartar respuestas de búsquedas obsoletas.
-    // No es observable: es estado de control interno, no de presentación.
-    private _searchRequestId: number = 0;
 
     constructor(
         @inject(TYPES.IHomeUseCase)
         private readonly homeUseCase: IHomeUseCase,
     ) {
-        makeAutoObservable<HomeViewModel, '_searchRequestId'>(this, { _searchRequestId: false });
+        makeAutoObservable(this);
     }
 
     get popularGames(): Game[] { return this._popularGames; }
     get recentlyPlayed(): Game[] { return this._recentlyPlayed; }
     get mostPlayed(): Game[] { return this._mostPlayed; }
-    get searchResults(): SearchResult[] { return this._searchResults; }
-    get searchQuery(): string { return this._searchQuery; }
     get isLoadingHome(): boolean { return this._isLoadingHome; }
-    get isSearching(): boolean { return this._isSearching; }
     get errorMessage(): string | null { return this._errorMessage; }
 
     async loadHomeData(userId: string): Promise<void> {
@@ -78,35 +68,14 @@ export class HomeViewModel {
         }
     }
 
-    async search(query: string, userId: string): Promise<void> {
-        if (!query.trim()) {
-            runInAction(() => {
-                this._searchResults = [];
-                this._searchQuery = '';
-            });
-            return;
-        }
-
-        // Capturar el ID de esta búsqueda antes del await para poder detectar
-        // si una búsqueda más reciente la ha dejado obsoleta cuando llegue la respuesta.
-        const requestId = ++this._searchRequestId;
-
-        runInAction(() => { this._searchQuery = query; });
-
-        await withLoading(this, '_isSearching', '_errorMessage', async () => {
-            const results = await this.homeUseCase.searchGames(query, userId);
-            runInAction(() => {
-                if (requestId !== this._searchRequestId) return;
-                this._searchResults = results;
-            });
-        });
-    }
-
-    clearSearch(): void {
-        // Invalidar cualquier búsqueda en vuelo para que su respuesta no sobreescriba el estado limpio.
-        this._searchRequestId++;
-        this._searchResults = [];
-        this._searchQuery = '';
+    /** Limpia todo el estado al cerrar sesión para que el siguiente usuario empiece limpio. */
+    reset(): void {
+        this._popularGames = [];
+        this._recentlyPlayed = [];
+        this._mostPlayed = [];
+        this._isLoadingHome = false;
+        this._errorMessage = null;
+        this._lastHomeLoadTime = 0;
     }
 
     clearError(): void {

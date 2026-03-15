@@ -5,7 +5,7 @@ import { Game } from '../../domain/entities/Game';
 import { SearchResult } from '../../domain/entities/SearchResult';
 import { Platform } from '../../domain/enums/Platform';
 import { TYPES } from '../../di/types';
-import { isGuestUser } from '../../core/utils/guestUtils';
+import { isGuestUser } from '../../domain/utils/guestUtils';
 
 @injectable()
 export class GuestAwareGameRepository implements IGameRepository {

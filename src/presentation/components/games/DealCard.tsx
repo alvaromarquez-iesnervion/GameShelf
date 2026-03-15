@@ -5,6 +5,7 @@ import * as Haptics from 'expo-haptics';
 import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { spacing, radius } from '../../theme/spacing';
+import { strings } from '../../../core/constants/strings';
 
 interface DealCardProps {
     storeName: string;
@@ -12,8 +13,21 @@ interface DealCardProps {
     originalPrice: number;
     discountPercentage: number;
     url: string;
+    currency: string;
     onPress?: () => void;
 }
+
+const formatPrice = (amount: number, currency: string): string => {
+    try {
+        return new Intl.NumberFormat(undefined, {
+            style: 'currency',
+            currency,
+            minimumFractionDigits: 2,
+        }).format(amount);
+    } catch {
+        return `${currency} ${amount.toFixed(2)}`;
+    }
+};
 
 export const DealCard: React.FC<DealCardProps> = ({
     storeName,
@@ -21,6 +35,7 @@ export const DealCard: React.FC<DealCardProps> = ({
     originalPrice,
     discountPercentage,
     url,
+    currency,
     onPress,
 }) => {
     const handlePress = () => {
@@ -36,8 +51,8 @@ export const DealCard: React.FC<DealCardProps> = ({
             <View style={styles.left}>
                 <Text style={styles.storeName} numberOfLines={1}>{storeName}</Text>
                 <View style={styles.priceRow}>
-                    <Text style={styles.currentPrice}>${price.toFixed(2)}</Text>
-                    <Text style={styles.originalPrice}>${originalPrice.toFixed(2)}</Text>
+                    <Text style={styles.currentPrice}>{formatPrice(price, currency)}</Text>
+                    <Text style={styles.originalPrice}>{formatPrice(originalPrice, currency)}</Text>
                 </View>
             </View>
 
@@ -47,7 +62,7 @@ export const DealCard: React.FC<DealCardProps> = ({
                     <Text style={styles.discountText}>-{discountPercentage}%</Text>
                 </View>
                 <View style={styles.ctaRow}>
-                    <Text style={styles.ctaText}>Ver oferta</Text>
+                    <Text style={styles.ctaText}>{strings.viewDeal}</Text>
                     <Feather name="external-link" size={12} color={colors.primary} />
                 </View>
             </View>

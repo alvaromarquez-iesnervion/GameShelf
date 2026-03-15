@@ -37,13 +37,13 @@ export class GameDetailUseCase implements IGameDetailUseCase {
     ) {}
 
     async getGameDetail(gameId: string, userId: string, providedSteamAppId?: number): Promise<GameDetailDTO> {
-        const game = await this.gameRepository.getOrCreateGameById(userId, gameId, providedSteamAppId);
+        let game = await this.gameRepository.getOrCreateGameById(userId, gameId, providedSteamAppId);
 
         // ── Phase 0: Steam App ID resolution for Epic Games and GOG entries ──
         if ((game.getPlatform() === Platform.EPIC_GAMES || game.getPlatform() === Platform.GOG) && game.getSteamAppId() === null) {
             const resolvedId = await this._resolveSteamAppId(game);
             if (resolvedId !== null) {
-                game.setSteamAppId(resolvedId);
+                game = game.withSteamAppId(resolvedId);
                 // Persist so next open skips this lookup
                 try {
                     await this.gameRepository.updateSteamAppId(userId, game.getId(), resolvedId);
@@ -100,7 +100,7 @@ export class GameDetailUseCase implements IGameDetailUseCase {
             let itadId = game.getItadGameId();
             if (!itadId) {
                 itadId = await this.itadService.lookupGameId(game.getTitle());
-                if (itadId) game.setItadGameId(itadId);
+                if (itadId) game = game.withItadGameId(itadId);
             }
             if (itadId) {
                 const info = await this.itadService.getGameInfo(itadId);
@@ -129,7 +129,7 @@ export class GameDetailUseCase implements IGameDetailUseCase {
                 : await this.itadService.lookupGameId(game.getTitle());
 
             if (itadId) {
-                game.setItadGameId(itadId);
+                game = game.withItadGameId(itadId);
             }
         }
 

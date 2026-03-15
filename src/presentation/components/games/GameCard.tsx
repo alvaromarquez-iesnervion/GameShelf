@@ -31,15 +31,15 @@ export const GameCard = React.memo(({ gameId, coverUrl, portraitCoverUrl, title,
     }, [onPress, gameId]);
 
     return (
-        <TouchableOpacity 
-            style={styles.card} 
-            onPress={handlePress} 
+        <TouchableOpacity
+            style={styles.card}
+            onPress={handlePress}
             activeOpacity={0.8}
         >
             <View style={styles.imageContainer}>
-                <Image 
-                    source={{ uri: imageSource }} 
-                    style={styles.cover} 
+                <Image
+                    source={{ uri: imageSource }}
+                    style={styles.cover}
                     contentFit="cover"
                     transition={200}
                 />
@@ -60,7 +60,15 @@ export const GameCard = React.memo(({ gameId, coverUrl, portraitCoverUrl, title,
             </View>
         </TouchableOpacity>
     );
-});
+}, (prev, next) =>
+    prev.gameId === next.gameId &&
+    prev.coverUrl === next.coverUrl &&
+    prev.portraitCoverUrl === next.portraitCoverUrl &&
+    prev.title === next.title &&
+    prev.onPress === next.onPress &&
+    prev.platforms?.length === next.platforms?.length &&
+    (prev.platforms?.every((p, i) => p === next.platforms?.[i]) ?? true),
+);
 GameCard.displayName = 'GameCard';
 
 const styles = StyleSheet.create({

@@ -33,3 +33,8 @@ export type MainTabParamList = {
     LibraryTab: undefined;
     SettingsTab: undefined;
 };
+
+export type RootStackParamList = {
+    Tabs: undefined;
+    WishlistStack: undefined;
+};

@@ -54,4 +54,9 @@ export class MockEpicGamesApiService implements IEpicGamesApiService {
             r.getTitle().toLowerCase().includes(lower),
         );
     }
+
+    async refreshToken(_refreshToken: string): Promise<EpicAuthToken> {
+        await simulateDelay(300);
+        return new EpicAuthToken('mock-access', 'mock-account', 'Mock User', new Date(Date.now() + 3600_000), _refreshToken);
+    }
 }

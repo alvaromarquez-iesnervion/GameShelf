@@ -1,14 +1,17 @@
-import { User } from '../../../entities/User';
+import { IAuthSessionUseCase } from './IAuthSessionUseCase';
+import { IGuestUseCase } from './IGuestUseCase';
+import { IAccountManagementUseCase } from './IAccountManagementUseCase';
 
-export interface IAuthUseCase {
-    login(email: string, password: string): Promise<User>;
-    register(email: string, password: string): Promise<User>;
-    logout(isGuest: boolean): Promise<void>;
-    getCurrentUser(): Promise<User | null>;
-    /** Firebase auth check + guest session fallback. */
-    checkAuthState(): Promise<User | null>;
-    continueAsGuest(): Promise<User>;
-    deleteAccount(): Promise<void>;
-    resetPassword(email: string): Promise<void>;
-    clearGuestSession(): Promise<void>;
-}
+/**
+ * Interfaz compuesta para funcionalidad de auth completa.
+ *
+ * Los consumidores que solo necesitan un subconjunto pueden depender
+ * de las interfaces más pequeñas directamente (ISP):
+ *   - IAuthSessionUseCase      — login, register, logout, getCurrentUser, checkAuthState
+ *   - IGuestUseCase            — continueAsGuest, clearGuestSession
+ *   - IAccountManagementUseCase — deleteAccount, resetPassword
+ */
+export interface IAuthUseCase
+    extends IAuthSessionUseCase,
+        IGuestUseCase,
+        IAccountManagementUseCase {}

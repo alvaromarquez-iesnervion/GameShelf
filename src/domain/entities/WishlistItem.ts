@@ -31,7 +31,7 @@ export class WishlistItem {
     // null = sin oferta activa. Se enriquece en WishlistUseCase via ITAD.
     getBestDealPercentage(): number | null { return this.bestDealPercentage; }
 
-    setBestDealPercentage(percentage: number | null): void {
-        this.bestDealPercentage = percentage;
+    withBestDealPercentage(percentage: number | null): WishlistItem {
+        return new WishlistItem(this.id, this.gameId, this.title, this.coverUrl, this.addedAt, percentage);
     }
 }

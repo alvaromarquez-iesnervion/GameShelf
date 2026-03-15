@@ -95,23 +95,18 @@ export class AuthRepositoryImpl implements IAuthRepository {
         );
     }
 
-    async deleteAccount(): Promise<void> {
+    async deleteAuthUser(): Promise<void> {
         const firebaseUser = this.auth.currentUser;
         if (!firebaseUser) throw new Error('No hay sesión activa');
-
-        const uid = firebaseUser.uid;
-
-        // 1. Borrar cuenta de Firebase Auth primero.
-        //    Si falla (p.ej. auth/requires-recent-login), no se toca ningún
-        //    dato de Firestore y el usuario puede reintentar con reautenticación.
+        // Si falla (p.ej. auth/requires-recent-login), no se toca ningún dato de Firestore.
         await deleteUser(firebaseUser);
+    }
 
-        // 2. Borrar subcolecciones de Firestore con writeBatch
+    async deleteUserFirestoreData(uid: string): Promise<void> {
+        // 1. Borrar subcolecciones con writeBatch (límite 500 ops por batch)
         const subCollections = ['library', 'wishlist', 'platforms'];
         for (const col of subCollections) {
             const snap = await getDocs(collection(this.firestore, 'users', uid, col));
-
-            // Firestore batches tienen límite de 500 ops
             const batches: Promise<void>[] = [];
             let currentBatch = writeBatch(this.firestore);
             let opsInBatch = 0;
@@ -119,7 +114,6 @@ export class AuthRepositoryImpl implements IAuthRepository {
             for (const docSnap of snap.docs) {
                 currentBatch.delete(docSnap.ref);
                 opsInBatch++;
-
                 if (opsInBatch === 500) {
                     batches.push(currentBatch.commit());
                     currentBatch = writeBatch(this.firestore);
@@ -127,18 +121,15 @@ export class AuthRepositoryImpl implements IAuthRepository {
                 }
             }
 
-            if (opsInBatch > 0) {
-                batches.push(currentBatch.commit());
-            }
-
+            if (opsInBatch > 0) batches.push(currentBatch.commit());
             await Promise.all(batches);
         }
 
-        // 3. Borrar settings/notifications
+        // 2. Borrar settings/notifications (puede no existir)
         await deleteDoc(doc(this.firestore, 'users', uid, 'settings', 'notifications'))
-            .catch(() => { /* puede no existir */ });
+            .catch(() => {});
 
-        // 4. Borrar documento raíz del usuario
+        // 3. Borrar documento raíz del usuario
         await deleteDoc(doc(this.firestore, 'users', uid));
     }
 

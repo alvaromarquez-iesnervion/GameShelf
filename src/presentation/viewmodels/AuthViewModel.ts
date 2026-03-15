@@ -7,6 +7,9 @@ import { TYPES } from '../../di/types';
 import { withLoading } from './BaseViewModel';
 import { isGuestUser } from '../../core/utils/guestUtils';
 import { mapFirebaseError } from '../../core/utils/firebaseErrors';
+import { HomeViewModel } from './HomeViewModel';
+import { LibraryViewModel } from './LibraryViewModel';
+import { WishlistViewModel } from './WishlistViewModel';
 
 /**
  * ViewModel para autenticación.
@@ -23,6 +26,12 @@ export class AuthViewModel {
     constructor(
         @inject(TYPES.IAuthUseCase)
         private readonly authUseCase: IAuthUseCase,
+        @inject(TYPES.HomeViewModel)
+        private readonly homeVm: HomeViewModel,
+        @inject(TYPES.LibraryViewModel)
+        private readonly libraryVm: LibraryViewModel,
+        @inject(TYPES.WishlistViewModel)
+        private readonly wishlistVm: WishlistViewModel,
     ) {
         makeAutoObservable(this);
     }
@@ -85,6 +94,9 @@ export class AuthViewModel {
             runInAction(() => {
                 this._currentUser = null;
             });
+            this.homeVm.reset();
+            this.libraryVm.reset();
+            this.wishlistVm.reset();
         });
     }
 

@@ -22,6 +22,7 @@ export const TYPES = {
     LocalGameRepository: Symbol.for('LocalGameRepository'),
 
     // Servicios externos
+    IPopularGamesService: Symbol.for('IPopularGamesService'),
     ISteamApiService: Symbol.for('ISteamApiService'),
     IEpicGamesApiService: Symbol.for('IEpicGamesApiService'),
     IGogApiService: Symbol.for('IGogApiService'),
@@ -48,4 +49,5 @@ export const TYPES = {
     PlatformLinkViewModel: Symbol.for('PlatformLinkViewModel'),
     SettingsViewModel: Symbol.for('SettingsViewModel'),
     HomeViewModel: Symbol.for('HomeViewModel'),
+    ProfileViewModel: Symbol.for('ProfileViewModel'),
 };

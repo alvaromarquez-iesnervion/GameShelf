@@ -1,12 +1,9 @@
 import { Deal } from '../../entities/Deal';
 import { SearchResult } from '../../entities/SearchResult';
+import { ItadGameInfo } from '../../dtos/ItadGameInfo';
 
-export interface ItadGameInfo {
-    id: string;
-    title: string;
-    steamAppId: number | null;
-    coverUrl: string;
-}
+// Re-exportado para compatibilidad con los callers que lo importan desde aquí.
+export type { ItadGameInfo };
 
 export interface IIsThereAnyDealService {
     /** POST /games/lookup/v1 → UUID interno de ITAD. null si no encontrado. */

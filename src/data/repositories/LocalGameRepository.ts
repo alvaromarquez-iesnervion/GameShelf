@@ -9,7 +9,7 @@ import { Game } from '../../domain/entities/Game';
 import { SearchResult } from '../../domain/entities/SearchResult';
 import { Platform } from '../../domain/enums/Platform';
 import { TYPES } from '../../di/types';
-import { GUEST_KEY_LIBRARY } from '../../core/utils/guestUtils';
+import { GUEST_KEY_LIBRARY } from '../../domain/utils/guestUtils';
 
 interface StoredGame {
     id: string;
@@ -26,6 +26,8 @@ interface StoredGame {
 
 @injectable()
 export class LocalGameRepository implements IGameRepository {
+
+    private _cache: Game[] | null = null;
 
     constructor(
         @inject(TYPES.LocalPlatformRepository)
@@ -63,12 +65,14 @@ export class LocalGameRepository implements IGameRepository {
     }
 
     private async readAll(): Promise<Game[]> {
+        if (this._cache !== null) return this._cache;
         const raw = await AsyncStorage.getItem(GUEST_KEY_LIBRARY);
-        if (!raw) return [];
-        return (JSON.parse(raw) as StoredGame[]).map(s => this.fromStored(s));
+        this._cache = raw ? (JSON.parse(raw) as StoredGame[]).map(s => this.fromStored(s)) : [];
+        return this._cache;
     }
 
     private async writeAll(games: Game[]): Promise<void> {
+        this._cache = null;
         await AsyncStorage.setItem(GUEST_KEY_LIBRARY, JSON.stringify(games.map(g => this.toStored(g))));
     }
 
@@ -157,10 +161,9 @@ export class LocalGameRepository implements IGameRepository {
 
     async updateSteamAppId(_userId: string, gameId: string, steamAppId: number): Promise<void> {
         const games = await this.readAll();
-        const updated = games.map(g => {
-            if (g.getId() === gameId) g.setSteamAppId(steamAppId);
-            return g;
-        });
+        const updated = games.map(g =>
+            g.getId() === gameId ? g.withSteamAppId(steamAppId) : g,
+        );
         await this.writeAll(updated);
     }
 }

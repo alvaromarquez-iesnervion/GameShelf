@@ -1,6 +1,6 @@
 # GameShelf — Project Status
 
-**Last updated:** Session 32 (Mar 2026) — 28 MEDIUM issues resolved
+**Last updated:** Session 33 (Mar 2026) — 15 issues resolved (S-11, D-10, A-04, A-06, A-07, A-08, A-11, N-09, F-05, R-05, X-03, C-08, P-01, P-03, P-04)
 **Current state:** Production-ready. Firebase + Steam + all external APIs active when env vars are set. Full mock mode available with no keys. Guest mode available without any account.
 
 ---
@@ -11,8 +11,8 @@
 |---|---|---|
 | **Domain** | Complete | Entities, enums, DTOs, all repo/service/use case interfaces, 7 use case implementations |
 | **Data** | Complete | 5 Firebase repos + 5 guest repos (LocalPlatformRepository, LocalGameRepository, GuestAware* wrappers, GuestSessionRepository), 5 external service impls, 2 Firestore mappers, 12 mocks, FirebaseConfig, ApiConstants |
-| **DI** | Complete | 47 TYPES symbols, full container bindings (3 modes + guest routing), `useInjection` hook |
-| **Presentation** | Complete | 8 ViewModels, 10 screens, 13 UI components, dark theme (colors / typography / spacing) |
+| **DI** | Complete | 48 TYPES symbols, full container bindings (3 modes + guest routing), `useInjection` hook |
+| **Presentation** | Complete | 9 ViewModels (incl. new ProfileViewModel), 10 screens, 13 UI components, dark theme (colors / typography / spacing) |
 | **Navigation** | Complete | React Navigation: RootNavigator, 5 stacks, MainTabNavigator (3 tabs + wishlist modal) |
 
 ---
@@ -99,9 +99,9 @@ See `KNOWN_ISSUES.md` for the full tracked list (replaces the old `MALAS_PRACTIC
 | Severity | Count | Top items |
 |---|---|---|
 | Critical | 0 | — |
-| High | 0 | All resolved as of Session 27 |
-| Medium | 0 | All resolved as of Session 30 |
-| Low | 0 | All resolved as of Session 24 |
+| High     | 3 | A-01 (HomeViewModel SRP), A-02 (HomeUseCase→Steam), A-03 (mutable entities) |
+| Medium   | 6 | D-09, D-11, A-05, N-12, C-06, C-07 |
+| Low      | 3 | C-09, C-10, S-10 (acceptable) |
 
 ---
 

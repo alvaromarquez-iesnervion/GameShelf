@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import { injectable } from 'inversify';
-import { IGameRepository } from '../../domain/interfaces/repositories/IGameRepository';
+import { IGameRepository, LibraryPage } from '../../domain/interfaces/repositories/IGameRepository';
 import { Game } from '../../domain/entities/Game';
 import { SearchResult } from '../../domain/entities/SearchResult';
 import { Platform } from '../../domain/enums/Platform';
@@ -86,6 +86,11 @@ export class MockGameRepository implements IGameRepository {
         return MOCK_SEARCH_RESULTS.filter(r =>
             r.getTitle().toLowerCase().includes(lower),
         );
+    }
+
+    async getLibraryGamesPage(_userId: string, _pageSize: number, _cursor?: string): Promise<LibraryPage> {
+        const games = await this.getLibraryGames(_userId);
+        return { games, nextCursor: null };
     }
 
     async storeEpicGames(_userId: string, _games: Game[]): Promise<void> {

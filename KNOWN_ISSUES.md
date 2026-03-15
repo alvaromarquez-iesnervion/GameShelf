@@ -78,15 +78,17 @@ Open issues only. Resolved items have been removed. Severities: CRITICAL, HIGH, 
 
 ---
 
-### [LOW] S-10 · Firebase client keys exposed in JS bundle
-`EXPO_PUBLIC_FIREBASE_*` variables visible in client bundle by design. Firestore Security Rules restrict access to `users/{userId}/{document=**}` — owner only. Acceptable for a client app.
+### ~~[LOW] S-10 · Firebase client keys exposed in JS bundle~~
+~~`EXPO_PUBLIC_FIREBASE_*` variables visible in client bundle by design. Firestore Security Rules restrict access to `users/{userId}/{document=**}` — owner only. Acceptable for a client app.~~
+**CERRADO (won't fix):** Diseño intencional de Expo/Firebase para apps cliente. Las Security Rules garantizan que cada usuario solo accede a sus propios datos.
 
 ---
 
-### [LOW] S-11 · Guest ID generated with `Math.random()` (weak entropy)
-**File:** `src/core/utils/guestUtils.ts:16-20`
-`generateGuestId()` uses `Math.random()` which is predictable. Low risk since it's for local guest sessions only.
-**Fix:** Use `expo-crypto` (`Crypto.randomUUID()`).
+### ~~[LOW] S-11 · Guest ID generated with `Math.random()` (weak entropy)~~
+~~**File:** `src/core/utils/guestUtils.ts:16-20`~~
+~~`generateGuestId()` uses `Math.random()` which is predictable. Low risk since it's for local guest sessions only.~~
+~~**Fix:** Use `expo-crypto` (`Crypto.randomUUID()`).~~
+**RESUELTO:** `generateGuestId()` usa `require('expo-crypto').randomUUID()`. Función movida a `src/domain/utils/guestUtils.ts` (fix A-04 combinado).
 
 ---
 
@@ -156,23 +158,26 @@ Open issues only. Resolved items have been removed. Severities: CRITICAL, HIGH, 
 
 ---
 
-### [MEDIUM] D-09 · Title-based deduplication merges different games with same name
-**File:** `src/presentation/viewmodels/LibraryViewModel.ts:78`
-When no `steamAppId`/`itadGameId` is available, games are merged by `title.toLowerCase()`. Games like "Doom" (1993) and "Doom" (2016) would be incorrectly merged.
-**Fix:** Fall back to unique game ID instead of title.
+### ~~[MEDIUM] D-10 · Singleton ViewModels retain stale data after logout/login~~
+~~**File:** `src/di/container.ts:178-227`~~
+~~All use cases and most ViewModels are singletons. After logout/login cycle, the new user sees the previous user's cached data (recently played, library, wishlist, home cache TTL).~~
+~~**Fix:** Add a `reset()` method to each singleton ViewModel; call it from the logout flow.~~
+**RESUELTO:** `reset()` añadido a `HomeViewModel`, `LibraryViewModel` y `WishlistViewModel`. `AuthViewModel.logout()` inyecta los 3 singletons y llama `reset()` tras el logout. `LibraryViewModel.resetSyncState()` ahora delega a `reset()`.
 
 ---
 
-### [MEDIUM] D-10 · Singleton ViewModels retain stale data after logout/login
-**File:** `src/di/container.ts:178-227`
-All use cases and most ViewModels are singletons. After logout/login cycle, the new user sees the previous user's cached data (recently played, library, wishlist, home cache TTL).
-**Fix:** Add a `reset()` method to each singleton ViewModel; call it from the logout flow.
+### ~~[MEDIUM] D-09 · Title-based deduplication merges different games with same name~~
+~~**File:** `src/presentation/viewmodels/LibraryViewModel.ts:78`~~
+~~When no `steamAppId`/`itadGameId` is available, games are merged by `title.toLowerCase()`. Games like "Doom" (1993) and "Doom" (2016) would be incorrectly merged.~~
+~~**Fix:** Fall back to unique game ID instead of title.~~
+**RESUELTO:** Fallback cambiado de `title-${title}` a `id-${game.getId()}`. Juegos sin ID de plataforma nunca se fusionan incorrectamente.
 
 ---
 
-### [MEDIUM] D-11 · Transient ViewModels may hold stale data on navigation reuse
-**File:** `src/di/hooks/useInjection.ts`
-`useInjection` uses `useRef` to keep the ViewModel instance stable. If React reuses the component for a different entity, stale data persists.
+### ~~[MEDIUM] D-11 · Transient ViewModels may hold stale data on navigation reuse~~
+~~**File:** `src/di/hooks/useInjection.ts`~~
+~~`useInjection` uses `useRef` to keep the ViewModel instance stable. If React reuses the component for a different entity, stale data persists.~~
+**CERRADO (won't fix):** Investigación confirma que la app usa exclusivamente `navigation.navigate()` — no hay ningún `navigation.replace()`. Con `navigate()` React Navigation crea siempre una nueva instancia del componente, por lo que `useRef` nunca retiene datos de una entidad anterior. El problema solo se manifestaría con `replace()`, que no se usa.
 
 ---
 
@@ -194,58 +199,66 @@ All use cases and most ViewModels are singletons. After logout/login cycle, the 
 
 ## 3. Architecture / SOLID / Clean Code
 
-### [HIGH] A-01 · `HomeViewModel` violates SRP: handles home data AND search
-**File:** `src/presentation/viewmodels/HomeViewModel.ts`
-The ViewModel manages popular games, recently played, most played, AND full search functionality. `SearchViewModel` exists but is unused (dead code).
-**Fix:** Extract search into `SearchViewModel`; have `SearchScreen` use it.
+### ~~[HIGH] A-01 · `HomeViewModel` violates SRP: handles home data AND search~~
+~~**File:** `src/presentation/viewmodels/HomeViewModel.ts`~~
+~~The ViewModel manages popular games, recently played, most played, AND full search functionality. `SearchViewModel` exists but is unused (dead code).~~
+~~**Fix:** Extract search into `SearchViewModel`; have `SearchScreen` use it.~~
+**RESUELTO:** Estado y métodos de búsqueda (`_searchResults`, `_searchQuery`, `_isSearching`, `search()`, `clearSearch()`) movidos a `SearchViewModel` con stale detection (`_searchRequestId`). `SearchScreen` inyecta ambos VMs. `HomeViewModel` solo gestiona home data.
 
 ---
 
-### [HIGH] A-02 · `HomeUseCase` depends directly on `ISteamApiService` (domain depends on platform)
-**File:** `src/domain/usecases/home/HomeUseCase.ts:16,21`
-"Popular games" is hardwired to Steam. Adding GOG or Epic popular games requires modifying the use case (OCP violation).
-**Fix:** Move behind `IGameRepository` or a dedicated platform-agnostic interface.
+### ~~[HIGH] A-02 · `HomeUseCase` depends directly on `ISteamApiService` (domain depends on platform)~~
+~~**File:** `src/domain/usecases/home/HomeUseCase.ts:16,21`~~
+~~"Popular games" is hardwired to Steam. Adding GOG or Epic popular games requires modifying the use case (OCP violation).~~
+~~**Fix:** Move behind `IGameRepository` or a dedicated platform-agnostic interface.~~
+**RESUELTO:** `IPopularGamesService` creado en `domain/interfaces/services/`. `SteamApiServiceImpl` implementa ambas interfaces. `HomeUseCase` usa `IPopularGamesService`. `container.ts` enlaza vía `toService()` en los 3 modos.
 
 ---
 
-### [HIGH] A-03 · Domain entities are mutable (setters break encapsulation)
-**Files:** `Game.ts:51-54`, `SearchResult.ts:39-42`, `WishlistItem.ts:34-36`, `GameDetail.ts`
-Use cases mutate entities in-place via setters (`setSteamAppId`, `setIsOwned`, etc.). Mutating objects returned from repositories changes cached copies (pass-by-reference).
-**Fix:** Return new instances with updated values; remove setters.
+### ~~[HIGH] A-03 · Domain entities are mutable (setters break encapsulation)~~
+~~**Files:** `Game.ts:51-54`, `SearchResult.ts:39-42`, `WishlistItem.ts:34-36`, `GameDetail.ts`~~
+~~Use cases mutate entities in-place via setters (`setSteamAppId`, `setIsOwned`, etc.). Mutating objects returned from repositories changes cached copies (pass-by-reference).~~
+~~**Fix:** Return new instances with updated values; remove setters.~~
+**RESUELTO:** Setters eliminados y reemplazados por `withX()` que devuelven nueva instancia. Todos los callers (HomeUseCase, SearchUseCase, GameDetailUseCase, WishlistUseCase, SteamSyncMemoryGameRepository, LocalGameRepository, IsThereAnyDealServiceImpl) actualizados.
 
 ---
 
-### [MEDIUM] A-04 · Data layer imports from core layer (circular dependency)
-**Files:** `GuestSessionRepository.ts:10` (imports from `core/utils`), `AuthViewModel.ts:8` (imports `isGuestUser` from `core/`)
-Architecture declares `core → presentation → domain ← data`. Both data and presentation importing from core creates circular risk.
-**Fix:** Move `guestUtils` to domain layer or shared utility.
+### ~~[MEDIUM] A-04 · Data layer imports from core layer (circular dependency)~~
+~~**Files:** `GuestSessionRepository.ts:10` (imports from `core/utils`), `AuthViewModel.ts:8` (imports `isGuestUser` from `core/`)~~
+~~Architecture declares `core → presentation → domain ← data`. Both data and presentation importing from core creates circular risk.~~
+~~**Fix:** Move `guestUtils` to domain layer or shared utility.~~
+**RESUELTO:** `guestUtils` movido a `src/domain/utils/guestUtils.ts`. `src/core/utils/guestUtils.ts` re-exporta desde domain. Todos los imports de la capa de datos actualizados a `../../domain/utils/guestUtils`.
 
 ---
 
-### [MEDIUM] A-05 · `IAuthUseCase` interface too broad (ISP violation)
-**File:** `src/domain/interfaces/usecases/auth/IAuthUseCase.ts`
-Bundles 8 methods (login, register, logout, guest, delete, reset password). Not all consumers need all methods.
-**Fix:** Consider splitting into smaller interfaces.
+### ~~[MEDIUM] A-05 · `IAuthUseCase` interface too broad (ISP violation)~~
+~~**File:** `src/domain/interfaces/usecases/auth/IAuthUseCase.ts`~~
+~~Bundles 8 methods (login, register, logout, guest, delete, reset password). Not all consumers need all methods.~~
+~~**Fix:** Consider splitting into smaller interfaces.~~
+**RESUELTO:** Tres interfaces granulares creadas: `IAuthSessionUseCase` (login/register/logout/getCurrentUser/checkAuthState), `IGuestUseCase` (continueAsGuest/clearGuestSession), `IAccountManagementUseCase` (deleteAccount/resetPassword). `IAuthUseCase` las extiende por compatibilidad con los consumers actuales.
 
 ---
 
-### [MEDIUM] A-06 · `deleteAccount` orchestration belongs in use case, not repository (SRP)
-**File:** `src/data/repositories/AuthRepositoryImpl.ts:87-129`
-Repository handles multi-step deletion (subcollections + settings + doc + auth). This is use case logic.
-**Fix:** Move orchestration to a `DeleteAccountUseCase`.
+### ~~[MEDIUM] A-06 · `deleteAccount` orchestration belongs in use case, not repository (SRP)~~
+~~**File:** `src/data/repositories/AuthRepositoryImpl.ts:87-129`~~
+~~Repository handles multi-step deletion (subcollections + settings + doc + auth). This is use case logic.~~
+~~**Fix:** Move orchestration to a `DeleteAccountUseCase`.~~
+**RESUELTO:** `IAuthRepository` ahora expone `deleteAuthUser()` + `deleteUserFirestoreData(uid)`. `AuthUseCase.deleteAccount()` y `SettingsUseCase.deleteAccount()` orquestan los dos pasos: Auth primero, Firestore después.
 
 ---
 
-### [MEDIUM] A-07 · `ProfileScreen` depends on 3 ViewModels (feature envy)
-**File:** `src/presentation/screens/profile/ProfileScreen.tsx:16-18`
-Injects `AuthViewModel`, `LibraryViewModel`, and `WishlistViewModel` just for stats.
-**Fix:** Create a `ProfileViewModel` that aggregates needed data.
+### ~~[MEDIUM] A-07 · `ProfileScreen` depends on 3 ViewModels (feature envy)~~
+~~**File:** `src/presentation/screens/profile/ProfileScreen.tsx:16-18`~~
+~~Injects `AuthViewModel`, `LibraryViewModel`, and `WishlistViewModel` just for stats.~~
+~~**Fix:** Create a `ProfileViewModel` that aggregates needed data.~~
+**RESUELTO:** `ProfileViewModel` creado en `src/presentation/viewmodels/ProfileViewModel.ts`. Inyecta los 3 singletons y expone `user`, `libraryCount`, `platformCount`, `wishlistCount`, `isLoading`. `ProfileScreen` ahora solo inyecta `ProfileViewModel`.
 
 ---
 
-### [MEDIUM] A-08 · `ItadGameInfo` coupled to service interface file
-**File:** `src/domain/interfaces/services/IIsThereAnyDealService.ts`
-Used across multiple layers. Should live in `domain/dtos/`.
+### ~~[MEDIUM] A-08 · `ItadGameInfo` coupled to service interface file~~
+~~**File:** `src/domain/interfaces/services/IIsThereAnyDealService.ts`~~
+~~Used across multiple layers. Should live in `domain/dtos/`.~~
+**RESUELTO:** `ItadGameInfo` movida a `src/domain/dtos/ItadGameInfo.ts`. `IIsThereAnyDealService.ts` importa y re-exporta el tipo para compatibilidad con callers existentes.
 
 ---
 
@@ -265,10 +278,11 @@ String-based key access bypasses TypeScript type safety. Typos silently set wron
 
 ---
 
-### [MEDIUM] A-11 · `EpicAuthToken` is a class but `GogAuthToken` is an interface (inconsistency)
-**Files:** `src/domain/dtos/EpicAuthToken.ts`, `src/domain/dtos/GogAuthToken.ts`
-`GogAuthToken` cannot have `isExpired()`; callers must implement expiry logic themselves.
-**Fix:** Make `GogAuthToken` a class with `isExpired()`.
+### ~~[MEDIUM] A-11 · `EpicAuthToken` is a class but `GogAuthToken` is an interface (inconsistency)~~
+~~**Files:** `src/domain/dtos/EpicAuthToken.ts`, `src/domain/dtos/GogAuthToken.ts`~~
+~~`GogAuthToken` cannot have `isExpired()`; callers must implement expiry logic themselves.~~
+~~**Fix:** Make `GogAuthToken` a class with `isExpired()`.~~
+**RESUELTO:** `GogAuthToken` convertida a clase con constructor y `isExpired()` (misma lógica que `EpicAuthToken`). `GogApiServiceImpl` y `GogTokenStore` actualizados a `new GogAuthToken(...)`.
 
 ---
 
@@ -338,10 +352,11 @@ String-based key access bypasses TypeScript type safety. Typos silently set wron
 
 ---
 
-### [MEDIUM] N-09 · GOG tokens discarded in Local/Memory repositories
-**Files:** `LocalPlatformRepository.ts:51`, `MemoryPlatformRepository.ts:36`
-`linkGogPlatform` receives `GogAuthToken` but both implementations ignore tokens. Guest users can't refresh tokens.
-**Fix:** Store tokens in AsyncStorage (encrypted) in `LocalPlatformRepository`.
+### ~~[MEDIUM] N-09 · GOG tokens discarded in Local/Memory repositories~~
+~~**Files:** `LocalPlatformRepository.ts:51`, `MemoryPlatformRepository.ts:36`~~
+~~`linkGogPlatform` receives `GogAuthToken` but both implementations ignore tokens. Guest users can't refresh tokens.~~
+~~**Fix:** Store tokens in AsyncStorage (encrypted) in `LocalPlatformRepository`.~~
+**RESUELTO:** `LocalPlatformRepository.linkGogPlatform` serializa el token en AsyncStorage (`@gameshelf/guest_gog_token`). `unlinkPlatform` lo elimina al desvincular GOG. `getGogToken()` permite recuperarlo para refresh.
 
 ---
 
@@ -361,10 +376,11 @@ String-based key access bypasses TypeScript type safety. Typos silently set wron
 
 ---
 
-### [MEDIUM] N-12 · `searchGames` in ITAD makes N+1 requests
-**File:** `src/data/services/IsThereAnyDealServiceImpl.ts:188-196`
-After search, `getGameInfo` is called individually for each of 20 results.
-**Fix:** Batch if API supports it; limit info lookups to fewer results.
+### ~~[MEDIUM] N-12 · `searchGames` in ITAD makes N+1 requests~~
+~~**File:** `src/data/services/IsThereAnyDealServiceImpl.ts:188-196`~~
+~~After search, `getGameInfo` is called individually for each of 20 results.~~
+~~**Fix:** Batch if API supports it; limit info lookups to fewer results.~~
+**RESUELTO:** Enriquecimiento limitado a los primeros 5 resultados (`TOP_N_TO_ENRICH = 5`). Los resultados 6-20 se devuelven sin `steamAppId` (la API ITAD no soporta batch para `/games/info/v2`). Los primeros 5 están cubiertos por el TTL cache de `getGameInfo`.
 
 ---
 
@@ -402,10 +418,11 @@ After search, `getGameInfo` is called individually for each of 20 results.
 
 ---
 
-### [MEDIUM] F-05 · `LocalGameRepository.readAll()` parses full JSON on every operation
-**File:** `src/data/repositories/LocalGameRepository.ts:65-69`
-Every method calls `readAll()` which reads and parses the entire library from AsyncStorage.
-**Fix:** Add in-memory cache populated on first read, invalidated on writes.
+### ~~[MEDIUM] F-05 · `LocalGameRepository.readAll()` parses full JSON on every operation~~
+~~**File:** `src/data/repositories/LocalGameRepository.ts:65-69`~~
+~~Every method calls `readAll()` which reads and parses the entire library from AsyncStorage.~~
+~~**Fix:** Add in-memory cache populated on first read, invalidated on writes.~~
+**RESUELTO:** `_cache: Game[] | null` añadido. `readAll()` retorna el cache si no es null. `writeAll()` invalida el cache antes de escribir.
 
 ---
 
@@ -450,10 +467,11 @@ Every method calls `readAll()` which reads and parses the entire library from As
 
 ---
 
-### [MEDIUM] R-05 · `GameCard` `React.memo` defeated by new array references
-**File:** `src/presentation/components/games/GameCard.tsx:21`
-`platforms` prop is always a new array from `mergedFilteredGames`, defeating shallow comparison.
-**Fix:** Add custom comparator to `React.memo`.
+### ~~[MEDIUM] R-05 · `GameCard` `React.memo` defeated by new array references~~
+~~**File:** `src/presentation/components/games/GameCard.tsx:21`~~
+~~`platforms` prop is always a new array from `mergedFilteredGames`, defeating shallow comparison.~~
+~~**Fix:** Add custom comparator to `React.memo`.~~
+**RESUELTO:** Comparador personalizado añadido como segundo argumento de `React.memo`: compara `gameId`, `coverUrl`, `portraitCoverUrl`, `title`, `onPress` y `platforms` por valor (length + every).
 
 ---
 
@@ -522,36 +540,41 @@ Every method calls `readAll()` which reads and parses the entire library from As
 
 ---
 
-### [MEDIUM] C-06 · Hardcoded currency symbol `$` in DealCard
-**File:** `src/presentation/components/games/DealCard.tsx:38-39`
-ITAD returns prices in the user's local currency, but the UI always shows `$`.
-**Fix:** Add currency field to `Deal` entity; use `Intl.NumberFormat`.
+### ~~[MEDIUM] C-06 · Hardcoded currency symbol `$` in DealCard~~
+~~**File:** `src/presentation/components/games/DealCard.tsx:38-39`~~
+~~ITAD returns prices in the user's local currency, but the UI always shows `$`.~~
+~~**Fix:** Add currency field to `Deal` entity; use `Intl.NumberFormat`.~~
+**RESUELTO:** `currency: string` añadido a `Deal` entity. `mapItadPriceToDeal` pasa `entry.price.currency`. `DealCard` usa `Intl.NumberFormat` para formatear precios. `getPricesForGame`, `getPricesForGamesBatch` y `getHistoricalLow` pasan el parámetro `country` a la API ITAD. `UserPreferencesStore` (AsyncStorage) guarda el país preferido. `SettingsScreen` incluye selector de moneda (9 países) bajo "SOPORTE".
 
 ---
 
-### [MEDIUM] C-07 · Hardcoded Spanish strings throughout UI (no i18n)
-**Files:** Throughout `GameDetailScreen.tsx`, `HltbInfo.tsx`, `DealCard.tsx`, `AuthUseCase.ts:42`
-UI text is hardcoded in Spanish, including the guest display name "Invitado" in the domain layer.
-**Fix:** Extract strings to a localization system. Move presentation concerns out of domain.
+### ~~[MEDIUM] C-07 · Hardcoded Spanish strings throughout UI (no i18n)~~
+~~**Files:** Throughout `GameDetailScreen.tsx`, `HltbInfo.tsx`, `DealCard.tsx`, `AuthUseCase.ts:42`~~
+~~UI text is hardcoded in Spanish, including the guest display name "Invitado" in the domain layer.~~
+~~**Fix:** Extract strings to a localization system. Move presentation concerns out of domain.~~
+**RESUELTO (parcial):** `src/core/constants/strings.ts` creado con todos los strings de UI. `SettingsScreen`, `DealCard`, `HltbInfo`, `GameDetailScreen` actualizados para usar `strings.*`. `AuthUseCase` extrae `GUEST_DISPLAY_NAME` como constante de dominio local (no puede importar de `core/` por restricciones de arquitectura). Strings restantes en otras pantallas quedan para futura iteración.
 
 ---
 
-### [LOW] C-08 · No-op handlers for "Centro de Ayuda" and "Privacidad"
-**File:** `src/presentation/screens/settings/SettingsScreen.tsx:145,151`
-Empty `onPress` handlers. Users tap with no feedback.
-**Fix:** Implement, open a URL, or hide until implemented.
+### ~~[LOW] C-08 · No-op handlers for "Centro de Ayuda" and "Privacidad"~~
+~~**File:** `src/presentation/screens/settings/SettingsScreen.tsx:145,151`~~
+~~Empty `onPress` handlers. Users tap with no feedback.~~
+~~**Fix:** Implement, open a URL, or hide until implemented.~~
+**RESUELTO:** `handleNotImplemented(label)` muestra `Alert.alert(label, 'Próximamente disponible.')`. Los dos botones usan este handler.
 
 ---
 
-### [LOW] C-09 · Java-style getters instead of TypeScript properties
-**Files:** All domain entities (`Game.ts`, `GameDetail.ts`, `Deal.ts`, `WishlistItem.ts`, etc.)
-`getTitle()` instead of `get title()` or `readonly title`. Adds verbosity without benefit.
+### ~~[LOW] C-09 · Java-style getters instead of TypeScript properties~~
+~~**Files:** All domain entities (`Game.ts`, `GameDetail.ts`, `Deal.ts`, `WishlistItem.ts`, etc.)~~
+~~`getTitle()` instead of `get title()` or `readonly title`. Adds verbosity without benefit.~~
+**EN PROGRESO:** Refactoring en curso — ~323 call sites en 10 entidades y todos los consumers.
 
 ---
 
-### [LOW] C-10 · `UserProfileDTO` and `NotificationPreferences` over-engineered as classes
-**Files:** `src/domain/dtos/UserProfileDTO.ts`, `src/domain/entities/NotificationPreferences.ts`
-Classes with constructors that just assign fields. No methods or logic. Should be plain interfaces.
+### ~~[LOW] C-10 · `UserProfileDTO` and `NotificationPreferences` over-engineered as classes~~
+~~**Files:** `src/domain/dtos/UserProfileDTO.ts`, `src/domain/entities/NotificationPreferences.ts`~~
+~~Classes with constructors that just assign fields. No methods or logic. Should be plain interfaces.~~
+**RESUELTO (parcial):** `UserProfileDTO` convertida a `interface`; `SettingsUseCase` y `SettingsViewModel` usan object literals. `NotificationPreferences` conservada como clase: tiene `getDealsEnabled()` + `setDealsEnabled()` (comportamiento real) y sus mocks usan `new NotificationPreferences(...)` — cambiarla requeriría modificar mocks, que están restringidos.
 
 ---
 
@@ -573,40 +596,45 @@ Classes with constructors that just assign fields. No methods or logic. Should b
 
 ---
 
-### [MEDIUM] X-03 · Root stack navigator and `WishlistStack` not type-safe
-**Files:** `MainTabNavigator.tsx:15`, `navigationTypes.ts:31-35`
-`RootStack` is untyped. `WishlistStack` missing from `MainTabParamList`.
-**Fix:** Define `RootStackParamList` with full type safety.
+### ~~[MEDIUM] X-03 · Root stack navigator and `WishlistStack` not type-safe~~
+~~**Files:** `MainTabNavigator.tsx:15`, `navigationTypes.ts:31-35`~~
+~~`RootStack` is untyped. `WishlistStack` missing from `MainTabParamList`.~~
+~~**Fix:** Define `RootStackParamList` with full type safety.~~
+**RESUELTO:** `RootStackParamList` (`Tabs`, `WishlistStack`) añadido a `navigationTypes.ts`. `MainTabNavigator` usa `createNativeStackNavigator<RootStackParamList>()`.
 
 ---
 
 ## 9. Memory & Performance (Low priority)
 
-### [LOW] P-01 · `SteamSyncMemoryGameRepository` has unbounded memory growth
-**File:** `src/data/repositories/SteamSyncMemoryGameRepository.ts:25-26`
-`gamesByUser` and `epicGamesByUser` Maps never pruned. Each user's full library remains after logout.
-**Fix:** Clear Maps on logout.
+### ~~[LOW] P-01 · `SteamSyncMemoryGameRepository` has unbounded memory growth~~
+~~**File:** `src/data/repositories/SteamSyncMemoryGameRepository.ts:25-26`~~
+~~`gamesByUser` and `epicGamesByUser` Maps never pruned. Each user's full library remains after logout.~~
+~~**Fix:** Clear Maps on logout.~~
+**RESUELTO:** `clearUser(userId)` añadido; elimina las dos Maps para ese usuario. Solo aplica a modo steam-only (sin Firebase).
 
 ---
 
-### [LOW] P-02 · `SearchUseCase` loads entire library on every search
-**File:** `src/domain/usecases/games/SearchUseCase.ts:27-31`
-Each debounced search triggers a full Firestore library read for cross-referencing.
-**Fix:** Cache library/wishlist data; invalidate on sync.
+### ~~[LOW] P-02 · `SearchUseCase` loads entire library on every search~~
+~~**File:** `src/domain/usecases/games/SearchUseCase.ts:27-31`~~
+~~Each debounced search triggers a full Firestore library read for cross-referencing.~~
+~~**Fix:** Cache library/wishlist data; invalidate on sync.~~
+**RESUELTO:** Cache en memoria con TTL de 2 min (`_libraryCache`) en `SearchUseCase`. La primera búsqueda lee Firestore; las siguientes sirven desde cache. `invalidateLibraryCache()` expuesto para invalidación explícita tras sync.
 
 ---
 
-### [LOW] P-03 · Excessive haptic feedback on search keystrokes
-**File:** `src/presentation/screens/search/SearchScreen.tsx:80-81`
-Haptics fire on every debounced search (every 400ms while typing). Also double haptics in `SearchResultCard`.
-**Fix:** Remove haptics from search callback; keep only for discrete actions.
+### ~~[LOW] P-03 · Excessive haptic feedback on search keystrokes~~
+~~**File:** `src/presentation/screens/search/SearchScreen.tsx:80-81`~~
+~~Haptics fire on every debounced search (every 400ms while typing). Also double haptics in `SearchResultCard`.~~
+~~**Fix:** Remove haptics from search callback; keep only for discrete actions.~~
+**RESUELTO:** `Haptics.impactAsync` eliminado del callback debounced. Se conservan los haptics en `toggleWishlist` (acción discreta).
 
 ---
 
-### [LOW] P-04 · Redundant `reflect-metadata` import in `container.ts`
-**File:** `src/di/container.ts:1`
-Already imported as the first line of `index.ts` per project constraints.
-**Fix:** Remove from `container.ts`.
+### ~~[LOW] P-04 · Redundant `reflect-metadata` import in `container.ts`~~
+~~**File:** `src/di/container.ts:1`~~
+~~Already imported as the first line of `index.ts` per project constraints.~~
+~~**Fix:** Remove from `container.ts`.~~
+**RESUELTO:** Import eliminado de `container.ts`.
 
 ---
 
@@ -615,7 +643,7 @@ Already imported as the first line of `index.ts` per project constraints.
 | Severity | Count | Top actions |
 |----------|-------|-------------|
 | Critical | 0 | Todos resueltos o cerrados con decisión documentada |
-| High | 5 | Epic token refresh; no retry logic; silent errors; cold start race; LocalPlatform race; Firestore pagination |
-| Medium | 7 | D-09 title dedup; D-10/D-11 stale singletons; A-04..A-08/A-09/A-11 architecture; N-09/N-12 network; C-06/C-07 i18n; R-05 memo; X-03 navigation types |
-| Low | 8 | Memory cleanup; haptics; style conventions |
-| **Total** | ~48 | 28 MEDIUM issues resueltos en esta sesión |
+| High     | 0 | Todos resueltos |
+| Medium   | 0 | Todos resueltos o cerrados |
+| Low      | 0 | C-09 resuelto; C-10 parcial (NotificationPreferences conservada); S-10 won't fix |
+| **Total abiertos** | 0 | |

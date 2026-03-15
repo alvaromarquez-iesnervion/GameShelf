@@ -7,7 +7,7 @@ import {
     GUEST_KEY_PLATFORMS,
     GUEST_KEY_LIBRARY,
     generateGuestId,
-} from '../../core/utils/guestUtils';
+} from '../../domain/utils/guestUtils';
 
 @injectable()
 export class GuestSessionRepository implements IGuestSessionRepository {

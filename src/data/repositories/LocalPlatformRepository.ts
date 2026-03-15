@@ -6,7 +6,9 @@ import { LinkedPlatform } from '../../domain/entities/LinkedPlatform';
 import { Platform } from '../../domain/enums/Platform';
 import { GogAuthToken } from '../../domain/dtos/GogAuthToken';
 import { EpicAuthToken } from '../../domain/dtos/EpicAuthToken';
-import { GUEST_KEY_PLATFORMS } from '../../core/utils/guestUtils';
+import { GUEST_KEY_PLATFORMS } from '../../domain/utils/guestUtils';
+
+const GUEST_KEY_GOG_TOKEN = '@gameshelf/guest_gog_token';
 
 interface StoredPlatform {
     platform: Platform;
@@ -66,12 +68,18 @@ export class LocalPlatformRepository implements IPlatformRepository {
         });
     }
 
-    async linkGogPlatform(_userId: string, gogUserId: string, _tokens: GogAuthToken): Promise<LinkedPlatform> {
+    async linkGogPlatform(_userId: string, gogUserId: string, tokens: GogAuthToken): Promise<LinkedPlatform> {
         return this.withMutex(async () => {
             const linked = new LinkedPlatform(Platform.GOG, gogUserId, new Date());
             const current = await this.readAll();
             const filtered = current.filter(p => p.getPlatform() !== Platform.GOG);
             await this.writeAll([...filtered, linked]);
+            await AsyncStorage.setItem(GUEST_KEY_GOG_TOKEN, JSON.stringify({
+                accessToken: tokens.accessToken,
+                refreshToken: tokens.refreshToken,
+                expiresAt: tokens.expiresAt.toISOString(),
+                userId: tokens.userId,
+            }));
             return linked;
         });
     }
@@ -80,7 +88,17 @@ export class LocalPlatformRepository implements IPlatformRepository {
         return this.withMutex(async () => {
             const current = await this.readAll();
             await this.writeAll(current.filter(p => p.getPlatform() !== platform));
+            if (platform === Platform.GOG) {
+                await AsyncStorage.removeItem(GUEST_KEY_GOG_TOKEN);
+            }
         });
+    }
+
+    async getGogToken(): Promise<GogAuthToken | null> {
+        const raw = await AsyncStorage.getItem(GUEST_KEY_GOG_TOKEN);
+        if (!raw) return null;
+        const s = JSON.parse(raw);
+        return new GogAuthToken(s.accessToken, s.refreshToken, new Date(s.expiresAt), s.userId);
     }
 
     async getLinkedPlatforms(_userId: string): Promise<LinkedPlatform[]> {

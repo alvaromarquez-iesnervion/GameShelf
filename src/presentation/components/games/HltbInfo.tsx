@@ -4,6 +4,7 @@ import { Feather } from '@expo/vector-icons';
 import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { spacing, radius } from '../../theme/spacing';
+import { strings } from '../../../core/constants/strings';
 
 interface HltbInfoProps {
     main: number | null;
@@ -37,7 +38,7 @@ export const HltbInfo: React.FC<HltbInfoProps> = ({ main, mainExtra, completioni
         return (
             <View style={styles.empty}>
                 <Feather name="clock" size={16} color={colors.textTertiary} />
-                <Text style={styles.emptyText}>Sin datos de duración</Text>
+                <Text style={styles.emptyText}>{strings.hltbNoData}</Text>
             </View>
         );
     }
@@ -46,14 +47,14 @@ export const HltbInfo: React.FC<HltbInfoProps> = ({ main, mainExtra, completioni
         <View style={styles.container}>
             <View style={styles.header}>
                 <Feather name="clock" size={15} color={colors.textSecondary} />
-                <Text style={styles.headerTitle}>Tiempo de juego estimado</Text>
+                <Text style={styles.headerTitle}>{strings.hltbSectionTitle}</Text>
             </View>
             <View style={styles.pillRow}>
-                <HltbPill label="Historia" value={formatHours(main)} />
+                <HltbPill label={strings.hltbMain} value={formatHours(main)} />
                 <View style={styles.pillDivider} />
-                <HltbPill label="Principal + Extras" value={formatHours(mainExtra)} />
+                <HltbPill label={strings.hltbMainExtra} value={formatHours(mainExtra)} />
                 <View style={styles.pillDivider} />
-                <HltbPill label="Completista" value={formatHours(completionist)} />
+                <HltbPill label={strings.hltbCompletionist} value={formatHours(completionist)} />
             </View>
         </View>
     );

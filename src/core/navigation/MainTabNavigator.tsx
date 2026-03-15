@@ -3,7 +3,7 @@ import { Feather } from '@expo/vector-icons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { BlurView } from 'expo-blur';
 import { StyleSheet, Platform } from 'react-native';
-import { MainTabParamList } from './navigationTypes';
+import { MainTabParamList, RootStackParamList } from './navigationTypes';
 import { SearchStack } from './SearchStack';
 import { LibraryStack } from './LibraryStack';
 import { SettingsStack } from './SettingsStack';
@@ -12,7 +12,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { colors } from '../../presentation/theme/colors';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
-const RootStack = createNativeStackNavigator();
+const RootStack = createNativeStackNavigator<RootStackParamList>();
 
 const TabNavigator: React.FC = () => {
     return (

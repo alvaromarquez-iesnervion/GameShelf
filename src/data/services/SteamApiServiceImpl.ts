@@ -4,6 +4,7 @@ import axios from 'axios';
 import { addAxiosRetryInterceptor } from '../utils/httpRetry';
 import { runLimited } from '../utils/concurrency';
 import { ISteamApiService } from '../../domain/interfaces/services/ISteamApiService';
+import { IPopularGamesService } from '../../domain/interfaces/services/IPopularGamesService';
 import { Game } from '../../domain/entities/Game';
 import { Platform } from '../../domain/enums/Platform';
 import { SteamGameMetadata } from '../../domain/dtos/SteamGameMetadata';
@@ -65,7 +66,7 @@ interface SteamAppDetails {
  *   6. getUserGames() → biblioteca del usuario
  */
 @injectable()
-export class SteamApiServiceImpl implements ISteamApiService {
+export class SteamApiServiceImpl implements ISteamApiService, IPopularGamesService {
 
     getOpenIdLoginUrl(returnUrl: string): string {
         // Extraer realm (protocol + host) de forma segura.
