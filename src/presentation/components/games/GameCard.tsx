@@ -1,11 +1,12 @@
 import React, { useCallback } from 'react';
-import { View, TouchableOpacity, StyleSheet, Text, Platform } from 'react-native';
+import { View, Pressable, StyleSheet, Text, Platform } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
+import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
-import { spacing, radius } from '../../theme/spacing';
+import { spacing, radius, shadows, textShadows, springPresets } from '../../theme/spacing';
 import { Platform as GamePlatform } from '../../../domain/enums/Platform';
 import { PlatformIcon } from '../platforms/PlatformIcon';
 
@@ -18,47 +19,71 @@ interface GameCardProps {
     onPress: (id: string) => void;
 }
 
+const SPRING_CONFIG = springPresets.cardPress;
+
 export const GameCard = React.memo(({ gameId, coverUrl, portraitCoverUrl, title, platforms, onPress }: GameCardProps) => {
     const imageSource = portraitCoverUrl || coverUrl;
+    const scale = useSharedValue(1);
 
-    // useCallback estabiliza la referencia para que React.memo funcione correctamente.
-    // onPress y gameId son las únicas dependencias reales: si no cambian, no se recrea.
+    const animatedStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: scale.value }],
+    }));
+
+    const handlePressIn = useCallback(() => {
+        scale.value = withSpring(0.94, SPRING_CONFIG);
+    }, [scale]);
+
+    const handlePressOut = useCallback(() => {
+        scale.value = withSpring(1, SPRING_CONFIG);
+    }, [scale]);
+
     const handlePress = useCallback(() => {
-        if (Platform.OS !== 'web') {
-            Haptics.selectionAsync();
-        }
+        if (Platform.OS !== 'web') Haptics.selectionAsync();
         onPress(gameId);
     }, [onPress, gameId]);
 
+    const visiblePlatforms = platforms?.filter(p => p !== GamePlatform.UNKNOWN) ?? [];
+
     return (
-        <TouchableOpacity
-            style={styles.card}
-            onPress={handlePress}
-            activeOpacity={0.8}
-        >
-            <View style={styles.imageContainer}>
-                <Image
-                    source={{ uri: imageSource }}
-                    style={styles.cover}
-                    contentFit="cover"
-                    transition={200}
-                />
-                <LinearGradient
-                    colors={['transparent', 'rgba(0,0,0,0.7)']}
-                    style={styles.gradient}
-                />
-                {platforms && platforms.filter(p => p !== GamePlatform.UNKNOWN).length > 0 && (
-                    <View style={styles.badgeContainer}>
-                        {platforms.filter(p => p !== GamePlatform.UNKNOWN).map(p => (
-                            <PlatformIcon key={p} platform={p} size={16} />
-                        ))}
+        <Animated.View style={[styles.card, animatedStyle]}>
+            <Pressable
+                onPressIn={handlePressIn}
+                onPressOut={handlePressOut}
+                onPress={handlePress}
+                style={styles.touchArea}
+            >
+                <View style={styles.imageContainer}>
+                    <Image
+                        source={{ uri: imageSource }}
+                        style={styles.cover}
+                        contentFit="cover"
+                        transition={300}
+                        recyclingKey={gameId}
+                    />
+                    <LinearGradient
+                        colors={['transparent', 'rgba(0,0,0,0.9)']}
+                        locations={[0.5, 1]}
+                        style={styles.gradient}
+                    />
+                    <LinearGradient
+                        colors={['rgba(0,0,0,0.4)', 'transparent']}
+                        style={styles.topVignette}
+                    />
+                    {visiblePlatforms.length > 0 && (
+                        <View style={styles.badgeContainer}>
+                            {visiblePlatforms.map(p => (
+                                <View key={p} style={styles.platformPill}>
+                                    <PlatformIcon platform={p} size={12} />
+                                </View>
+                            ))}
+                        </View>
+                    )}
+                    <View style={styles.titleOverlay}>
+                        <Text style={styles.title} numberOfLines={2}>{title}</Text>
                     </View>
-                )}
-            </View>
-            <View style={styles.info}>
-                <Text style={styles.title} numberOfLines={1}>{title}</Text>
-            </View>
-        </TouchableOpacity>
+                </View>
+            </Pressable>
+        </Animated.View>
     );
 }, (prev, next) =>
     prev.gameId === next.gameId &&
@@ -73,15 +98,18 @@ GameCard.displayName = 'GameCard';
 
 const styles = StyleSheet.create({
     card: {
-        width: '31%', // Proporción para 3 columnas con margen
-        marginBottom: spacing.lg,
+        width: '31%',
+        marginBottom: spacing.md,
+        ...shadows.card,
+    },
+    touchArea: {
+        borderRadius: radius.lg,
+        overflow: 'hidden',
     },
     imageContainer: {
         aspectRatio: 2/3,
-        borderRadius: radius.md,
-        overflow: 'hidden',
-        // Color de fondo visible mientras la imagen carga (actúa como placeholder)
-        backgroundColor: colors.surfaceElevated,
+        backgroundColor: colors.surface,
+        position: 'relative',
     },
     cover: {
         width: '100%',
@@ -92,22 +120,42 @@ const styles = StyleSheet.create({
         bottom: 0,
         left: 0,
         right: 0,
-        height: '40%',
+        height: '60%',
+    },
+    topVignette: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        height: '25%',
     },
     badgeContainer: {
         position: 'absolute',
-        top: 6,
-        right: 6,
-        flexDirection: 'column',
-        gap: 2,
+        top: spacing.xs + 2,
+        right: spacing.xs + 2,
+        flexDirection: 'row',
+        gap: 3,
     },
-    info: {
-        marginTop: spacing.xs,
-        paddingHorizontal: 2,
+    platformPill: {
+        width: 22,
+        height: 22,
+        borderRadius: 11,
+        backgroundColor: colors.overlayDark,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: StyleSheet.hairlineWidth,
+        borderColor: colors.borderWhiteThin,
+    },
+    titleOverlay: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        paddingHorizontal: spacing.sm,
+        paddingBottom: spacing.sm,
     },
     title: {
-        ...typography.caption,
-        color: colors.textSecondary,
-        fontWeight: '600',
+        ...typography.cardTitle,
+        ...textShadows.onImage,
     },
 });

@@ -46,7 +46,7 @@ export const HltbInfo: React.FC<HltbInfoProps> = ({ main, mainExtra, completioni
     return (
         <View style={styles.container}>
             <View style={styles.header}>
-                <Feather name="clock" size={15} color={colors.textSecondary} />
+                <Feather name="clock" size={15} color={colors.primary} />
                 <Text style={styles.headerTitle}>{strings.hltbSectionTitle}</Text>
             </View>
             <View style={styles.pillRow}>
@@ -63,9 +63,9 @@ export const HltbInfo: React.FC<HltbInfoProps> = ({ main, mainExtra, completioni
 const styles = StyleSheet.create({
     container: {
         backgroundColor: colors.surface,
-        borderRadius: radius.lg,
+        borderRadius: radius.xl,
         borderWidth: StyleSheet.hairlineWidth,
-        borderColor: colors.border,
+        borderColor: colors.borderSubtle,
         overflow: 'hidden',
     },
     header: {
@@ -74,7 +74,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: spacing.md,
         paddingTop: spacing.md,
         paddingBottom: spacing.sm,
-        gap: spacing.xs,
+        gap: spacing.sm,
         borderBottomWidth: StyleSheet.hairlineWidth,
         borderBottomColor: colors.border,
     },
@@ -117,11 +117,11 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         paddingVertical: spacing.md,
-        gap: spacing.xs,
+        gap: spacing.sm,
         backgroundColor: colors.surface,
-        borderRadius: radius.lg,
+        borderRadius: radius.xl,
         borderWidth: StyleSheet.hairlineWidth,
-        borderColor: colors.border,
+        borderColor: colors.borderSubtle,
     },
     emptyText: {
         ...typography.bodySecondary,

@@ -4,26 +4,37 @@
 export const colors = {
     // Fondo base negro puro para pantallas OLED
     background: '#000000',
-    
-    // Superficies estilo "System Grouped Background" de iOS
+
+    // Superficies estilo "System Grouped Background" de iOS — refined depth
     surface: '#1C1C1E',
     surfaceElevated: '#2C2C2E',
     surfaceVariant: '#3A3A3C',
-    
+    surfacePressed: '#252528',
+
     // Colores de acento Apple
     primary: '#0A84FF', // iOS Blue
     primaryLight: '#409CFF',
+    primaryDim: 'rgba(10, 132, 255, 0.12)',
+    primaryMedium: 'rgba(10, 132, 255, 0.15)',
+    primaryBorder: 'rgba(10, 132, 255, 0.4)',
+    primarySubtle: 'rgba(10, 132, 255, 0.06)',
+    primaryGlow: 'rgba(10, 132, 255, 0.08)',
+    primaryHeroGlow: 'rgba(10, 132, 255, 0.18)',
+    primaryRing: 'rgba(10, 132, 255, 0.3)',
     onPrimary: '#FFFFFF',
-    
+
     secondary: '#5E5CE6', // iOS Indigo
+    secondaryDim: 'rgba(94, 92, 230, 0.12)',
     accent: '#FF9F0A',    // iOS Orange
-    
+    accentDim: 'rgba(255, 159, 10, 0.12)',
+    accentWarm: '#FF6B35', // Naranja cálido para secciones "populares"
+
     // Texto con jerarquía iOS
     textPrimary: '#FFFFFF',
     textSecondary: '#EBEBF599', // 60% white
     textTertiary: '#EBEBF54D',  // 30% white
     textDisabled: '#EBEBF52D',
-    
+
     // Estados
     error: '#FF453A',
     errorBackground: 'rgba(255, 69, 58, 0.1)',
@@ -32,12 +43,19 @@ export const colors = {
     successBackground: 'rgba(50, 215, 75, 0.1)',
     warning: '#FFD60A',
     warningBackground: 'rgba(255, 214, 10, 0.1)',
-    
+
     // Elementos UI
     border: '#38383A',
     borderLight: '#48484A',
+    borderSubtle: 'rgba(255, 255, 255, 0.06)',
+    borderSubtleLight: 'rgba(255, 255, 255, 0.08)',
+    borderWhiteThin: 'rgba(255, 255, 255, 0.1)',
     divider: '#38383A',
-    
+
+    // Overlays para cards
+    overlayDark: 'rgba(0, 0, 0, 0.65)',
+    overlayWhiteThin: 'rgba(255,255,255,0.2)',
+
     // Glassmorphism
     blurBackground: 'rgba(28, 28, 30, 0.8)',
     

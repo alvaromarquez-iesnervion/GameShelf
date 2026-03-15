@@ -68,8 +68,8 @@ export const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         backgroundColor: colors.primary,
-        paddingVertical: spacing.md,
-        borderRadius: radius.lg,
+        paddingVertical: spacing.md + 2,
+        borderRadius: radius.xl,
         gap: spacing.sm,
     },
     wishlistBtnActive: {
@@ -106,10 +106,12 @@ export const styles = StyleSheet.create({
     statCard: {
         flex: 1,
         backgroundColor: colors.surface,
-        borderRadius: radius.md,
+        borderRadius: radius.xl,
         padding: spacing.md,
         alignItems: 'center',
         gap: spacing.xs,
+        borderWidth: StyleSheet.hairlineWidth,
+        borderColor: colors.borderSubtle,
     },
     statValue: {
         ...typography.title,
@@ -127,8 +129,10 @@ export const styles = StyleSheet.create({
         alignItems: 'center',
         gap: spacing.md,
         backgroundColor: colors.surface,
-        borderRadius: radius.md,
+        borderRadius: radius.xl,
         padding: spacing.md,
+        borderWidth: StyleSheet.hairlineWidth,
+        borderColor: colors.borderSubtle,
     },
     protonBadges: {
         flexDirection: 'row',
@@ -172,22 +176,23 @@ export const styles = StyleSheet.create({
         marginTop: spacing.xs,
     },
     genreChip: {
-        backgroundColor: colors.surface,
+        backgroundColor: colors.primaryDim,
         borderRadius: radius.full,
-        paddingHorizontal: spacing.sm,
-        paddingVertical: 3,
+        paddingHorizontal: spacing.sm + 2,
+        paddingVertical: spacing.xs,
     },
     genreChipText: {
         ...typography.caption,
-        color: colors.textSecondary,
+        color: colors.primaryLight,
+        fontWeight: '600',
     },
 
     // ─── Metacritic ───────────────────────────────────────────────────────────
     metacriticBadge: {
         alignSelf: 'flex-start',
-        borderRadius: radius.sm,
-        paddingHorizontal: spacing.sm,
-        paddingVertical: 3,
+        borderRadius: radius.md,
+        paddingHorizontal: spacing.sm + 2,
+        paddingVertical: spacing.xs,
         marginBottom: spacing.md,
     },
     metacriticScore: {

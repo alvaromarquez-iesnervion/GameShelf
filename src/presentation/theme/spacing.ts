@@ -61,4 +61,39 @@ export const shadows = {
         shadowRadius: 8,
         elevation: 8,
     },
+    /** Glow suave para cards con imagen — sutil en OLED */
+    card: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.35,
+        shadowRadius: 12,
+        elevation: 6,
+    },
 };
+
+/**
+ * Text shadows reutilizables para texto sobre imágenes
+ */
+export const textShadows = {
+    /** Sombra estándar para títulos sobre gradient de imagen */
+    onImage: {
+        textShadowColor: 'rgba(0,0,0,0.8)',
+        textShadowOffset: { width: 0, height: 1 },
+        textShadowRadius: 3,
+    },
+    /** Sombra más suave para subtítulos sobre gradient */
+    onImageLight: {
+        textShadowColor: 'rgba(0,0,0,0.7)',
+        textShadowOffset: { width: 0, height: 1 },
+        textShadowRadius: 2,
+    },
+} as const;
+
+/**
+ * Configuración de spring compartida para animaciones de press en cards.
+ * Damping bajo + stiffness alto = animación snappy tipo iOS App Store.
+ */
+export const springPresets = {
+    /** Press animation para game cards (scale down ~0.94-0.97) */
+    cardPress: { damping: 15, stiffness: 450, mass: 0.3 },
+} as const;

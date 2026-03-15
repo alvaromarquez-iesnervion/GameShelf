@@ -13,6 +13,15 @@ export const typography = {
         letterSpacing: 0.37,
     } as TextStyle,
 
+    /** Título extra grande para pantallas principales (Descubre, etc.) */
+    heroLarge: {
+        fontFamily: sansFont,
+        fontSize: 38,
+        fontWeight: '800',
+        color: colors.textPrimary,
+        letterSpacing: -0.5,
+    } as TextStyle,
+
     heading: {
         fontFamily: sansFont,
         fontSize: 28,
@@ -113,5 +122,30 @@ export const typography = {
         fontSize: 16,
         fontWeight: '400',
         color: colors.textPrimary,
+    } as TextStyle,
+
+    /** Título dentro de cards con imagen (overlay sobre gradient) */
+    cardTitle: {
+        fontFamily: sansFont,
+        fontSize: 11,
+        fontWeight: '700',
+        color: colors.onPrimary,
+        lineHeight: 14,
+    } as TextStyle,
+
+    /** Subtítulo dentro de cards con imagen (overlay sobre gradient) */
+    cardSubtitle: {
+        fontFamily: sansFont,
+        fontSize: 11,
+        fontWeight: '600',
+        color: 'rgba(255,255,255,0.8)',
+    } as TextStyle,
+
+    /** Número de ranking dentro de badge */
+    rankBadge: {
+        fontFamily: sansFont,
+        fontSize: 12,
+        fontWeight: '800',
+        color: colors.onPrimary,
     } as TextStyle,
 };

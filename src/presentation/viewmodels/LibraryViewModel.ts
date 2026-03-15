@@ -81,7 +81,9 @@ export class LibraryViewModel {
 
             const existing = map.get(key);
             if (existing) {
-                existing.platforms.push(game.getPlatform());
+                if (!existing.platforms.includes(game.getPlatform())) {
+                    existing.platforms.push(game.getPlatform());
+                }
                 // Prefer Steam game as canonical
                 if (game.getPlatform() === Platform.STEAM) {
                     existing.game = game;

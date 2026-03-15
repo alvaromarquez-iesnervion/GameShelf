@@ -36,7 +36,7 @@ export const ProfileScreen: React.FC = observer(() => {
         >
             {/* Hero header */}
             <LinearGradient
-                colors={['rgba(10, 132, 255, 0.18)', 'transparent']}
+                colors={[colors.primaryHeroGlow, 'transparent']}
                 style={styles.heroGradient}
                 pointerEvents="none"
             />

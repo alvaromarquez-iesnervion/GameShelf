@@ -25,7 +25,7 @@ export const styles = StyleSheet.create({
     },
     count: {
         ...typography.bodySecondary,
-        color: colors.textSecondary,
+        color: colors.textTertiary,
         marginTop: spacing.xs,
     },
 });

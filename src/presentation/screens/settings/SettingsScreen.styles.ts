@@ -24,9 +24,11 @@ export const styles = StyleSheet.create({
         alignItems: 'center',
         backgroundColor: colors.surface,
         marginHorizontal: spacing.lg,
-        padding: spacing.md,
-        borderRadius: radius.lg,
+        padding: spacing.lg,
+        borderRadius: radius.xl,
         marginBottom: spacing.xl,
+        borderWidth: StyleSheet.hairlineWidth,
+        borderColor: colors.borderSubtle,
     },
     avatar: {
         width: 60,
@@ -66,15 +68,18 @@ export const styles = StyleSheet.create({
     group: {
         backgroundColor: colors.surface,
         marginHorizontal: spacing.lg,
-        borderRadius: radius.lg,
+        borderRadius: radius.xl,
         overflow: 'hidden',
+        borderWidth: StyleSheet.hairlineWidth,
+        borderColor: colors.borderSubtle,
     },
     row: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: spacing.md,
-        borderBottomWidth: 0.5,
+        paddingHorizontal: spacing.lg,
+        paddingVertical: spacing.md + 2,
+        borderBottomWidth: StyleSheet.hairlineWidth,
         borderBottomColor: colors.border,
     },
     rowLast: {
@@ -87,7 +92,7 @@ export const styles = StyleSheet.create({
     iconBox: {
         width: 32,
         height: 32,
-        borderRadius: 8,
+        borderRadius: radius.md,
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: spacing.md,
@@ -98,11 +103,13 @@ export const styles = StyleSheet.create({
     },
     logoutBtn: {
         marginHorizontal: spacing.lg,
-        padding: spacing.md,
+        paddingVertical: spacing.md + 2,
         backgroundColor: colors.surface,
-        borderRadius: radius.lg,
+        borderRadius: radius.xl,
         alignItems: 'center',
         marginTop: spacing.md,
+        borderWidth: StyleSheet.hairlineWidth,
+        borderColor: colors.borderSubtle,
     },
     logoutText: {
         ...typography.button,
@@ -113,6 +120,6 @@ export const styles = StyleSheet.create({
         textAlign: 'center',
         marginTop: spacing.xxl,
         marginBottom: spacing.xxxl,
-        color: colors.textTertiary,
+        color: colors.textDisabled,
     },
 });

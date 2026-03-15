@@ -27,10 +27,10 @@ const TabNavigator: React.FC = () => {
                     paddingBottom: Platform.OS === 'ios' ? 32 : 12,
                 },
                 tabBarBackground: () => (
-                    <BlurView 
-                        intensity={80} 
-                        tint="dark" 
-                        style={StyleSheet.absoluteFill} 
+                    <BlurView
+                        intensity={80}
+                        tint="dark"
+                        style={StyleSheet.absoluteFill}
                     />
                 ),
                 tabBarActiveTintColor: colors.primary,
@@ -42,22 +42,22 @@ const TabNavigator: React.FC = () => {
             }}
         >
             <Tab.Screen
-                name="SearchTab"
-                component={SearchStack}
-                options={{
-                    title: 'Buscar',
-                    tabBarIcon: ({ color }) => (
-                        <Feather name="search" size={22} color={color} />
-                    ),
-                }}
-            />
-            <Tab.Screen
                 name="LibraryTab"
                 component={LibraryStack}
                 options={{
                     title: 'Biblioteca',
                     tabBarIcon: ({ color }) => (
                         <Feather name="grid" size={22} color={color} />
+                    ),
+                }}
+            />
+            <Tab.Screen
+                name="SearchTab"
+                component={SearchStack}
+                options={{
+                    title: 'Buscar',
+                    tabBarIcon: ({ color }) => (
+                        <Feather name="search" size={22} color={color} />
                     ),
                 }}
             />
@@ -82,7 +82,7 @@ export const MainTabNavigator: React.FC = () => {
             <RootStack.Screen
                 name="WishlistStack"
                 component={WishlistStack}
-                options={{ 
+                options={{
                     presentation: 'modal',
                     headerShown: false
                 }}

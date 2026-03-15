@@ -47,16 +47,17 @@ export const DealCard: React.FC<DealCardProps> = ({
 
     return (
         <TouchableOpacity style={styles.card} onPress={handlePress} activeOpacity={0.75}>
-            {/* Left: store + prices */}
             <View style={styles.left}>
-                <Text style={styles.storeName} numberOfLines={1}>{storeName}</Text>
+                <View style={styles.storeRow}>
+                    <View style={styles.storeDot} />
+                    <Text style={styles.storeName} numberOfLines={1}>{storeName}</Text>
+                </View>
                 <View style={styles.priceRow}>
                     <Text style={styles.currentPrice}>{formatPrice(price, currency)}</Text>
                     <Text style={styles.originalPrice}>{formatPrice(originalPrice, currency)}</Text>
                 </View>
             </View>
 
-            {/* Right: discount badge + CTA */}
             <View style={styles.right}>
                 <View style={styles.discountBadge}>
                     <Text style={styles.discountText}>-{discountPercentage}%</Text>
@@ -75,21 +76,32 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: colors.surface,
-        borderRadius: radius.lg,
-        paddingHorizontal: spacing.md,
-        paddingVertical: spacing.md,
+        borderRadius: radius.xl,
+        paddingHorizontal: spacing.lg,
+        paddingVertical: spacing.md + 2,
         marginBottom: spacing.sm,
         borderWidth: StyleSheet.hairlineWidth,
-        borderColor: colors.border,
+        borderColor: colors.borderSubtle,
     },
     left: {
         flex: 1,
         marginRight: spacing.md,
     },
+    storeRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm,
+        marginBottom: spacing.xs + 2,
+    },
+    storeDot: {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        backgroundColor: colors.primary,
+    },
     storeName: {
         ...typography.body,
         fontWeight: '600',
-        marginBottom: spacing.xs,
     },
     priceRow: {
         flexDirection: 'row',
@@ -112,15 +124,15 @@ const styles = StyleSheet.create({
     },
     discountBadge: {
         backgroundColor: colors.discountBackground,
-        paddingHorizontal: spacing.sm,
-        paddingVertical: 3,
-        borderRadius: radius.sm,
+        paddingHorizontal: spacing.sm + 2,
+        paddingVertical: spacing.xs,
+        borderRadius: radius.md,
     },
     discountText: {
         ...typography.caption,
         color: colors.discount,
-        fontWeight: '700',
-        fontSize: 13,
+        fontWeight: '800',
+        fontSize: 14,
     },
     ctaRow: {
         flexDirection: 'row',

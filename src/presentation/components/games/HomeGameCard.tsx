@@ -1,70 +1,144 @@
-import React from 'react';
-import { View, TouchableOpacity, StyleSheet, Text } from 'react-native';
+import React, { useCallback } from 'react';
+import { View, Pressable, StyleSheet, Text, Platform } from 'react-native';
 import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
+import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
-import { spacing, radius } from '../../theme/spacing';
+import { spacing, radius, shadows, textShadows, springPresets } from '../../theme/spacing';
 
 interface HomeGameCardProps {
     coverUrl: string;
     title: string;
     subtitle?: string;
     onPress: () => void;
-    size?: 'small' | 'medium';
+    size?: 'small' | 'medium' | 'featured';
+    rank?: number;
 }
 
-export const HomeGameCard = React.memo(({ coverUrl, title, subtitle, onPress, size = 'medium' }: HomeGameCardProps) => {
-    const handlePress = () => {
-        Haptics.selectionAsync();
-        onPress();
-    };
+const SPRING_CONFIG = springPresets.cardPress;
 
-    const dimensions = size === 'small' 
-        ? { coverWidth: 100, coverHeight: 134 }
-        : { coverWidth: 120, coverHeight: 160 };
+export const HomeGameCard = React.memo(({ coverUrl, title, subtitle, onPress, size = 'medium', rank }: HomeGameCardProps) => {
+    const scale = useSharedValue(1);
+
+    const animatedStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: scale.value }],
+    }));
+
+    const handlePressIn = useCallback(() => {
+        scale.value = withSpring(0.95, SPRING_CONFIG);
+    }, [scale]);
+
+    const handlePressOut = useCallback(() => {
+        scale.value = withSpring(1, SPRING_CONFIG);
+    }, [scale]);
+
+    const handlePress = useCallback(() => {
+        if (Platform.OS !== 'web') Haptics.selectionAsync();
+        onPress();
+    }, [onPress]);
+
+    const dimensions = size === 'small'
+        ? { coverWidth: 110, coverHeight: 148 }
+        : size === 'featured'
+        ? { coverWidth: 160, coverHeight: 214 }
+        : { coverWidth: 130, coverHeight: 174 };
 
     return (
-        <TouchableOpacity 
-            style={[styles.card, { width: dimensions.coverWidth + spacing.md * 2 }]} 
-            onPress={handlePress} 
-            activeOpacity={0.75}
-        >
-            <Image 
-                source={{ uri: coverUrl }} 
-                style={[styles.cover, { width: dimensions.coverWidth, height: dimensions.coverHeight }]} 
-                contentFit="cover"
-                transition={200}
-            />
-            <View style={styles.info}>
-                <Text style={styles.title} numberOfLines={2}>{title}</Text>
-                {subtitle && <Text style={styles.subtitle} numberOfLines={1}>{subtitle}</Text>}
-            </View>
-        </TouchableOpacity>
+        <Animated.View style={[styles.card, { width: dimensions.coverWidth }, animatedStyle]}>
+            <Pressable
+                onPressIn={handlePressIn}
+                onPressOut={handlePressOut}
+                onPress={handlePress}
+            >
+                <View style={[styles.coverWrap, { width: dimensions.coverWidth, height: dimensions.coverHeight }]}>
+                    <Image
+                        source={{ uri: coverUrl }}
+                        style={styles.cover}
+                        contentFit="cover"
+                        transition={300}
+                    />
+                    <LinearGradient
+                        colors={['transparent', 'rgba(0,0,0,0.85)']}
+                        locations={[0.55, 1]}
+                        style={styles.gradient}
+                    />
+                    {rank !== undefined && (
+                        <View style={styles.rankBadge}>
+                            <Text style={styles.rankText}>{rank}</Text>
+                        </View>
+                    )}
+                    {subtitle && (
+                        <View style={styles.subtitleOverlay}>
+                            <Text style={styles.subtitleText} numberOfLines={1}>{subtitle}</Text>
+                        </View>
+                    )}
+                </View>
+                <View style={styles.info}>
+                    <Text style={styles.title} numberOfLines={2}>{title}</Text>
+                </View>
+            </Pressable>
+        </Animated.View>
     );
 });
 HomeGameCard.displayName = 'HomeGameCard';
 
 const styles = StyleSheet.create({
     card: {
-        alignItems: 'flex-start',
+        ...shadows.card,
+    },
+    coverWrap: {
+        borderRadius: radius.lg,
+        overflow: 'hidden',
+        backgroundColor: colors.surface,
+        position: 'relative',
     },
     cover: {
-        borderRadius: radius.lg,
-        backgroundColor: colors.surfaceElevated,
+        width: '100%',
+        height: '100%',
+    },
+    gradient: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        height: '50%',
+    },
+    rankBadge: {
+        position: 'absolute',
+        top: spacing.xs,
+        left: spacing.xs,
+        width: 26,
+        height: 26,
+        borderRadius: 13,
+        backgroundColor: colors.primary,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 2,
+        borderColor: colors.overlayWhiteThin,
+    },
+    rankText: {
+        ...typography.rankBadge,
+    },
+    subtitleOverlay: {
+        position: 'absolute',
+        bottom: spacing.sm,
+        left: spacing.sm,
+        right: spacing.sm,
+    },
+    subtitleText: {
+        ...typography.cardSubtitle,
+        ...textShadows.onImageLight,
     },
     info: {
         marginTop: spacing.sm,
-        paddingHorizontal: spacing.xs,
+        paddingHorizontal: 2,
     },
     title: {
         ...typography.caption,
-        fontWeight: '600',
+        fontWeight: '700',
         color: colors.textPrimary,
-    },
-    subtitle: {
-        ...typography.caption,
-        color: colors.textTertiary,
-        marginTop: 2,
+        lineHeight: 16,
     },
 });

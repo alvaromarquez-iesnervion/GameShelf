@@ -86,7 +86,8 @@ export class SearchUseCase implements ISearchUseCase {
             if (appId !== null) {
                 const platforms = steamAppIdToPlatforms.get(appId);
                 if (platforms) {
-                    r = r.withIsOwned(true).withOwnedPlatforms(platforms);
+                    const unique = [...new Set(platforms)];
+                    r = r.withIsOwned(true).withOwnedPlatforms(unique);
                 }
             }
 

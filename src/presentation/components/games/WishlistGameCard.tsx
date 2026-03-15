@@ -30,14 +30,21 @@ export const WishlistGameCard = React.memo(({ coverUrl, title, discountPercentag
 
     return (
         <TouchableOpacity style={styles.card} onPress={handlePress} activeOpacity={0.75}>
-            <Image source={{ uri: coverUrl }} style={styles.cover} contentFit="cover" transition={200} />
+            <View style={styles.coverWrap}>
+                <Image source={{ uri: coverUrl }} style={styles.cover} contentFit="cover" transition={200} />
+                {hasDiscount && (
+                    <View style={styles.discountOverlay}>
+                        <Text style={styles.discountOverlayText}>-{discountPercentage}%</Text>
+                    </View>
+                )}
+            </View>
 
             <View style={styles.info}>
                 <Text style={styles.title} numberOfLines={2}>{title}</Text>
                 {hasDiscount ? (
                     <View style={styles.discountBadge}>
                         <Feather name="tag" size={11} color={colors.discount} />
-                        <Text style={styles.discountText}>-{discountPercentage}%</Text>
+                        <Text style={styles.discountText}>Oferta disponible</Text>
                     </View>
                 ) : (
                     <Text style={styles.noDiscount}>Sin ofertas activas</Text>
@@ -46,7 +53,7 @@ export const WishlistGameCard = React.memo(({ coverUrl, title, discountPercentag
 
             <View style={styles.actions}>
                 <TouchableOpacity
-                    style={styles.chevronBtn}
+                    style={styles.actionBtn}
                     onPress={handlePress}
                     hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 >
@@ -57,12 +64,13 @@ export const WishlistGameCard = React.memo(({ coverUrl, title, discountPercentag
                     onPress={handleRemove}
                     hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 >
-                    <Feather name="trash-2" size={18} color={colors.error} />
+                    <Feather name="trash-2" size={16} color={colors.error} />
                 </TouchableOpacity>
             </View>
         </TouchableOpacity>
     );
 });
+WishlistGameCard.displayName = 'WishlistGameCard';
 
 const styles = StyleSheet.create({
     card: {
@@ -70,16 +78,33 @@ const styles = StyleSheet.create({
         backgroundColor: colors.surface,
         marginHorizontal: spacing.lg,
         marginBottom: spacing.sm,
-        borderRadius: radius.lg,
+        borderRadius: radius.xl,
         overflow: 'hidden',
         alignItems: 'center',
         borderWidth: StyleSheet.hairlineWidth,
-        borderColor: colors.border,
+        borderColor: colors.borderSubtle,
+    },
+    coverWrap: {
+        position: 'relative',
     },
     cover: {
         width: 72,
         height: 96,
         backgroundColor: colors.surfaceElevated,
+    },
+    discountOverlay: {
+        position: 'absolute',
+        top: spacing.xs,
+        left: spacing.xs,
+        backgroundColor: colors.discount,
+        paddingHorizontal: spacing.xs + 2,
+        paddingVertical: 2,
+        borderRadius: radius.xs,
+    },
+    discountOverlayText: {
+        fontSize: 10,
+        fontWeight: '800',
+        color: '#000',
     },
     info: {
         flex: 1,
@@ -96,27 +121,27 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: colors.discountBackground,
-        paddingHorizontal: 8,
+        paddingHorizontal: spacing.sm,
         paddingVertical: 3,
         borderRadius: radius.sm,
         alignSelf: 'flex-start',
         gap: 4,
     },
     discountText: {
-        ...typography.caption,
+        ...typography.small,
         color: colors.discount,
         fontWeight: '700',
     },
     noDiscount: {
-        ...typography.caption,
+        ...typography.small,
         color: colors.textTertiary,
     },
     actions: {
         paddingRight: spacing.md,
-        gap: spacing.md,
+        gap: spacing.sm,
         alignItems: 'center',
     },
-    chevronBtn: {
+    actionBtn: {
         width: 32,
         height: 32,
         justifyContent: 'center',
@@ -128,7 +153,6 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         backgroundColor: colors.errorBackground,
-        borderRadius: radius.sm,
+        borderRadius: radius.md,
     },
 });
-WishlistGameCard.displayName = 'WishlistGameCard';

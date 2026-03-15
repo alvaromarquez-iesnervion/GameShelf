@@ -36,19 +36,27 @@ export class HomeViewModel {
         // Si los datos son recientes, no relanzar los fetches
         if (Date.now() - this._lastHomeLoadTime < HOME_CACHE_TTL_MS) return;
 
+        // Lanzar popular games en paralelo sin bloquear el resto.
+        // Así el usuario ve sus datos personales (recientes/más jugados) rápido
+        // mientras los juegos populares cargan en background.
+        const popularPromise = this.homeUseCase.getPopularGames(10)
+            .then(popular => { runInAction(() => { this._popularGames = popular; }); })
+            .catch(() => { /* silent — popular games son opcionales */ });
+
         await withLoading(this, '_isLoadingHome', '_errorMessage', async () => {
-            const [popular, recent, mostPlayed] = await Promise.all([
-                this.homeUseCase.getPopularGames(10),
+            const [recent, mostPlayed] = await Promise.all([
                 this.homeUseCase.getRecentlyPlayed(userId),
                 this.homeUseCase.getMostPlayed(userId, 5),
             ]);
             runInAction(() => {
-                this._popularGames = popular;
                 this._recentlyPlayed = recent;
                 this._mostPlayed = mostPlayed;
                 this._lastHomeLoadTime = Date.now();
             });
         });
+
+        // Esperar a que popular termine para no dejar promesas sueltas
+        await popularPromise;
     }
 
     /** Fuerza una recarga completa ignorando el TTL. Útil tras sincronizar la biblioteca. */

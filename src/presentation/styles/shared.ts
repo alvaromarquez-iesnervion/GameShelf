@@ -70,7 +70,7 @@ export const sharedStyles = StyleSheet.create({
         backgroundColor: colors.surface,
         borderRadius: radius.xl,
         borderWidth: StyleSheet.hairlineWidth,
-        borderColor: colors.border,
+        borderColor: colors.borderSubtle,
         overflow: 'hidden',
     },
 
@@ -78,7 +78,7 @@ export const sharedStyles = StyleSheet.create({
     settingsRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: spacing.md,
+        paddingHorizontal: spacing.lg,
         paddingVertical: spacing.md,
     },
 
@@ -88,7 +88,7 @@ export const sharedStyles = StyleSheet.create({
     iconBox: {
         width: 32,
         height: 32,
-        borderRadius: 8,
+        borderRadius: radius.md,
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -111,8 +111,10 @@ export const sharedStyles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: colors.surface,
-        borderRadius: radius.lg,
-        paddingHorizontal: spacing.md,
+        borderRadius: radius.xl,
+        paddingHorizontal: spacing.lg,
+        borderWidth: StyleSheet.hairlineWidth,
+        borderColor: colors.borderSubtle,
     },
 
     /** TextInput dentro de searchBar */

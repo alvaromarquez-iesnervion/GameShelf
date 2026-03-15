@@ -22,9 +22,11 @@ export const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: colors.surface,
-        borderRadius: radius.lg,
-        paddingHorizontal: spacing.md,
+        borderRadius: radius.xl,
+        paddingHorizontal: spacing.lg,
         height: 48,
+        borderWidth: StyleSheet.hairlineWidth,
+        borderColor: colors.borderSubtle,
     },
     searchInput: {
         flex: 1,
@@ -40,7 +42,7 @@ export const styles = StyleSheet.create({
         paddingBottom: layout.tabBarClearance,
     },
     section: {
-        marginTop: spacing.lg,
+        marginTop: spacing.xl,
     },
     sectionTitle: {
         ...typography.subheading,
@@ -50,7 +52,7 @@ export const styles = StyleSheet.create({
     },
     horizontalList: {
         paddingHorizontal: spacing.lg,
-        gap: spacing.sm,
+        gap: spacing.md,
     },
     list: {
         paddingBottom: layout.tabBarClearance,
@@ -63,9 +65,11 @@ export const styles = StyleSheet.create({
         alignItems: 'center',
         backgroundColor: colors.surface,
         marginHorizontal: spacing.lg,
-        padding: spacing.md,
-        borderRadius: radius.lg,
-        gap: spacing.sm,
+        padding: spacing.lg,
+        borderRadius: radius.xl,
+        gap: spacing.md,
+        borderWidth: StyleSheet.hairlineWidth,
+        borderColor: colors.borderSubtle,
     },
     emptySectionText: {
         ...typography.bodySecondary,
@@ -81,9 +85,9 @@ export const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: colors.primary,
-        paddingHorizontal: spacing.lg,
+        paddingHorizontal: spacing.xl,
         paddingVertical: spacing.md,
-        borderRadius: radius.lg,
+        borderRadius: radius.xl,
         marginTop: spacing.lg,
         gap: spacing.sm,
     },

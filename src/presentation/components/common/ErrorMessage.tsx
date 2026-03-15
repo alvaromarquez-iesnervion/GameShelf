@@ -37,8 +37,8 @@ const styles = StyleSheet.create({
         backgroundColor: colors.background,
     },
     iconWrap: {
-        width: 64,
-        height: 64,
+        width: 72,
+        height: 72,
         borderRadius: radius.full,
         backgroundColor: colors.errorBackground,
         justifyContent: 'center',
@@ -63,8 +63,8 @@ const styles = StyleSheet.create({
     retryBtn: {
         backgroundColor: colors.primary,
         paddingHorizontal: spacing.xl,
-        paddingVertical: 12,
-        borderRadius: radius.md,
+        paddingVertical: spacing.md,
+        borderRadius: radius.xl,
         flexDirection: 'row',
         alignItems: 'center',
         gap: spacing.sm,

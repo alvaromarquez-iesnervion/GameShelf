@@ -2,6 +2,7 @@ import React, { useEffect, useCallback, useRef, useState } from 'react';
 import { View, FlatList, TextInput, TouchableOpacity, Text, RefreshControl, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { observer } from 'mobx-react-lite';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -21,10 +22,10 @@ import { styles } from './LibraryScreen.styles';
 
 type Nav = NativeStackNavigationProp<LibraryStackParamList, 'Library'>;
 
-const SORT_OPTIONS: { label: string; criteria: SortCriteria }[] = [
-    { label: 'A-Z', criteria: SortCriteria.ALPHABETICAL },
-    { label: 'Recientes', criteria: SortCriteria.LAST_PLAYED },
-    { label: 'Tiempo jugado', criteria: SortCriteria.PLAYTIME },
+const SORT_OPTIONS: { label: string; criteria: SortCriteria; icon: keyof typeof Feather.glyphMap }[] = [
+    { label: 'A-Z', criteria: SortCriteria.ALPHABETICAL, icon: 'type' },
+    { label: 'Recientes', criteria: SortCriteria.LAST_PLAYED, icon: 'clock' },
+    { label: 'Tiempo', criteria: SortCriteria.PLAYTIME, icon: 'bar-chart-2' },
 ];
 
 export const LibraryScreen: React.FC = observer(() => {
@@ -34,17 +35,12 @@ export const LibraryScreen: React.FC = observer(() => {
     const navigation = useNavigation<Nav>();
     const userId = authVm.currentUser?.getId() ?? '';
 
-    // La carga inicial la gestiona RootNavigator via autoSyncIfNeeded.
-    // La screen solo carga si al montarse no hay ningún dato aún (primera visita
-    // antes de que el autoSync haya terminado) y no hay una carga en curso.
     useEffect(() => {
         if (userId && vm.games.length === 0 && !vm.isLoading && !vm.isSyncing) {
             vm.loadLibrary(userId);
         }
     }, [userId, vm]);
 
-    // Estado local del input para que la UI sea inmediata.
-    // El VM solo se actualiza tras el debounce para evitar recomputes en cada keystroke.
     const [searchInput, setSearchInput] = useState(vm.searchQuery);
     const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -56,7 +52,6 @@ export const LibraryScreen: React.FC = observer(() => {
         }, 200);
     }, [vm]);
 
-    // Limpiar timer al desmontar
     useEffect(() => {
         return () => {
             if (debounceTimer.current) clearTimeout(debounceTimer.current);
@@ -77,6 +72,7 @@ export const LibraryScreen: React.FC = observer(() => {
     }, [navigation]);
 
     const handleSortChange = useCallback((criteria: SortCriteria) => {
+        if (Platform.OS !== 'web') Haptics.selectionAsync();
         vm.setSortCriteria(criteria);
     }, [vm]);
 
@@ -105,7 +101,7 @@ export const LibraryScreen: React.FC = observer(() => {
                         style={styles.actionCircle}
                         onPress={handleNavigateWishlist}
                     >
-                        <Feather name="heart" size={18} color={colors.primary} />
+                        <Feather name="heart" size={18} color={colors.error} />
                     </TouchableOpacity>
                 </View>
             ),
@@ -115,26 +111,40 @@ export const LibraryScreen: React.FC = observer(() => {
     if (vm.isLoading && vm.games.length === 0) return <LibrarySkeleton />;
     if (vm.errorMessage) return <ErrorMessage message={vm.errorMessage} onRetry={handleRefresh} />;
 
+    const gameCount = vm.mergedFilteredGames.length;
+
     return (
         <View style={styles.container}>
-            {/* Header fuera del FlatList: evita que removeClippedSubviews desmonte
-                items visibles por calcular offsets sin contar la altura del header */}
+            {/* Subtle header glow */}
+            <LinearGradient
+                colors={[colors.primarySubtle, 'transparent']}
+                style={styles.headerGlow}
+                pointerEvents="none"
+            />
             <View style={[styles.header, { paddingTop: insets.top + 44 }]}>
-                <Text style={styles.largeTitle}>Mi Biblioteca</Text>
+                <View style={styles.titleRow}>
+                    <Text style={styles.largeTitle}>Biblioteca</Text>
+                    {gameCount > 0 && (
+                        <View style={styles.countBadge}>
+                            <Text style={styles.countText}>{gameCount}</Text>
+                        </View>
+                    )}
+                </View>
                 <View style={styles.searchContainer}>
                     <Feather name="search" size={16} color={colors.textTertiary} />
                     <TextInput
                         style={styles.searchInput}
-                        placeholder="Buscar en la colección"
+                        placeholder="Buscar en la coleccion"
                         placeholderTextColor={colors.textTertiary}
                         value={searchInput}
                         onChangeText={handleSearchChange}
                         clearButtonMode="while-editing"
                         selectionColor={colors.primary}
+                        keyboardAppearance="dark"
                     />
                 </View>
                 <View style={styles.sortBar}>
-                    {SORT_OPTIONS.map(({ label, criteria }) => {
+                    {SORT_OPTIONS.map(({ label, criteria, icon }) => {
                         const isActive = vm.sortCriteria === criteria;
                         return (
                             <TouchableOpacity
@@ -143,6 +153,11 @@ export const LibraryScreen: React.FC = observer(() => {
                                 onPress={() => handleSortChange(criteria)}
                                 activeOpacity={0.7}
                             >
+                                <Feather
+                                    name={icon}
+                                    size={12}
+                                    color={isActive ? colors.primary : colors.textTertiary}
+                                />
                                 <Text style={[styles.sortChipText, isActive && styles.sortChipTextActive]}>
                                     {label}
                                 </Text>
@@ -172,7 +187,7 @@ export const LibraryScreen: React.FC = observer(() => {
                 ListEmptyComponent={
                     <View style={styles.emptyContainer}>
                         <EmptyState
-                            message="Tu colección está esperando. Vincula una plataforma para importar tus juegos."
+                            message="Tu coleccion esta esperando. Vincula una plataforma para importar tus juegos."
                             icon="plus-circle"
                         />
                     </View>

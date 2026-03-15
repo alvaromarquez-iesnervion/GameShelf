@@ -19,7 +19,8 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
     return (
         <View style={styles.container} accessibilityRole="text" accessibilityLabel={message}>
             <View style={styles.iconWrap}>
-                <Feather name={icon} size={iconSize} color={colors.textTertiary} />
+                <View style={styles.iconGlow} />
+                <Feather name={icon} size={iconSize} color={colors.primary} />
             </View>
             <Text style={styles.message}>{message}</Text>
         </View>
@@ -35,21 +36,28 @@ const styles = StyleSheet.create({
         minHeight: 240,
     },
     iconWrap: {
-        width: 72,
-        height: 72,
+        width: 80,
+        height: 80,
         borderRadius: radius.full,
-        backgroundColor: colors.surface,
+        backgroundColor: colors.primaryDim,
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: spacing.lg,
-        borderWidth: StyleSheet.hairlineWidth,
-        borderColor: colors.border,
+        position: 'relative',
+    },
+    iconGlow: {
+        position: 'absolute',
+        width: 80,
+        height: 80,
+        borderRadius: radius.full,
+        backgroundColor: colors.primarySubtle,
+        transform: [{ scale: 1.3 }],
     },
     message: {
         ...typography.bodySecondary,
         textAlign: 'center',
         color: colors.textSecondary,
-        maxWidth: 260,
+        maxWidth: 280,
         lineHeight: 22,
     },
 });
