@@ -15,6 +15,7 @@ export class HomeViewModel {
     private _popularGames: Game[] = [];
     private _recentlyPlayed: Game[] = [];
     private _mostPlayed: Game[] = [];
+    private _isSteamLinked: boolean = false;
     private _isLoadingHome: boolean = false;
     private _errorMessage: string | null = null;
     private _lastHomeLoadTime: number = 0;
@@ -29,6 +30,7 @@ export class HomeViewModel {
     get popularGames(): Game[] { return this._popularGames; }
     get recentlyPlayed(): Game[] { return this._recentlyPlayed; }
     get mostPlayed(): Game[] { return this._mostPlayed; }
+    get isSteamLinked(): boolean { return this._isSteamLinked; }
     get isLoadingHome(): boolean { return this._isLoadingHome; }
     get errorMessage(): string | null { return this._errorMessage; }
 
@@ -44,13 +46,15 @@ export class HomeViewModel {
             .catch(() => { /* silent — popular games son opcionales */ });
 
         await withLoading(this, '_isLoadingHome', '_errorMessage', async () => {
-            const [recent, mostPlayed] = await Promise.all([
+            const [recent, mostPlayed, steamLinked] = await Promise.all([
                 this.homeUseCase.getRecentlyPlayed(userId),
                 this.homeUseCase.getMostPlayed(userId, 5),
+                this.homeUseCase.isSteamLinked(userId),
             ]);
             runInAction(() => {
                 this._recentlyPlayed = recent;
                 this._mostPlayed = mostPlayed;
+                this._isSteamLinked = steamLinked;
                 this._lastHomeLoadTime = Date.now();
             });
         });
@@ -81,6 +85,7 @@ export class HomeViewModel {
         this._popularGames = [];
         this._recentlyPlayed = [];
         this._mostPlayed = [];
+        this._isSteamLinked = false;
         this._isLoadingHome = false;
         this._errorMessage = null;
         this._lastHomeLoadTime = 0;

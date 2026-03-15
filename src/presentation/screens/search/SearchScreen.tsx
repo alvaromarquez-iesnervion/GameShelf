@@ -216,8 +216,12 @@ export const SearchScreen: React.FC = observer(() => {
                             start={{ x: 0, y: 0 }}
                             end={{ x: 1, y: 1 }}
                         />
-                        <Feather name="link" size={20} color={colors.success} />
-                        <Text style={styles.emptySectionText}>Vincula Steam para ver tus juegos recientes</Text>
+                        <Feather name={vm.isSteamLinked ? "clock" : "link"} size={20} color={colors.success} />
+                        <Text style={styles.emptySectionText}>
+                            {vm.isSteamLinked
+                                ? 'No has jugado nada recientemente en Steam'
+                                : 'Vincula Steam para ver tus juegos recientes'}
+                        </Text>
                     </View>
                 </View>
             )}
@@ -253,14 +257,18 @@ export const SearchScreen: React.FC = observer(() => {
                             start={{ x: 0, y: 0 }}
                             end={{ x: 1, y: 1 }}
                         />
-                        <Feather name="clock" size={20} color={colors.accent} />
-                        <Text style={styles.emptySectionText}>Vincula Steam para ver tus estadisticas</Text>
+                        <Feather name={vm.isSteamLinked ? "bar-chart-2" : "clock"} size={20} color={colors.accent} />
+                        <Text style={styles.emptySectionText}>
+                            {vm.isSteamLinked
+                                ? 'Aun no tienes juegos con tiempo registrado'
+                                : 'Vincula Steam para ver tus estadisticas'}
+                        </Text>
                     </View>
                 </View>
             )}
 
             {/* CTA when no data */}
-            {vm.recentlyPlayed.length === 0 && vm.mostPlayed.length === 0 && (
+            {vm.recentlyPlayed.length === 0 && vm.mostPlayed.length === 0 && !vm.isSteamLinked && (
                 <View style={styles.emptyHome}>
                     <TouchableOpacity
                         style={styles.linkButton}

@@ -8,6 +8,8 @@ export interface IHomeUseCase {
     getRecentlyPlayed(userId: string): Promise<Game[]>;
     /** Juegos más jugados por el usuario (requiere Steam vinculado). */
     getMostPlayed(userId: string, limit?: number): Promise<Game[]>;
+    /** Comprueba si el usuario tiene Steam vinculado. */
+    isSteamLinked(userId: string): Promise<boolean>;
     /** Búsqueda en catálogo ITAD. */
     searchGames(query: string, userId: string): Promise<SearchResult[]>;
 }

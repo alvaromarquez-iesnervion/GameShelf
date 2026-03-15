@@ -50,6 +50,15 @@ export class HomeUseCase implements IHomeUseCase {
             .slice(0, limit);
     }
 
+    async isSteamLinked(userId: string): Promise<boolean> {
+        try {
+            const platforms = await this.platformRepository.getLinkedPlatforms(userId);
+            return platforms.some(p => p.getPlatform() === Platform.STEAM);
+        } catch {
+            return false;
+        }
+    }
+
     async searchGames(query: string, userId: string): Promise<SearchResult[]> {
         if (!query.trim()) return [];
 
