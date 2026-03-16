@@ -19,7 +19,7 @@ export const sharedStyles = StyleSheet.create({
     /** Pantalla completa con fondo base */
     screenContainer: {
         flex: 1,
-        backgroundColor: colors.background,
+        backgroundColor: 'transparent',
     },
 
     /** ScrollView / FlatList con contenido que respeta la tab bar */
@@ -49,8 +49,7 @@ export const sharedStyles = StyleSheet.create({
 
     /** Título grande tipo iOS (hero) */
     largeTitle: {
-        ...typography.hero,
-        color: colors.textPrimary,
+        ...typography.largeTitle,
     },
 
     // ─── Secciones agrupadas ──────────────────────────────────────────────────
@@ -120,7 +119,7 @@ export const sharedStyles = StyleSheet.create({
     /** TextInput dentro de searchBar */
     searchInput: {
         flex: 1,
-        ...typography.input,
+        ...typography.inputLarge,
         color: colors.textPrimary,
         marginLeft: spacing.sm,
     },

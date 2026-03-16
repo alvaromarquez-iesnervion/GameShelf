@@ -1,4 +1,4 @@
-import { Platform, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { spacing, layout } from '../../theme/spacing';
@@ -6,22 +6,28 @@ import { spacing, layout } from '../../theme/spacing';
 export const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: colors.background,
+        backgroundColor: 'transparent',
     },
     listContent: {
-        paddingTop: Platform.OS === 'ios'
-            ? layout.safeAreaPaddingTop.ios
-            : layout.safeAreaPaddingTop.android,
         paddingBottom: layout.tabBarClearance,
     },
     header: {
         paddingHorizontal: spacing.lg,
+        paddingTop: spacing.sm,
         paddingBottom: spacing.md,
         marginBottom: spacing.sm,
     },
+    dragHandle: {
+        width: 40,
+        height: 5,
+        borderRadius: 2.5,
+        backgroundColor: colors.textTertiary,
+        opacity: 0.35,
+        alignSelf: 'center',
+        marginBottom: spacing.lg,
+    },
     title: {
-        ...typography.hero,
-        color: colors.textPrimary,
+        ...typography.largeTitle,
     },
     count: {
         ...typography.bodySecondary,

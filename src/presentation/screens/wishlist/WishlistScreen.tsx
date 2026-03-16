@@ -1,8 +1,9 @@
 import React, { useEffect, useCallback } from 'react';
-import { View, Text, FlatList, RefreshControl, StyleSheet, ListRenderItemInfo } from 'react-native';
+import { View, Text, FlatList, StyleSheet, ListRenderItemInfo } from 'react-native';
 import { observer } from 'mobx-react-lite';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useInjection } from '../../../di/hooks/useInjection';
 import { AuthViewModel } from '../../viewmodels/AuthViewModel';
 import { WishlistViewModel } from '../../viewmodels/WishlistViewModel';
@@ -13,7 +14,6 @@ import { WishlistGameCard } from '../../components/games/WishlistGameCard';
 import { ErrorMessage } from '../../components/common/ErrorMessage';
 import { EmptyState } from '../../components/common/EmptyState';
 import { ListSkeleton } from '../../components/common/ListItemSkeleton';
-import { colors } from '../../theme/colors';
 import { spacing } from '../../theme/spacing';
 import { styles } from './WishlistScreen.styles';
 
@@ -25,6 +25,7 @@ const ITEM_HEIGHT = 96 + StyleSheet.hairlineWidth * 2; // cover height + borders
 const ITEM_MARGIN = spacing.sm; // marginBottom
 
 export const WishlistScreen: React.FC = observer(() => {
+    const insets = useSafeAreaInsets();
     const authVm = useInjection<AuthViewModel>(TYPES.AuthViewModel);
     const vm = useInjection<WishlistViewModel>(TYPES.WishlistViewModel);
     const navigation = useNavigation<Nav>();
@@ -33,10 +34,6 @@ export const WishlistScreen: React.FC = observer(() => {
     useEffect(() => {
         if (userId) vm.loadWishlist(userId);
     }, [userId, vm]);
-
-    const handleRefresh = useCallback(() => {
-        vm.loadWishlist(userId);
-    }, [vm, userId]);
 
     const handleGamePress = useCallback((gameId: string) => {
         navigation.navigate('GameDetail', { gameId });
@@ -57,14 +54,17 @@ export const WishlistScreen: React.FC = observer(() => {
     ), [handleGamePress, handleRemove]);
 
     if (vm.isLoading && vm.items.length === 0) return <ListSkeleton />;
-    if (vm.errorMessage) return <ErrorMessage message={vm.errorMessage} onRetry={handleRefresh} />;
+    if (vm.errorMessage) return <ErrorMessage message={vm.errorMessage} onRetry={() => vm.loadWishlist(userId)} />;
 
     return (
         <View style={styles.container}>
             <FlatList
                 data={vm.items}
                 keyExtractor={(item) => item.getId()}
-                contentContainerStyle={styles.listContent}
+                contentContainerStyle={[
+                    styles.listContent,
+                    { paddingTop: insets.top + spacing.md },
+                ]}
                 showsVerticalScrollIndicator={false}
                 initialNumToRender={10}
                 maxToRenderPerBatch={5}
@@ -75,16 +75,9 @@ export const WishlistScreen: React.FC = observer(() => {
                     offset: index * (ITEM_HEIGHT + ITEM_MARGIN),
                     index,
                 })}
-                refreshControl={
-                    <RefreshControl
-                        refreshing={vm.isLoading}
-                        onRefresh={handleRefresh}
-                        tintColor={colors.primary}
-                        colors={[colors.primary]}
-                    />
-                }
                 ListHeaderComponent={
                     <View style={styles.header}>
+                        <View style={styles.dragHandle} />
                         <Text style={styles.title}>Lista de deseos</Text>
                         {vm.items.length > 0 && (
                             <Text style={styles.count}>{vm.items.length} {vm.items.length === 1 ? 'juego' : 'juegos'}</Text>

@@ -34,7 +34,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         padding: spacing.xxl,
-        backgroundColor: colors.background,
+        backgroundColor: 'transparent',
     },
     iconWrap: {
         width: 72,

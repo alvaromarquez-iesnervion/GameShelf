@@ -14,6 +14,7 @@ import { SteamLinkModal } from './SteamLinkModal';
 import { EpicLinkModal } from './EpicLinkModal';
 import { GogLinkModal } from './GogLinkModal';
 import { styles } from './PlatformLinkScreen.styles';
+import { Screen } from '../../components/common/Screen';
 
 export const PlatformLinkScreen: React.FC = observer(() => {
     const authVm = useInjection<AuthViewModel>(TYPES.AuthViewModel);
@@ -179,7 +180,7 @@ export const PlatformLinkScreen: React.FC = observer(() => {
     // ─── Render ───────────────────────────────────────────────────────────────
 
     return (
-        <View style={styles.container}>
+        <Screen style={styles.container} topInset="header">
             <Text style={styles.sectionLabel}>CUENTAS VINCULADAS</Text>
 
             <View style={styles.group}>
@@ -239,7 +240,7 @@ export const PlatformLinkScreen: React.FC = observer(() => {
                 onCodeReceived={handleGogCodeReceived}
                 onClose={handleCloseGogModal}
             />
-        </View>
+        </Screen>
     );
 });
 PlatformLinkScreen.displayName = 'PlatformLinkScreen';

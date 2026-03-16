@@ -9,6 +9,7 @@ import { TYPES } from '../../../di/types';
 import { ListSkeleton } from '../../components/common/ListItemSkeleton';
 import { colors } from '../../theme/colors';
 import { styles } from './NotificationSettingsScreen.styles';
+import { Screen } from '../../components/common/Screen';
 
 export const NotificationSettingsScreen: React.FC = observer(() => {
     const authVm = useInjection<AuthViewModel>(TYPES.AuthViewModel);
@@ -26,7 +27,7 @@ export const NotificationSettingsScreen: React.FC = observer(() => {
     if (vm.isLoading && !vm.profile) return <ListSkeleton count={1} />;
 
     return (
-        <View style={styles.container}>
+        <Screen style={styles.container} topInset="header">
             <Text style={styles.sectionLabel}>ALERTAS</Text>
 
             <View style={styles.group}>
@@ -53,7 +54,7 @@ export const NotificationSettingsScreen: React.FC = observer(() => {
             <Text style={styles.footnote}>
                 Las notificaciones se enviarán cuando un precio caiga al menos un 20% respecto al precio habitual.
             </Text>
-        </View>
+        </Screen>
     );
 });
 NotificationSettingsScreen.displayName = 'NotificationSettingsScreen';

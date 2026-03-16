@@ -1,5 +1,7 @@
 import React from 'react';
-import { View, StyleSheet, Platform } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { useHeaderHeight } from '@react-navigation/elements';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Shimmer } from './Shimmer';
 import { colors } from '../../theme/colors';
 import { spacing, radius } from '../../theme/spacing';
@@ -17,8 +19,11 @@ export const ListItemSkeleton: React.FC = () => {
 };
 
 export const ListSkeleton: React.FC<{ count?: number }> = ({ count = 6 }) => {
+    const headerHeight = useHeaderHeight();
+    const insets = useSafeAreaInsets();
+
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { paddingTop: Math.max(headerHeight, insets.top) + spacing.md }]}>
             <View style={styles.headerPlaceholder}>
                 <Shimmer width={200} height={34} borderRadius={radius.sm} />
                 <Shimmer width={80} height={14} borderRadius={radius.xs} style={styles.headerSub} />
@@ -33,8 +38,7 @@ export const ListSkeleton: React.FC<{ count?: number }> = ({ count = 6 }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: colors.background,
-        paddingTop: Platform.OS === 'ios' ? 100 : 64,
+        backgroundColor: 'transparent',
     },
     headerPlaceholder: {
         paddingHorizontal: spacing.lg,

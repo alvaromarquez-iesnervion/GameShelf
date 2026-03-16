@@ -45,7 +45,7 @@ const styles = StyleSheet.create({
         paddingVertical: spacing.xs,
         borderRadius: radius.sm,
         alignSelf: 'flex-start',
-        borderWidth: 1,
+        borderWidth: StyleSheet.hairlineWidth,
     },
     steam: {
         backgroundColor: colors.steam,

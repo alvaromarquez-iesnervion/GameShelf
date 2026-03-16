@@ -1,15 +1,12 @@
-import { Platform, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
-import { spacing, radius, layout } from '../../theme/spacing';
+import { spacing, radius } from '../../theme/spacing';
 
 export const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: colors.background,
-        paddingTop: Platform.OS === 'ios'
-            ? layout.safeAreaPaddingTop.ios
-            : layout.safeAreaPaddingTop.android,
+        backgroundColor: 'transparent',
         paddingHorizontal: spacing.lg,
     },
     sectionLabel: {

@@ -18,7 +18,7 @@ export const SettingsStack: React.FC = () => {
             <Stack.Screen
                 name="Settings"
                 component={SettingsScreen}
-                options={{ title: '' }}
+                options={{ title: '', headerShown: false }}
             />
             <Stack.Screen
                 name="PlatformLink"

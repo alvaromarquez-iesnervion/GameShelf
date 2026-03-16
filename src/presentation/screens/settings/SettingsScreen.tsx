@@ -4,6 +4,7 @@ import { Feather } from '@expo/vector-icons';
 import { observer } from 'mobx-react-lite';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import Constants from 'expo-constants';
 import { useInjection } from '../../../di/hooks/useInjection';
@@ -13,6 +14,7 @@ import { TYPES } from '../../../di/types';
 import { SettingsStackParamList } from '../../../core/navigation/navigationTypes';
 import { ListSkeleton } from '../../components/common/ListItemSkeleton';
 import { colors } from '../../theme/colors';
+import { spacing } from '../../theme/spacing';
 import { styles } from './SettingsScreen.styles';
 import { strings } from '../../../core/constants/strings';
 import { UserPreferencesStore, SUPPORTED_COUNTRIES, DEFAULT_COUNTRY } from '../../../data/utils/UserPreferencesStore';
@@ -42,6 +44,7 @@ const SettingRow: React.FC<{
 );
 
 export const SettingsScreen: React.FC = observer(() => {
+    const insets = useSafeAreaInsets();
     const authVm = useInjection<AuthViewModel>(TYPES.AuthViewModel);
     const vm = useInjection<SettingsViewModel>(TYPES.SettingsViewModel);
     const navigation = useNavigation<Nav>();
@@ -111,7 +114,7 @@ export const SettingsScreen: React.FC = observer(() => {
 
     return (
         <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-            <View style={styles.header}>
+            <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
                 <Text style={styles.largeTitle}>{strings.settingsTitle}</Text>
             </View>
 

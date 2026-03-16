@@ -1,5 +1,7 @@
 import React from 'react';
-import { View, StyleSheet, Platform } from 'react-native';
+import { View, StyleSheet, useWindowDimensions } from 'react-native';
+import { useHeaderHeight } from '@react-navigation/elements';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Shimmer } from './Shimmer';
 import { colors } from '../../theme/colors';
 import { spacing, radius } from '../../theme/spacing';
@@ -8,8 +10,17 @@ import { spacing, radius } from '../../theme/spacing';
 const NUM_CARDS = 12;
 
 export const LibrarySkeleton: React.FC = () => {
+    const headerHeight = useHeaderHeight();
+    const insets = useSafeAreaInsets();
+    const { width: windowWidth } = useWindowDimensions();
+    const cardWidth = Math.floor((windowWidth - (spacing.lg * 2) - (spacing.sm * 2)) / 3);
+
     return (
-        <View style={styles.container} accessibilityRole="progressbar" accessibilityLabel="Cargando...">
+        <View
+            style={[styles.container, { paddingTop: Math.max(headerHeight, insets.top) + spacing.md }]}
+            accessibilityRole="progressbar"
+            accessibilityLabel="Cargando..."
+        >
             {/* Large title placeholder */}
             <Shimmer width={180} height={34} borderRadius={radius.sm} style={styles.titleBar} />
             {/* Search bar placeholder */}
@@ -17,7 +28,7 @@ export const LibrarySkeleton: React.FC = () => {
             {/* Grid */}
             <View style={styles.grid}>
                 {Array.from({ length: NUM_CARDS }).map((_, i) => (
-                    <View key={i} style={styles.cardWrap}>
+                    <View key={i} style={[styles.cardWrap, { width: cardWidth }]}>
                         <Shimmer width="100%" height="100%" borderRadius={radius.md} style={styles.cover} />
                         <Shimmer width="70%" height={11} borderRadius={radius.xs} style={styles.titleShimmer} />
                     </View>
@@ -30,8 +41,7 @@ export const LibrarySkeleton: React.FC = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: colors.background,
-        paddingTop: Platform.OS === 'ios' ? 100 : 64,
+        backgroundColor: 'transparent',
         paddingHorizontal: spacing.lg,
     },
     titleBar: {
@@ -46,8 +56,6 @@ const styles = StyleSheet.create({
         gap: spacing.sm,
     },
     cardWrap: {
-        // ~1/3 width accounting for 2 gaps of spacing.sm
-        width: '31%',
         aspectRatio: 2 / 3,
         borderRadius: radius.md,
         overflow: 'hidden',

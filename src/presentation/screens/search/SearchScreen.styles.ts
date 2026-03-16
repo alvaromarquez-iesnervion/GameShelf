@@ -6,16 +6,21 @@ import { spacing, radius, layout } from '../../theme/spacing';
 export const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: colors.background,
+        backgroundColor: 'transparent',
+    },
+    headerGlow: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        height: 200,
     },
     searchHeader: {
         paddingHorizontal: spacing.lg,
-        paddingBottom: spacing.md,
-        backgroundColor: colors.background,
+        paddingBottom: spacing.lg,
     },
-    title: {
-        ...typography.hero,
-        color: colors.textPrimary,
+    heroTitle: {
+        ...typography.heroLarge,
         marginBottom: spacing.lg,
     },
     searchBar: {
@@ -26,12 +31,11 @@ export const styles = StyleSheet.create({
         paddingHorizontal: spacing.lg,
         height: 48,
         borderWidth: StyleSheet.hairlineWidth,
-        borderColor: colors.borderSubtle,
+        borderColor: colors.borderSubtleLight,
     },
     searchInput: {
         flex: 1,
-        ...typography.input,
-        fontSize: 17,
+        ...typography.inputLarge,
         color: colors.textPrimary,
         marginLeft: spacing.sm,
     },
@@ -43,12 +47,6 @@ export const styles = StyleSheet.create({
     },
     section: {
         marginTop: spacing.xl,
-    },
-    sectionTitle: {
-        ...typography.subheading,
-        color: colors.textPrimary,
-        marginBottom: spacing.md,
-        marginHorizontal: spacing.lg,
     },
     horizontalList: {
         paddingHorizontal: spacing.lg,
@@ -68,6 +66,7 @@ export const styles = StyleSheet.create({
         padding: spacing.lg,
         borderRadius: radius.xl,
         gap: spacing.md,
+        overflow: 'hidden',
         borderWidth: StyleSheet.hairlineWidth,
         borderColor: colors.borderSubtle,
     },
@@ -77,22 +76,25 @@ export const styles = StyleSheet.create({
         flex: 1,
     },
     emptyHome: {
-        marginTop: 60,
+        marginTop: spacing.xxl,
         paddingHorizontal: spacing.lg,
         alignItems: 'center',
     },
     linkButton: {
+        borderRadius: radius.xl,
+        overflow: 'hidden',
+    },
+    linkButtonGradient: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: colors.primary,
         paddingHorizontal: spacing.xl,
-        paddingVertical: spacing.md,
-        borderRadius: radius.xl,
-        marginTop: spacing.lg,
+        paddingVertical: spacing.md + 2,
         gap: spacing.sm,
     },
     linkButtonText: {
         ...typography.button,
-        color: colors.textPrimary,
+        color: colors.onPrimary,
+        fontWeight: '700',
     },
 });
+

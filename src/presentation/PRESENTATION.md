@@ -181,6 +181,9 @@ Pure functional components — receive data via props, never access ViewModels d
 | `DetailSkeleton` | — | Shimmer layout for game detail loading |
 | `ListItemSkeleton` | — | Shimmer for generic list items |
 | `Shimmer` | — | Base animated shimmer (opacity pulse) |
+| `AppBackground` | — | Global gradient background wrapper (behind Navigation) |
+| `BrandAura` | — | Decorative header accent (signature) |
+| `Screen` | `topInset?`, `bottomInset?` | Minimal wrapper to standardize safe-area/header clearance and keep backgrounds transparent |
 
 ### Games (`components/games/`)
 
@@ -210,7 +213,9 @@ Dark mode is the **only** theme. All components import tokens from here — no i
 ### `colors.ts`
 
 ```ts
-background:   '#000000'   // OLED black
+background:   '#000000'   // OLED black (legacy alias)
+backgroundBase: '#000000' // semantic base background
+backgroundGradientStops: ['rgba(...)', ..., '#000000'] // subtle global gradient
 surface:      '#1C1C1E'   // card / input backgrounds (= inputBackground)
 primary:      '#0A84FF'   // iOS system blue (= inputFocusBorder)
 secondary:    '#5E5CE6'   // iOS Indigo
@@ -228,7 +233,7 @@ iosGreen:     '#34C759'   // Privacy
 
 ### `typography.ts`
 
-13 named text styles: `hero` (34px/800) through `priceSmall` + `input` (16px/400, native font). Font families: SF Pro (iOS) / Roboto (Android).
+Named text styles include `largeTitle`, `inputLarge`, `micro` in addition to the base scale (`hero` → `small`). Font families: SF Pro (iOS) / Roboto (Android).
 
 ### `spacing.ts`
 

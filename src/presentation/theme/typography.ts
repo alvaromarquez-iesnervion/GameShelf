@@ -13,6 +13,15 @@ export const typography = {
         letterSpacing: 0.37,
     } as TextStyle,
 
+    /** Large title estilo iOS (usado en Biblioteca, Ajustes, etc.) */
+    largeTitle: {
+        fontFamily: sansFont,
+        fontSize: 36,
+        fontWeight: '800',
+        color: colors.textPrimary,
+        letterSpacing: -0.5,
+    } as TextStyle,
+
     /** Título extra grande para pantallas principales (Descubre, etc.) */
     heroLarge: {
         fontFamily: sansFont,
@@ -79,6 +88,15 @@ export const typography = {
         color: colors.textTertiary,
     } as TextStyle,
 
+    /** Micro-label para stats/badges (11px) */
+    micro: {
+        fontFamily: sansFont,
+        fontSize: 11,
+        fontWeight: '500',
+        color: colors.textTertiary,
+        letterSpacing: 0.12,
+    } as TextStyle,
+
     button: {
         fontFamily: sansFont,
         fontSize: 17,
@@ -120,6 +138,14 @@ export const typography = {
     input: {
         fontFamily: sansFont,
         fontSize: 16,
+        fontWeight: '400',
+        color: colors.textPrimary,
+    } as TextStyle,
+
+    /** Variante para search bars (ligeramente mas grande que input estándar) */
+    inputLarge: {
+        fontFamily: sansFont,
+        fontSize: 17,
         fontWeight: '400',
         color: colors.textPrimary,
     } as TextStyle,

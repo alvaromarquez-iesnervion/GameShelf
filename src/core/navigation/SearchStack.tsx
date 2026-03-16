@@ -16,7 +16,7 @@ export const SearchStack: React.FC = () => {
             <Stack.Screen
                 name="Search"
                 component={SearchScreen}
-                options={{ title: '' }}
+                options={{ title: '', headerShown: false }}
             />
             <Stack.Screen
                 name="GameDetail"

@@ -1,7 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { Shimmer } from './Shimmer';
-import { colors } from '../../theme/colors';
 import { spacing, radius } from '../../theme/spacing';
 
 export const DetailSkeleton: React.FC = () => {
@@ -40,7 +39,7 @@ export const DetailSkeleton: React.FC = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: colors.background,
+        backgroundColor: 'transparent',
     },
     content: {
         padding: spacing.lg,

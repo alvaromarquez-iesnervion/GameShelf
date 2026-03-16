@@ -93,7 +93,7 @@ const styles = StyleSheet.create({
     },
     unlinkBtn: {
         backgroundColor: colors.errorBackground,
-        borderWidth: 1,
+        borderWidth: StyleSheet.hairlineWidth,
         borderColor: colors.errorBorder,
     },
     actionText: {

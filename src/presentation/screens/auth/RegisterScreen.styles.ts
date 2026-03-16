@@ -6,7 +6,7 @@ import { spacing, radius, layout } from '../../theme/spacing';
 export const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: colors.background,
+        backgroundColor: 'transparent',
     },
     backBtn: {
         position: 'absolute',

@@ -4,7 +4,6 @@ import { AuthStackParamList } from './navigationTypes';
 import { LoginScreen } from '../../presentation/screens/auth/LoginScreen';
 import { RegisterScreen } from '../../presentation/screens/auth/RegisterScreen';
 import { ForgotPasswordScreen } from '../../presentation/screens/auth/ForgotPasswordScreen';
-import { colors } from '../../presentation/theme/colors';
 
 const Stack = createNativeStackNavigator<AuthStackParamList>();
 
@@ -13,7 +12,10 @@ export const AuthStack: React.FC = () => {
         <Stack.Navigator
             screenOptions={{
                 headerShown: false,
-                contentStyle: { backgroundColor: colors.background },
+                animation: 'fade_from_bottom',
+                animationDuration: 300,
+                // Transparent so the global AppBackground gradient can show through.
+                contentStyle: { backgroundColor: 'transparent' },
             }}
         >
             <Stack.Screen name="Login" component={LoginScreen} />

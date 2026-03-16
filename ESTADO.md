@@ -1,6 +1,6 @@
 # GameShelf — Project Status
 
-**Last updated:** Session 33 (Mar 2026) — 15 issues resolved (S-11, D-10, A-04, A-06, A-07, A-08, A-11, N-09, F-05, R-05, X-03, C-08, P-01, P-03, P-04)
+**Last updated:** Session 34 (Mar 2026) — UI consistency + global background gradient (UI-01..UI-06)
 **Current state:** Production-ready. Firebase + Steam + all external APIs active when env vars are set. Full mock mode available with no keys. Guest mode available without any account.
 
 ---

@@ -3,14 +3,17 @@ import { View, Text, ScrollView } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { observer } from 'mobx-react-lite';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useInjection } from '../../../di/hooks/useInjection';
 import { ProfileViewModel } from '../../viewmodels/ProfileViewModel';
 import { TYPES } from '../../../di/types';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { colors } from '../../theme/colors';
 import { styles } from './ProfileScreen.styles';
+import { spacing } from '../../theme/spacing';
 
 export const ProfileScreen: React.FC = observer(() => {
+    const insets = useSafeAreaInsets();
     const vm = useInjection<ProfileViewModel>(TYPES.ProfileViewModel);
     const user = vm.user;
 
@@ -31,7 +34,10 @@ export const ProfileScreen: React.FC = observer(() => {
     return (
         <ScrollView
             style={styles.container}
-            contentContainerStyle={styles.scrollContent}
+            contentContainerStyle={[
+                styles.scrollContent,
+                { paddingTop: insets.top + spacing.md },
+            ]}
             showsVerticalScrollIndicator={false}
         >
             {/* Hero header */}

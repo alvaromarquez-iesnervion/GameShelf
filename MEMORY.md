@@ -4,6 +4,20 @@ Most recent first. Never rewrite history — only append.
 
 ---
 
+## Session 34 · Mar 2026 — UI consistency + global background gradient (OLED)
+
+**UI-01** Fondo global con gradiente sutil: `AppBackground` envuelve la navegación; `NavigationContainer` + `contentStyle` pasan a `transparent` para dejar ver el fondo.
+
+**UI-02** Tokens de tema: añadidos `colors.backgroundBase`, `colors.backgroundGradientStops`, `colors.brandAuraStops`; tipografía ampliada con `typography.largeTitle`, `typography.inputLarge`, `typography.micro`.
+
+**UI-03** “Screen chrome” unificado: padding superior calculado con `useHeaderHeight()` en `Library/Search/Settings/Wishlist/Profile` y settings sub-screens. Nuevo wrapper `Screen` para estandarizar.
+
+**UI-04** Identidad sutil: `BrandAura` como acento de header (Library/Search) sin depender de assets.
+
+**UI-05** Biblioteca: grid 3 columnas con ancho matemático; `GameCard` + `LibrarySkeleton` ajustados para gutters perfectos.
+
+**UI-06** Fondos opacos eliminados en componentes full-screen (`ErrorMessage`, `LoadingSpinner`, `*Skeleton`) para que el gradiente global no quede tapado.
+
 ## Session 33 · Mar 2026 — 15 issues resolved from KNOWN_ISSUES.md
 
 **S-11** `guestUtils.ts` → `generateGuestId()` usa `expo-crypto.randomUUID()` en vez de `Math.random()`.

@@ -2,8 +2,27 @@
  * Sistema de Colores iOS Premium (OLED Dark Mode)
  */
 export const colors = {
-    // Fondo base negro puro para pantallas OLED
+    // Fondo base negro puro para pantallas OLED (se mantiene por compatibilidad)
     background: '#000000',
+
+    /**
+     * Fondo semántico (nuevo):
+     * - backgroundBase: color final del fondo
+     * - backgroundGradientStops: gradiente global sutil para evitar "negro plano"
+     */
+    backgroundBase: '#000000',
+    backgroundGradientStops: [
+        'rgba(10, 132, 255, 0.12)',  // iOS Blue haze
+        'rgba(94, 92, 230, 0.08)',   // Indigo haze
+        'rgba(255, 159, 10, 0.04)',  // Warm hint
+        '#000000',
+    ] as const,
+    /** Aura de marca para headers/secciones (menos "azul plano", mas firma) */
+    brandAuraStops: [
+        'rgba(10, 132, 255, 0.16)',
+        'rgba(94, 92, 230, 0.12)',
+        'transparent',
+    ] as const,
 
     // Superficies estilo "System Grouped Background" de iOS — refined depth
     surface: '#1C1C1E',

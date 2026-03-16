@@ -6,7 +6,7 @@ import { spacing, radius, layout } from '../../theme/spacing';
 export const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: colors.background,
+        backgroundColor: 'transparent',
     },
     headerGlow: {
         position: 'absolute',
@@ -36,14 +36,16 @@ export const styles = StyleSheet.create({
     titleRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: spacing.md,
+        justifyContent: 'space-between',
         marginBottom: spacing.lg,
     },
+    titleLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.md,
+    },
     largeTitle: {
-        ...typography.hero,
-        color: colors.textPrimary,
-        fontSize: 36,
-        letterSpacing: -0.5,
+        ...typography.largeTitle,
     },
     countBadge: {
         backgroundColor: colors.primary,
@@ -70,7 +72,7 @@ export const styles = StyleSheet.create({
     },
     searchInput: {
         flex: 1,
-        ...typography.input,
+        ...typography.inputLarge,
         color: colors.textPrimary,
         marginLeft: spacing.sm,
     },

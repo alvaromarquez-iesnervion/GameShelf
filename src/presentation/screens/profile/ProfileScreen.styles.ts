@@ -1,17 +1,14 @@
-import { Platform, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
-import { spacing, radius, layout } from '../../theme/spacing';
+import { spacing, radius } from '../../theme/spacing';
 
 export const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: colors.background,
+        backgroundColor: 'transparent',
     },
     scrollContent: {
-        paddingTop: Platform.OS === 'ios'
-            ? layout.safeAreaPaddingTop.ios
-            : layout.safeAreaPaddingTop.android,
         paddingBottom: spacing.xxl,
     },
     heroGradient: {
@@ -40,10 +37,10 @@ export const styles = StyleSheet.create({
         borderColor: colors.primaryRing,
     },
     avatarInitial: {
+        ...typography.heroLarge,
         fontSize: 42,
         fontWeight: '700',
         color: colors.onPrimary,
-        fontFamily: Platform.OS === 'ios' ? 'System' : 'Roboto',
     },
     verifiedBadge: {
         position: 'absolute',
@@ -59,10 +56,10 @@ export const styles = StyleSheet.create({
         borderColor: colors.background,
     },
     displayName: {
+        ...typography.heading,
         fontSize: 26,
         fontWeight: '700',
         color: colors.textPrimary,
-        fontFamily: Platform.OS === 'ios' ? 'System' : 'Roboto',
         letterSpacing: 0.2,
         marginBottom: spacing.xs,
     },
@@ -105,18 +102,16 @@ export const styles = StyleSheet.create({
         borderRightColor: colors.border,
     },
     statValue: {
+        ...typography.heading,
         fontSize: 28,
         fontWeight: '700',
         color: colors.textPrimary,
-        fontFamily: Platform.OS === 'ios' ? 'System' : 'Roboto',
         marginBottom: spacing.xs,
     },
     statIcon: {
         marginBottom: spacing.xs,
     },
     statLabel: {
-        ...typography.caption,
-        color: colors.textTertiary,
-        fontSize: 11,
+        ...typography.micro,
     },
 });

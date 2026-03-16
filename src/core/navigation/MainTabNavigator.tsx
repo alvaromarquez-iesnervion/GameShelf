@@ -84,7 +84,10 @@ export const MainTabNavigator: React.FC = () => {
                 component={WishlistStack}
                 options={{
                     presentation: 'modal',
-                    headerShown: false
+                    animation: 'slide_from_bottom',
+                    gestureEnabled: true,
+                    headerShown: false,
+                    contentStyle: { backgroundColor: colors.background },
                 }}
             />
         </RootStack.Navigator>

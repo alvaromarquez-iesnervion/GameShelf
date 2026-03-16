@@ -13,7 +13,7 @@ export const HERO_HEIGHT = Math.round(width * 0.6);
 export const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: colors.background,
+        backgroundColor: 'transparent',
     },
     scrollView: {
         flex: 1,

@@ -1,8 +1,7 @@
 import React, { useEffect, useCallback, useRef, useState } from 'react';
-import { View, FlatList, TextInput, TouchableOpacity, Text, RefreshControl, Platform } from 'react-native';
+import { View, FlatList, TextInput, TouchableOpacity, Text, RefreshControl, Platform, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { observer } from 'mobx-react-lite';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -16,8 +15,10 @@ import { GameCard } from '../../components/games/GameCard';
 import { ErrorMessage } from '../../components/common/ErrorMessage';
 import { EmptyState } from '../../components/common/EmptyState';
 import { LibrarySkeleton } from '../../components/common/LibrarySkeleton';
+import { BrandAura } from '../../components/common/BrandAura';
 import { SortCriteria } from '../../../domain/enums/SortCriteria';
 import { colors } from '../../theme/colors';
+import { spacing } from '../../theme/spacing';
 import { styles } from './LibraryScreen.styles';
 
 type Nav = NativeStackNavigationProp<LibraryStackParamList, 'Library'>;
@@ -30,10 +31,14 @@ const SORT_OPTIONS: { label: string; criteria: SortCriteria; icon: keyof typeof 
 
 export const LibraryScreen: React.FC = observer(() => {
     const insets = useSafeAreaInsets();
+    const { width: windowWidth } = useWindowDimensions();
     const authVm = useInjection<AuthViewModel>(TYPES.AuthViewModel);
     const vm = useInjection<LibraryViewModel>(TYPES.LibraryViewModel);
     const navigation = useNavigation<Nav>();
     const userId = authVm.currentUser?.getId() ?? '';
+
+    // 3-column grid with perfect gutters (aligned with screen padding)
+    const cardWidth = Math.floor((windowWidth - (spacing.lg * 2) - (spacing.sm * 2)) / 3);
 
     useEffect(() => {
         if (userId && vm.games.length === 0 && !vm.isLoading && !vm.isSyncing) {
@@ -83,30 +88,10 @@ export const LibraryScreen: React.FC = observer(() => {
             portraitCoverUrl={item.game.getPortraitCoverUrl()}
             title={item.game.getTitle()}
             platforms={item.platforms}
+            cardWidth={cardWidth}
             onPress={(id) => handleGamePress(id, item.platforms)}
         />
-    ), [handleGamePress]);
-
-    React.useLayoutEffect(() => {
-        navigation.setOptions({
-            headerRight: () => (
-                <View style={styles.headerActions}>
-                    <TouchableOpacity
-                        style={styles.actionCircle}
-                        onPress={handleRefresh}
-                    >
-                        <Feather name="rotate-cw" size={18} color={colors.primary} />
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={styles.actionCircle}
-                        onPress={handleNavigateWishlist}
-                    >
-                        <Feather name="heart" size={18} color={colors.error} />
-                    </TouchableOpacity>
-                </View>
-            ),
-        });
-    }, [navigation, handleRefresh, handleNavigateWishlist]);
+    ), [handleGamePress, cardWidth]);
 
     if (vm.isLoading && vm.games.length === 0) return <LibrarySkeleton />;
     if (vm.errorMessage) return <ErrorMessage message={vm.errorMessage} onRetry={handleRefresh} />;
@@ -115,20 +100,38 @@ export const LibraryScreen: React.FC = observer(() => {
 
     return (
         <View style={styles.container}>
-            {/* Subtle header glow */}
-            <LinearGradient
-                colors={[colors.primarySubtle, 'transparent']}
-                style={styles.headerGlow}
-                pointerEvents="none"
-            />
-            <View style={[styles.header, { paddingTop: insets.top + 44 }]}>
+            {/* Header aura (signature) */}
+            <BrandAura style={styles.headerGlow} />
+            <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
                 <View style={styles.titleRow}>
-                    <Text style={styles.largeTitle}>Biblioteca</Text>
-                    {gameCount > 0 && (
-                        <View style={styles.countBadge}>
-                            <Text style={styles.countText}>{gameCount}</Text>
-                        </View>
-                    )}
+                    <View style={styles.titleLeft}>
+                        <Text style={styles.largeTitle}>Biblioteca</Text>
+                        {gameCount > 0 && (
+                            <View style={styles.countBadge}>
+                                <Text style={styles.countText}>{gameCount}</Text>
+                            </View>
+                        )}
+                    </View>
+                    <View style={styles.headerActions}>
+                        <TouchableOpacity
+                            style={styles.actionCircle}
+                            onPress={handleRefresh}
+                            activeOpacity={0.8}
+                            accessibilityRole="button"
+                            accessibilityLabel="Resincronizar biblioteca"
+                        >
+                            <Feather name="rotate-cw" size={18} color={colors.primary} />
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={styles.actionCircle}
+                            onPress={handleNavigateWishlist}
+                            activeOpacity={0.8}
+                            accessibilityRole="button"
+                            accessibilityLabel="Abrir wishlist"
+                        >
+                            <Feather name="heart" size={18} color={colors.error} />
+                        </TouchableOpacity>
+                    </View>
                 </View>
                 <View style={styles.searchContainer}>
                     <Feather name="search" size={16} color={colors.textTertiary} />

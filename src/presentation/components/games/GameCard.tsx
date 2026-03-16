@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import { View, Pressable, StyleSheet, Text, Platform } from 'react-native';
+import { View, Pressable, StyleSheet, Text, Platform, Dimensions } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
@@ -16,12 +16,14 @@ interface GameCardProps {
     portraitCoverUrl?: string;
     title: string;
     platforms?: GamePlatform[];
+    cardWidth?: number;
     onPress: (id: string) => void;
 }
 
 const SPRING_CONFIG = springPresets.cardPress;
+const DEFAULT_CARD_WIDTH = Math.floor((Dimensions.get('window').width - (spacing.lg * 2) - (spacing.sm * 2)) / 3);
 
-export const GameCard = React.memo(({ gameId, coverUrl, portraitCoverUrl, title, platforms, onPress }: GameCardProps) => {
+export const GameCard = React.memo(({ gameId, coverUrl, portraitCoverUrl, title, platforms, cardWidth, onPress }: GameCardProps) => {
     const imageSource = portraitCoverUrl || coverUrl;
     const scale = useSharedValue(1);
 
@@ -44,8 +46,10 @@ export const GameCard = React.memo(({ gameId, coverUrl, portraitCoverUrl, title,
 
     const visiblePlatforms = platforms?.filter(p => p !== GamePlatform.UNKNOWN) ?? [];
 
+    const width = cardWidth ?? DEFAULT_CARD_WIDTH;
+
     return (
-        <Animated.View style={[styles.card, animatedStyle]}>
+        <Animated.View style={[styles.card, { width }, animatedStyle]}>
             <Pressable
                 onPressIn={handlePressIn}
                 onPressOut={handlePressOut}
@@ -98,7 +102,6 @@ GameCard.displayName = 'GameCard';
 
 const styles = StyleSheet.create({
     card: {
-        width: '31%',
         marginBottom: spacing.md,
         ...shadows.card,
     },

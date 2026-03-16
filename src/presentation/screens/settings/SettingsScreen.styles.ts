@@ -1,23 +1,19 @@
-import { Platform, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
-import { spacing, radius, layout } from '../../theme/spacing';
+import { spacing, radius } from '../../theme/spacing';
 
 export const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: colors.background,
+        backgroundColor: 'transparent',
     },
     header: {
         paddingHorizontal: spacing.lg,
-        paddingTop: Platform.OS === 'ios'
-            ? layout.safeAreaPaddingTop.ios
-            : layout.safeAreaPaddingTop.android,
         marginBottom: spacing.lg,
     },
     largeTitle: {
-        ...typography.hero,
-        color: colors.textPrimary,
+        ...typography.largeTitle,
     },
     profileCard: {
         flexDirection: 'row',

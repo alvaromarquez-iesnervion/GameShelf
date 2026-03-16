@@ -18,7 +18,7 @@ export const LibraryStack: React.FC = () => {
                 component={LibraryScreen} 
                 options={{ 
                     title: '',
-                    headerShown: true,
+                    headerShown: false,
                 }} 
             />
             <Stack.Screen 

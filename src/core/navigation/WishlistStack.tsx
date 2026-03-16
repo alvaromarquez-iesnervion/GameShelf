@@ -11,12 +11,21 @@ const Stack = createNativeStackNavigator<WishlistStackParamList>();
 export const WishlistStack: React.FC = () => {
     return (
         <Stack.Navigator
-            screenOptions={makeBlurHeader(colors)}
+            screenOptions={{
+                ...makeBlurHeader(colors),
+                // Inside a formSheet modal — keep default animation for inner push
+                gestureEnabled: true,
+            }}
         >
             <Stack.Screen
                 name="Wishlist"
                 component={WishlistScreen}
-                options={{ title: '' }}
+                options={{
+                    title: '',
+                    headerShown: false,
+                    // Root screen inherits formSheet gesture — no custom animation
+                    animation: 'none',
+                }}
             />
             <Stack.Screen
                 name="GameDetail"
@@ -25,6 +34,7 @@ export const WishlistStack: React.FC = () => {
                     title: '',
                     headerTransparent: true,
                     headerBackground: undefined,
+                    animation: 'slide_from_right',
                 }}
             />
         </Stack.Navigator>

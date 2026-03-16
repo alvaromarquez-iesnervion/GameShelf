@@ -4,6 +4,7 @@ import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { RootNavigator } from './navigation/RootNavigator';
 import { colors } from '../presentation/theme/colors';
+import { AppBackground } from '../presentation/components/common/AppBackground';
 // Importar container para que se ejecuten todos los bindings
 import '../di/container';
 import { initializeFirebase } from '../data/config/FirebaseConfig';
@@ -19,7 +20,8 @@ const darkTheme = {
     colors: {
         ...DefaultTheme.colors,
         primary: colors.primary,
-        background: colors.background,
+        // Transparent so our global AppBackground can show through.
+        background: 'transparent',
         card: colors.surface,
         text: colors.textPrimary,
         border: colors.border,
@@ -32,7 +34,9 @@ export default function App() {
         <SafeAreaProvider>
             <NavigationContainer theme={darkTheme}>
                 <StatusBar style="light" />
-                <RootNavigator />
+                <AppBackground>
+                    <RootNavigator />
+                </AppBackground>
             </NavigationContainer>
         </SafeAreaProvider>
     );
