@@ -71,20 +71,16 @@ export class LibraryViewModel {
     get mergedFilteredGames(): MergedLibraryGame[] {
         const map = new Map<string, MergedLibraryGame>();
         for (const game of this.filteredGames) {
-            const steamId = game.getSteamAppId();
-            const itadId = game.getItadGameId();
-            const key = steamId !== null
-                ? `steam-${steamId}`
-                : itadId
-                    ? `itad-${itadId}`
-                    : `id-${game.getId()}`;
+            // Normalized title is the only identifier shared across all platforms
+            // (steamAppId is Steam-only, itadGameId is often null for GOG/Steam).
+            const key = game.getTitle().toLowerCase().trim();
 
             const existing = map.get(key);
             if (existing) {
                 if (!existing.platforms.includes(game.getPlatform())) {
                     existing.platforms.push(game.getPlatform());
                 }
-                // Prefer Steam game as canonical
+                // Prefer Steam game as canonical (richer metadata: playtime, cover, etc.)
                 if (game.getPlatform() === Platform.STEAM) {
                     existing.game = game;
                 }

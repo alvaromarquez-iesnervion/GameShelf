@@ -7,7 +7,7 @@ import * as Haptics from 'expo-haptics';
 import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { spacing, radius, springPresets } from '../../theme/spacing';
-import { PlatformBadge } from '../platforms/PlatformBadge';
+import { PlatformIcon } from '../platforms/PlatformIcon';
 import { Platform as GPlatform } from '../../../domain/enums/Platform';
 
 interface SearchResultCardProps {
@@ -67,7 +67,7 @@ export const SearchResultCard = React.memo(({ coverUrl, title, isInWishlist, isO
                 {isOwned ? (
                     <View style={styles.ownedBadges}>
                         {(ownedPlatforms ?? [GPlatform.STEAM]).map(p => (
-                            <PlatformBadge key={p} platform={p} />
+                            <PlatformIcon key={p} platform={p} size={18} />
                         ))}
                     </View>
                 ) : (
@@ -152,8 +152,9 @@ const styles = StyleSheet.create({
         backgroundColor: colors.errorBackground,
     },
     ownedBadges: {
+        flexDirection: 'row',
         paddingHorizontal: spacing.sm,
-        justifyContent: 'center',
-        alignItems: 'flex-end',
+        alignItems: 'center',
+        gap: spacing.xs,
     },
 });

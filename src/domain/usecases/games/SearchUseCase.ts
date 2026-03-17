@@ -64,14 +64,21 @@ export class SearchUseCase implements ISearchUseCase {
 
         if (results.length === 0) return results;
 
-        // Índice de biblioteca: steamAppId → plataformas que poseen ese juego
+        // Índices de biblioteca para cruzar por steamAppId y por título normalizado
         const steamAppIdToPlatforms = new Map<number, Platform[]>();
+        const titleToPlatforms = new Map<string, Platform[]>();
         for (const game of libraryGames) {
             const appId = game.getSteamAppId();
             if (appId !== null) {
                 const existing = steamAppIdToPlatforms.get(appId) ?? [];
                 existing.push(game.getPlatform());
                 steamAppIdToPlatforms.set(appId, existing);
+            }
+            const normTitle = game.getTitle().toLowerCase().trim();
+            if (normTitle) {
+                const existing = titleToPlatforms.get(normTitle) ?? [];
+                existing.push(game.getPlatform());
+                titleToPlatforms.set(normTitle, existing);
             }
         }
 
@@ -82,13 +89,17 @@ export class SearchUseCase implements ISearchUseCase {
                 r = r.withIsInWishlist(true);
             }
 
+            // Combinar plataformas encontradas por steamAppId y por título
+            const platformsSet = new Set<Platform>();
             const appId = r.getSteamAppId();
             if (appId !== null) {
-                const platforms = steamAppIdToPlatforms.get(appId);
-                if (platforms) {
-                    const unique = [...new Set(platforms)];
-                    r = r.withIsOwned(true).withOwnedPlatforms(unique);
-                }
+                for (const p of steamAppIdToPlatforms.get(appId) ?? []) platformsSet.add(p);
+            }
+            const normTitle = r.getTitle().toLowerCase().trim();
+            for (const p of titleToPlatforms.get(normTitle) ?? []) platformsSet.add(p);
+
+            if (platformsSet.size > 0) {
+                r = r.withIsOwned(true).withOwnedPlatforms([...platformsSet]);
             }
 
             return r;
