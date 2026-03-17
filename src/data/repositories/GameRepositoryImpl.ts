@@ -24,6 +24,7 @@ import { IIsThereAnyDealService } from '../../domain/interfaces/services/IIsTher
 import { Game } from '../../domain/entities/Game';
 import { SearchResult } from '../../domain/entities/SearchResult';
 import { Platform } from '../../domain/enums/Platform';
+import { GameType } from '../../domain/enums/GameType';
 import { FirestoreGameMapper } from '../mappers/FirestoreGameMapper';
 import { TYPES } from '../../di/types';
 
@@ -145,6 +146,7 @@ export class GameRepositoryImpl implements IGameRepository {
             if (!steamDoc.exists()) return [];
             const steamId = steamDoc.data().externalUserId as string;
             games = await this.steamApiService.getUserGames(steamId);
+
         } else if (platform === Platform.EPIC_GAMES) {
             // Si hay token almacenado (flujo auth code), re-sincronizar desde la API de Epic.
             // Si no (flujo GDPR), devolver los juegos ya almacenados en Firestore.
@@ -222,4 +224,12 @@ export class GameRepositoryImpl implements IGameRepository {
         const ref = doc(this.firestore, 'users', userId, 'library', gameId);
         await updateDoc(ref, { steamAppId });
     }
+
+    async getOwnedDlcsForGame(userId: string, parentGameId: string): Promise<Game[]> {
+        const allGames = await this.getLibraryGames(userId);
+        return allGames.filter(g =>
+            g.getGameType() === GameType.DLC && g.getParentGameId() === parentGameId,
+        );
+    }
+
 }

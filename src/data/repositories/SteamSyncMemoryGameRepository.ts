@@ -8,6 +8,7 @@ import { IIsThereAnyDealService } from '../../domain/interfaces/services/IIsTher
 import { Game } from '../../domain/entities/Game';
 import { SearchResult } from '../../domain/entities/SearchResult';
 import { Platform } from '../../domain/enums/Platform';
+import { GameType } from '../../domain/enums/GameType';
 import { TYPES } from '../../di/types';
 
 /**
@@ -171,6 +172,11 @@ export class SteamSyncMemoryGameRepository implements IGameRepository {
             games[idx] = game.withSteamAppId(_steamAppId);
             this.gamesByUser.set(_userId, games);
         }
+    }
+
+    async getOwnedDlcsForGame(userId: string, parentGameId: string): Promise<Game[]> {
+        const games = this.gamesByUser.get(userId) ?? [];
+        return games.filter(g => g.getGameType() === GameType.DLC && g.getParentGameId() === parentGameId);
     }
 
     /** Limpia los datos en memoria de un usuario (llamar al cerrar sesión). */

@@ -40,9 +40,12 @@ interface SteamChartsGame {
 interface SteamAppDetails {
     success: boolean;
     data?: {
+        type?: string;
         name: string;
         header_image: string;
         short_description: string;
+        fullgame?: { appid: string; name: string };
+        dlc?: number[];
         genres?: { id: string; description: string }[];
         developers?: string[];
         publishers?: string[];
@@ -281,6 +284,7 @@ export class SteamApiServiceImpl implements ISteamApiService, IPopularGamesServi
 
         const d = entry.data;
         return {
+            name:                d.name,
             genres:              (d.genres  ?? []).map(g => g.description),
             developers:          d.developers  ?? [],
             publishers:          d.publishers  ?? [],
@@ -289,6 +293,9 @@ export class SteamApiServiceImpl implements ISteamApiService, IPopularGamesServi
             metacriticUrl:       d.metacritic?.url    ?? null,
             screenshots:         (d.screenshots ?? []).map(s => s.path_full),
             recommendationCount: d.recommendations?.total ?? null,
+            appType:             d.type ?? null,
+            parentSteamAppId:    d.fullgame?.appid ? parseInt(d.fullgame.appid, 10) : null,
+            dlcAppIds:           d.dlc ?? [],
         };
     }
 

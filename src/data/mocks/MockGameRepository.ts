@@ -101,4 +101,9 @@ export class MockGameRepository implements IGameRepository {
     async updateSteamAppId(_userId: string, _gameId: string, _steamAppId: number): Promise<void> {
         // No-op in mocks
     }
+
+    async getOwnedDlcsForGame(_userId: string, _parentGameId: string): Promise<Game[]> {
+        return [];
+    }
+
 }

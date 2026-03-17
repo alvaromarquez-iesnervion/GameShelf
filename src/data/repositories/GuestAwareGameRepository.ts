@@ -53,4 +53,8 @@ export class GuestAwareGameRepository implements IGameRepository {
     updateSteamAppId(userId: string, gameId: string, steamAppId: number): Promise<void> {
         return this.repo(userId).updateSteamAppId(userId, gameId, steamAppId);
     }
+
+    getOwnedDlcsForGame(userId: string, parentGameId: string): Promise<Game[]> {
+        return this.repo(userId).getOwnedDlcsForGame(userId, parentGameId);
+    }
 }

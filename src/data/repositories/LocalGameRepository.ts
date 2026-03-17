@@ -8,6 +8,7 @@ import { IIsThereAnyDealService } from '../../domain/interfaces/services/IIsTher
 import { Game } from '../../domain/entities/Game';
 import { SearchResult } from '../../domain/entities/SearchResult';
 import { Platform } from '../../domain/enums/Platform';
+import { GameType } from '../../domain/enums/GameType';
 import { TYPES } from '../../di/types';
 import { GUEST_KEY_LIBRARY } from '../../domain/utils/guestUtils';
 
@@ -166,4 +167,10 @@ export class LocalGameRepository implements IGameRepository {
         );
         await this.writeAll(updated);
     }
+
+    async getOwnedDlcsForGame(_userId: string, parentGameId: string): Promise<Game[]> {
+        const games = await this.readAll();
+        return games.filter(g => g.getGameType() === GameType.DLC && g.getParentGameId() === parentGameId);
+    }
+
 }

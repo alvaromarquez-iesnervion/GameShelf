@@ -38,4 +38,6 @@ export interface IGameRepository {
      * screenshots, Metacritic, etc.).
      */
     updateSteamAppId(userId: string, gameId: string, steamAppId: number): Promise<void>;
+    /** Devuelve los DLCs poseídos cuyo parentGameId coincida con el juego indicado. */
+    getOwnedDlcsForGame(userId: string, parentGameId: string): Promise<Game[]>;
 }

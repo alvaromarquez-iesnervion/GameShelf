@@ -9,6 +9,7 @@ import { Game } from '../../entities/Game';
 import { GameDetail } from '../../entities/GameDetail';
 import { GameDetailDTO } from '../../dtos/GameDetailDTO';
 import { Platform } from '../../enums/Platform';
+import { SteamGameMetadata } from '../../dtos/SteamGameMetadata';
 
 /**
  * Constructs the full detail of a game by aggregating data from 5 external sources.
@@ -55,7 +56,7 @@ export class GameDetailUseCase implements IGameDetailUseCase {
 
         const steamAppId = game.getSteamAppId();
 
-        const [protonResult, hltbResult, dealsResult, wishlistResult, steamMetaResult] =
+        const [protonResult, hltbResult, dealsResult, wishlistResult, steamMetaResult, dlcsResult] =
             await Promise.allSettled([
                 steamAppId
                     ? this.protonDbService.getCompatibilityRating(String(steamAppId))
@@ -66,6 +67,7 @@ export class GameDetailUseCase implements IGameDetailUseCase {
                 steamAppId
                     ? this.steamApiService.getSteamAppDetails(steamAppId)
                     : Promise.resolve(null),
+                this.gameRepository.getOwnedDlcsForGame(userId, game.getId()),
             ]);
 
         const protonRating   = protonResult.status      === 'fulfilled' ? protonResult.value      : null;
@@ -73,6 +75,22 @@ export class GameDetailUseCase implements IGameDetailUseCase {
         const deals          = dealsResult.status       === 'fulfilled' ? dealsResult.value       : [];
         const isInWishlist   = wishlistResult.status    === 'fulfilled' ? wishlistResult.value    : false;
         const steamMetadata  = steamMetaResult.status   === 'fulfilled' ? steamMetaResult.value   : null;
+        let ownedDlcs        = dlcsResult.status        === 'fulfilled' ? dlcsResult.value        : [];
+
+        // Fetch DLC details from Steam Store (on-demand, max 10).
+        // GetOwnedGames does NOT return DLCs, so we show all DLCs of the base game.
+        if (steamMetadata?.dlcAppIds && steamMetadata.dlcAppIds.length > 0) {
+            try {
+                const dlcGames = await this._fetchDlcDetails(steamMetadata.dlcAppIds);
+                const seen = new Set(ownedDlcs.map(d => d.getId()));
+                for (const dlc of dlcGames) {
+                    if (!seen.has(dlc.getId())) {
+                        ownedDlcs.push(dlc);
+                        seen.add(dlc.getId());
+                    }
+                }
+            } catch { /* no crítico — la sección DLC simplemente no se muestra */ }
+        }
 
         const detail = new GameDetail(
             game,
@@ -84,6 +102,7 @@ export class GameDetailUseCase implements IGameDetailUseCase {
             hltb?.getCompletionist()        ?? null,
             deals,
             steamMetadata,
+            ownedDlcs,
         );
 
         return new GameDetailDTO(detail, isInWishlist);
@@ -116,6 +135,37 @@ export class GameDetailUseCase implements IGameDetailUseCase {
         } catch {
             return null;
         }
+    }
+
+    /**
+     * Fetches DLC details from Steam Store API (max 10, parallel with allSettled).
+     * Builds Game objects with name, cover URL, and steamAppId.
+     */
+    private async _fetchDlcDetails(dlcAppIds: number[]): Promise<Game[]> {
+        const MAX_DLCS = 10;
+        const ids = dlcAppIds.slice(0, MAX_DLCS);
+        const results = await Promise.allSettled(
+            ids.map(id => this.steamApiService.getSteamAppDetails(id)),
+        );
+        const dlcs: Game[] = [];
+        for (let i = 0; i < results.length; i++) {
+            const result = results[i];
+            if (result.status !== 'fulfilled' || !result.value) continue;
+            const meta: SteamGameMetadata = result.value;
+            const appId = ids[i];
+            dlcs.push(new Game(
+                String(appId),
+                meta.name,
+                '',
+                `https://steamcdn-a.akamaihd.net/steam/apps/${appId}/header.jpg`,
+                Platform.STEAM,
+                appId,
+                null,
+                0,
+                null,
+            ));
+        }
+        return dlcs;
     }
 
     /** Resolves the itadGameId (from cache or lookup) and fetches prices. */

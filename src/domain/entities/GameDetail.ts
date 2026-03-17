@@ -14,6 +14,7 @@ export class GameDetail {
     private howLongToBeatCompletionist: number | null;
     private deals: Deal[];
     private steamMetadata: SteamGameMetadata | null;
+    private ownedDlcs: Game[];
 
     constructor(
         game: Game,
@@ -25,6 +26,7 @@ export class GameDetail {
         howLongToBeatCompletionist: number | null,
         deals: Deal[],
         steamMetadata: SteamGameMetadata | null,
+        ownedDlcs: Game[] = [],
     ) {
         this.game = game;
         this.protonDbRating = protonDbRating;
@@ -35,6 +37,7 @@ export class GameDetail {
         this.howLongToBeatCompletionist = howLongToBeatCompletionist;
         this.deals = deals;
         this.steamMetadata = steamMetadata;
+        this.ownedDlcs = ownedDlcs;
     }
 
     getGame(): Game { return this.game; }
@@ -49,4 +52,6 @@ export class GameDetail {
     getDeals(): Deal[] { return this.deals; }
     /** Steam Store metadata (genres, devs, publishers, Metacritic, screenshots, recommendations). */
     getSteamMetadata(): SteamGameMetadata | null { return this.steamMetadata; }
+    /** DLCs poseídos por el usuario para este juego base. */
+    getOwnedDlcs(): Game[] { return this.ownedDlcs; }
 }

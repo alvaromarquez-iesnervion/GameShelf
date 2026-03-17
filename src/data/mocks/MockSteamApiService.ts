@@ -65,6 +65,7 @@ export class MockSteamApiService implements ISteamApiService {
     async getSteamAppDetails(_appId: number): Promise<SteamGameMetadata | null> {
         await simulateDelay(500);
         return {
+            name: 'Mock Game',
             genres: ['Action', 'Adventure'],
             developers: ['Mock Developer'],
             publishers: ['Mock Publisher'],
@@ -73,6 +74,9 @@ export class MockSteamApiService implements ISteamApiService {
             metacriticUrl: null,
             screenshots: [],
             recommendationCount: 12000,
+            appType: 'game',
+            parentSteamAppId: null,
+            dlcAppIds: [],
         };
     }
 

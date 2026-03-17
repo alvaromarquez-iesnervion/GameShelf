@@ -1,6 +1,7 @@
 import { DocumentData } from 'firebase/firestore';
 import { Game } from '../../domain/entities/Game';
 import { Platform } from '../../domain/enums/Platform';
+import { GameType } from '../../domain/enums/GameType';
 
 /**
  * Mapper bidireccional entre documentos Firestore y la entidad Game.
@@ -24,6 +25,10 @@ export class FirestoreGameMapper {
         const platform: Platform = validPlatforms.includes(data.platform)
             ? (data.platform as Platform)
             : Platform.UNKNOWN;
+        const validGameTypes = Object.values(GameType);
+        const gameType: GameType = validGameTypes.includes(data.gameType)
+            ? (data.gameType as GameType)
+            : GameType.GAME;
         return new Game(
             docId,
             data.title ?? '',
@@ -35,6 +40,8 @@ export class FirestoreGameMapper {
             data.playtime ?? 0,
             data.lastPlayed?.toDate() ?? null,
             data.portraitCoverUrl ?? '',
+            gameType,
+            data.parentGameId ?? null,
         );
     }
 
@@ -49,6 +56,8 @@ export class FirestoreGameMapper {
             itadGameId: game.getItadGameId(),
             playtime: game.getPlaytime(),
             lastPlayed: game.getLastPlayed(),
+            gameType: game.getGameType(),
+            parentGameId: game.getParentGameId(),
         };
     }
 }

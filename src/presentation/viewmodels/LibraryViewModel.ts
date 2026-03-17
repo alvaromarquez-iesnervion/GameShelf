@@ -6,6 +6,7 @@ import { Game } from '../../domain/entities/Game';
 import { LinkedPlatform } from '../../domain/entities/LinkedPlatform';
 import { Platform } from '../../domain/enums/Platform';
 import { SortCriteria } from '../../domain/enums/SortCriteria';
+import { GameType } from '../../domain/enums/GameType';
 import { TYPES } from '../../di/types';
 import { withLoading } from './BaseViewModel';
 
@@ -44,11 +45,14 @@ export class LibraryViewModel {
     }
 
     get filteredGames(): Game[] {
+        // 0. Excluir DLCs — se muestran en la pantalla de detalle del juego base
+        const baseGames = this._games.filter(g => g.getGameType() !== GameType.DLC);
+
         // 1. Filtrado por búsqueda
         const query = this._searchQuery.trim().toLowerCase();
         const filtered = query
-            ? this._games.filter(game => game.getTitle().toLowerCase().includes(query))
-            : [...this._games];
+            ? baseGames.filter(game => game.getTitle().toLowerCase().includes(query))
+            : [...baseGames];
 
         // 2. Ordenación — slice implícito evita mutar el array original
         switch (this._sortCriteria) {

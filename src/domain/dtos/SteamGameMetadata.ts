@@ -4,6 +4,8 @@
  * Fields are nullable — some games (e.g. DLC, legacy titles) may omit them.
  */
 export interface SteamGameMetadata {
+    /** Game name as it appears on the Steam Store. */
+    name: string;
     /** e.g. ["Action", "RPG", "Open World"] */
     genres: string[];
     /** e.g. ["Valve", "CD PROJEKT RED"] */
@@ -20,4 +22,10 @@ export interface SteamGameMetadata {
     screenshots: string[];
     /** Total number of positive Steam user recommendations. */
     recommendationCount: number | null;
+    /** Steam app type: "game", "dlc", "mod", etc. null if not returned. */
+    appType: string | null;
+    /** For DLCs: the Steam App ID of the parent base game. null for base games. */
+    parentSteamAppId: number | null;
+    /** For base games: list of DLC Steam App IDs. Empty if none or not a base game. */
+    dlcAppIds: number[];
 }

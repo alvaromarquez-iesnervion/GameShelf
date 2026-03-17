@@ -1,16 +1,14 @@
 import 'reflect-metadata';
 import { injectable, inject } from 'inversify';
 import axios from 'axios';
-
-const epicAxios = axios.create({ timeout: 15_000 });
 import { addAxiosRetryInterceptor } from '../utils/httpRetry';
-addAxiosRetryInterceptor(epicAxios);
 import { IEpicGamesApiService } from '../../domain/interfaces/services/IEpicGamesApiService';
 import { IIsThereAnyDealService } from '../../domain/interfaces/services/IIsThereAnyDealService';
 import { Game } from '../../domain/entities/Game';
 import { SearchResult } from '../../domain/entities/SearchResult';
 import { EpicAuthToken } from '../../domain/dtos/EpicAuthToken';
 import { Platform } from '../../domain/enums/Platform';
+import { GameType } from '../../domain/enums/GameType';
 import {
     EPIC_GRAPHQL_URL,
     EPIC_AUTH_TOKEN_URL,
@@ -21,6 +19,9 @@ import {
     EPIC_AUTH_REDIRECT_URL,
 } from '../config/ApiConstants';
 import { TYPES } from '../../di/types';
+
+const epicAxios = axios.create({ timeout: 15_000 });
+addAxiosRetryInterceptor(epicAxios);
 
 // ─── Tipos internos ────────────────────────────────────────────────────────────
 
@@ -68,14 +69,18 @@ interface EpicGdprEntitlement {
 
 // itemTypes que definitivamente no son juegos — se excluyen en el filtro (GDPR flow).
 // Usar lista negra en lugar de lista blanca porque Epic añade nuevos tipos sin avisar.
+// DLC y ADD_ON se conservan pero se marcan como GameType.DLC.
 const EPIC_NON_GAME_TYPES = new Set([
     'CONSUMABLE',
     'VIRTUAL_CURRENCY',
     'SEASON_PASS',
     'BUNDLE',
-    'ADD_ON',
-    'DLC',
     'UNLOCKABLE',
+]);
+
+const EPIC_DLC_TYPES = new Set([
+    'DLC',
+    'ADD_ON',
 ]);
 
 // Namespaces internos de Epic que no son juegos de la tienda
@@ -251,6 +256,7 @@ export class EpicGamesApiServiceImpl implements IEpicGamesApiService {
         }
 
         // Excluir tipos que claramente no son juegos (lista negra — más permisivo que lista blanca)
+        // DLCs y ADD_ONs se conservan para marcarlos como GameType.DLC
         const gameEntitlements = entitlements.filter(
             e => !EPIC_NON_GAME_TYPES.has(e.itemType),
         );
@@ -486,6 +492,15 @@ export class EpicGamesApiServiceImpl implements IEpicGamesApiService {
             }
         }
 
+        // Detectar DLC: mainGameItem indica juego padre, o categories con path "addons"
+        const mainGame = record.metadata?.mainGameItem ?? catalogItem?.mainGameItem;
+        const categories = record.metadata?.categories ?? catalogItem?.categories ?? [];
+        const hasAddonCategory = categories.some(c => c.path.startsWith('addons'));
+        const isDlc = mainGame != null || hasAddonCategory;
+        const parentGameId = mainGame != null && typeof mainGame === 'object'
+            ? (mainGame as { id?: string }).id ?? null
+            : null;
+
         return new Game(
             record.catalogItemId,
             title,
@@ -494,6 +509,11 @@ export class EpicGamesApiServiceImpl implements IEpicGamesApiService {
             Platform.EPIC_GAMES,
             null, // No hay Steam AppID para juegos de Epic
             itadGameId,
+            0,
+            null,
+            '',
+            isDlc ? GameType.DLC : GameType.GAME,
+            parentGameId,
         );
     }
 
@@ -525,6 +545,8 @@ export class EpicGamesApiServiceImpl implements IEpicGamesApiService {
             // Si ITAD está indisponible, crear el Game sin estos datos
         }
 
+        const isDlc = EPIC_DLC_TYPES.has(entitlement.itemType);
+
         return new Game(
             entitlement.catalogItemId,
             title,
@@ -533,6 +555,11 @@ export class EpicGamesApiServiceImpl implements IEpicGamesApiService {
             Platform.EPIC_GAMES,
             null,
             itadGameId,
+            0,
+            null,
+            '',
+            isDlc ? GameType.DLC : GameType.GAME,
+            null, // GDPR no proporciona referencia al juego padre
         );
     }
 }

@@ -1,7 +1,7 @@
 import React, { useEffect, useCallback } from 'react';
 import {
     View, ScrollView, Text, TouchableOpacity,
-    Platform,
+    Platform, StyleSheet,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { observer } from 'mobx-react-lite';
@@ -26,7 +26,8 @@ import { WishlistItem } from '../../../domain/entities/WishlistItem';
 import { strings } from '../../../core/constants/strings';
 import { SteamGameMetadata } from '../../../domain/dtos/SteamGameMetadata';
 import { colors } from '../../theme/colors';
-import { spacing } from '../../theme/spacing';
+import { typography } from '../../theme/typography';
+import { spacing, radius } from '../../theme/spacing';
 import { styles } from './GameDetailScreen.styles';
 
 type Route = RouteProp<LibraryStackParamList, 'GameDetail'>;
@@ -340,8 +341,61 @@ export const GameDetailScreen: React.FC = observer(() => {
                             ))}
                         </View>
                     )}
+
+                    {/* ── Owned DLCs ── */}
+                    {detail.getOwnedDlcs().length > 0 && (
+                        <View style={styles.section}>
+                            <View style={styles.sectionHeader}>
+                                <Text style={styles.sectionTitle}>DLCs de este juego</Text>
+                                <Feather name="package" size={18} color={colors.accent} />
+                            </View>
+                            <ScrollView
+                                horizontal
+                                showsHorizontalScrollIndicator={false}
+                                contentContainerStyle={dlcStyles.list}
+                            >
+                                {detail.getOwnedDlcs().map(dlc => (
+                                    <View key={dlc.getId()} style={dlcStyles.card}>
+                                        <Image
+                                            source={{ uri: dlc.getCoverUrl() }}
+                                            style={dlcStyles.cover}
+                                            contentFit="cover"
+                                            transition={200}
+                                        />
+                                        <Text style={dlcStyles.title} numberOfLines={2}>
+                                            {dlc.getTitle()}
+                                        </Text>
+                                    </View>
+                                ))}
+                            </ScrollView>
+                        </View>
+                    )}
                 </View>
             </ScrollView>
         </View>
     );
+});
+
+const dlcStyles = StyleSheet.create({
+    list: {
+        paddingHorizontal: spacing.xs,
+        gap: spacing.sm,
+    },
+    card: {
+        width: 120,
+        borderRadius: radius.md,
+        overflow: 'hidden',
+        backgroundColor: colors.surface,
+    },
+    cover: {
+        width: 120,
+        height: 68,
+        backgroundColor: colors.surfaceElevated,
+    },
+    title: {
+        ...typography.small,
+        fontWeight: '600',
+        paddingHorizontal: spacing.xs,
+        paddingVertical: spacing.xs,
+    },
 });
