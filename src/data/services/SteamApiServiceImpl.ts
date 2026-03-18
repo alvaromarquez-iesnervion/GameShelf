@@ -10,7 +10,10 @@ import { Platform } from '../../domain/enums/Platform';
 import { SteamGameMetadata } from '../../domain/dtos/SteamGameMetadata';
 import { STEAM_API_BASE_URL, STEAM_OPENID_URL, STEAM_CDN_BASE, STEAM_API_KEY } from '../config/ApiConstants';
 
-const steamAxios = axios.create({ timeout: 15_000 });
+const steamAxios = axios.create({
+    timeout: 15_000,
+    headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
+});
 addAxiosRetryInterceptor(steamAxios);
 
 interface SteamOwnedGame {

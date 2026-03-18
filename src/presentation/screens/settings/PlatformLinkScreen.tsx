@@ -38,6 +38,7 @@ export const PlatformLinkScreen: React.FC = observer(() => {
     const handleOpenSteamModal = useCallback(() => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         vm.clearError();
+        vm.generateSteamLoginUrl('https://gameshelf.app/auth/steam/callback');
         setSteamModalVisible(true);
     }, [vm]);
 
@@ -46,11 +47,28 @@ export const PlatformLinkScreen: React.FC = observer(() => {
         vm.clearError();
     }, [vm]);
 
-    const handleConfirmSteam = useCallback(async (input: string) => {
+    const handleConfirmSteamManual = useCallback(async (input: string) => {
         const trimmed = input.trim();
         if (!trimmed) return;
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         const success = await vm.linkSteamById(userId, trimmed);
+        if (success) {
+            setSteamModalVisible(false);
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            Alert.alert(
+                'Steam vinculado',
+                'Tu biblioteca de Steam se está sincronizando en segundo plano.\n\nVe a Biblioteca y pulsa ↻ para ver tus juegos.',
+                [{ text: 'Entendido' }],
+            );
+        }
+    }, [vm, userId]);
+
+    const handleConfirmSteamOpenId = useCallback(async (
+        callbackUrl: string,
+        params: Record<string, string>,
+    ) => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        const success = await vm.linkSteam(userId, callbackUrl, params);
         if (success) {
             setSteamModalVisible(false);
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -210,7 +228,9 @@ export const PlatformLinkScreen: React.FC = observer(() => {
                 visible={steamModalVisible}
                 isLinking={vm.isLinking}
                 errorMessage={vm.errorMessage}
-                onConfirm={handleConfirmSteam}
+                loginUrl={vm.steamLoginUrl ?? ''}
+                onConfirmManual={handleConfirmSteamManual}
+                onConfirmOpenId={handleConfirmSteamOpenId}
                 onClose={handleCloseSteamModal}
             />
 
