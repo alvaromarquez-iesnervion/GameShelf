@@ -29,6 +29,7 @@
 ### Library
 - [x] Steam library sync (real API, requires `EXPO_PUBLIC_STEAM_API_KEY`)
 - [x] Epic Games library (Auth Code flow + GDPR JSON fallback)
+- [x] Epic Games auth code capture inside the app (`WebView`) with manual browser fallback
 - [x] GOG library (OAuth2 WebView flow)
 - [x] Platform badge in grid for Steam, Epic Games and GOG
 - [x] Local search within library

@@ -101,9 +101,10 @@ Implement `domain/interfaces/services/`. Each encapsulates one external API.
 Epic has no public library API. Two flows are implemented:
 
 **Preferred: Authorization Code (unofficial internal API)**
-1. `getAuthUrl()`: returns `EPIC_AUTH_REDIRECT_URL` — user opens this in the browser, logs in, and gets a ~32-char code.
-2. `exchangeAuthCode(code)`: POST to `account-public-service-prod.ol.epicgames.com/account/api/oauth/token` using Basic Auth with `launcherAppClient2` credentials. Returns an `EpicAuthToken`.
-3. `fetchLibrary(accessToken, accountId)`: GET entitlements from `entitlement-public-service-prod08.ol.epicgames.com/entitlement/api/account/{accountId}/entitlements?count=5000`.
+1. `getLoginUrl()`: opens Epic login with `redirectUrl={EPIC_AUTH_REDIRECT_URL}` so the app can try to capture the auth code automatically in a `WebView`.
+2. `getAuthUrl()`: returns `EPIC_AUTH_REDIRECT_URL` — manual fallback if automatic capture fails.
+3. `exchangeAuthCode(code)`: POST to `account-public-service-prod.ol.epicgames.com/account/api/oauth/token` using Basic Auth with `launcherAppClient2` credentials. Returns an `EpicAuthToken`.
+4. `fetchLibrary(accessToken, accountId)`: GET entitlements from `entitlement-public-service-prod08.ol.epicgames.com/entitlement/api/account/{accountId}/entitlements?count=5000`.
 
 > **Warning:** uses an undocumented Epic internal API. May break without notice. Violates Epic ToS.
 

@@ -23,6 +23,12 @@ import { EpicAuthToken } from '../../dtos/EpicAuthToken';
  */
 export interface IEpicGamesApiService {
     /**
+     * Devuelve la URL de login de Epic que redirige a la página JSON con el
+     * authorization code.
+     */
+    getLoginUrl?(): string;
+
+    /**
      * Devuelve la URL que el usuario debe abrir en el navegador para iniciar sesión
      * en Epic Games y obtener el authorization code.
      */

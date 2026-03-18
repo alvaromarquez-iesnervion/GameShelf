@@ -4,6 +4,10 @@ Most recent first. Never rewrite history — only append.
 
 ---
 
+## Session 35 · Mar 2026 — Epic auth code auto-capture
+
+**P-02** Epic linking now reuses the GOG-style in-app `WebView` pattern: `PlatformLinkViewModel` exposes `getEpicLoginUrl()`, `EpicGamesApiServiceImpl` builds a login URL that redirects to Epic's JSON auth-code endpoint, and `EpicLinkModal` attempts to read `authorizationCode` automatically before falling back to manual browser copy/paste.
+
 ## Session 34 · Mar 2026 — UI consistency + global background gradient (OLED)
 
 **UI-01** Fondo global con gradiente sutil: `AppBackground` envuelve la navegación; `NavigationContainer` + `contentStyle` pasan a `transparent` para dejar ver el fondo.

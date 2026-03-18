@@ -128,6 +128,10 @@ export class EpicGamesApiServiceImpl implements IEpicGamesApiService {
         return EPIC_AUTH_REDIRECT_URL;
     }
 
+    getLoginUrl(): string {
+        return `https://www.epicgames.com/id/login?redirectUrl=${encodeURIComponent(EPIC_AUTH_REDIRECT_URL)}`;
+    }
+
     /**
      * Intercambia un authorization code por un access token de Epic.
      *

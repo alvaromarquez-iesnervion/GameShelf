@@ -92,7 +92,7 @@ Pass a different `loadingKey` when a ViewModel has multiple loading flags
 | `HomeViewModel` | Singleton | `recentlyPlayed`, `mostPlayed`, `popularGames`, `searchResults`, `isLoadingHome`, `isSearching` | `loadHomeData`, `loadPopularGames`, `search`, `clearSearch` |
 | `GameDetailViewModel` | Transient | `gameDetail` (`GameDetailDTO`), `isLoading`, `errorMessage` | `loadGameDetail`, `clear`, `clearError` |
 | `SearchViewModel` | Transient | `results`, `isLoading`, `errorMessage` | `search`, `clearResults` |
-| `PlatformLinkViewModel` | Transient | `linkedPlatforms`, `isLinking`, `errorMessage` | `loadLinkedPlatforms`, `linkSteam`, `linkSteamById`, `linkEpicByAuthCode`, `linkEpic`, `getEpicAuthUrl`, `unlinkPlatform`, `isPlatformLinked`, `clearError` |
+| `PlatformLinkViewModel` | Transient | `linkedPlatforms`, `isLinking`, `errorMessage` | `loadLinkedPlatforms`, `linkSteam`, `linkSteamById`, `linkEpicByAuthCode`, `linkEpic`, `getEpicLoginUrl`, `getEpicAuthUrl`, `unlinkPlatform`, `isPlatformLinked`, `clearError` |
 | `SettingsViewModel` | Transient | `profile` (`UserProfileDTO`), `isLoading`, `errorMessage` | `loadProfile`, `updateNotificationPreferences`, `deleteAccount` |
 
 ---
@@ -159,7 +159,7 @@ export default GameDetailScreen;
 | `wishlist/WishlistScreen` | `WishlistViewModel` | Wishlist with deal percentages, remove action |
 | `games/GameDetailScreen` | `GameDetailViewModel`, `WishlistViewModel` | Static hero image, ProtonDB badge, HLTB info, Steam metadata, deals, wishlist toggle; Epic Games entries auto-enriched with Steam data |
 | `settings/SettingsScreen` | `SettingsViewModel`, `AuthViewModel` | Profile overview (guest avatar when `isGuest`), navigation to sub-settings, logout (different text/alert for guests), Notifications row hidden for guests |
-| `settings/PlatformLinkScreen` | `PlatformLinkViewModel` | Link/unlink Steam and Epic Games |
+| `settings/PlatformLinkScreen` | `PlatformLinkViewModel` | Link/unlink Steam, Epic Games and GOG; GOG and Epic can capture the auth code inside a `WebView` |
 | `settings/NotificationSettingsScreen` | `SettingsViewModel` | Deal notification toggle |
 | `profile/ProfileScreen` | `AuthViewModel` | User profile stats |
 

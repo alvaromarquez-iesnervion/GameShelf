@@ -77,7 +77,7 @@ Abstract external third-party APIs. Implemented by `data/services/`.
 | Interface | External API | Notes |
 |---|---|---|
 | `ISteamApiService` | Steam Web API + OpenID 2.0 + Store API | `getOpenIdLoginUrl`, `extractSteamIdFromCallback`, `verifyOpenIdResponse`, `getUserGames`, `getRecentlyPlayedGames`, `getMostPlayedGames`, `checkProfileVisibility`, `resolveSteamId`, `getSteamAppDetails`, `searchSteamAppId(title)` |
-| `IEpicGamesApiService` | Epic internal (unofficial) | `getAuthUrl()`, `exchangeAuthCode(code)`, `fetchLibrary(token, accountId)`, `parseExportedLibrary(json)` (GDPR fallback), `searchCatalog` |
+| `IEpicGamesApiService` | Epic internal (unofficial) | `getLoginUrl()`, `getAuthUrl()`, `exchangeAuthCode(code)`, `fetchLibrary(token, accountId)`, `parseExportedLibrary(json)` (GDPR fallback), `searchCatalog` |
 | `IGogApiService` | GOG internal OAuth2 (unofficial) | `getAuthUrl()`, `exchangeAuthCode(code)`, `refreshToken(refreshToken)`, `getUserGames(accessToken)`. Cover = `_392.jpg`, portrait/hero = `_bg_crop_1680x655.jpg` |
 | `IProtonDbService` | ProtonDB JSON endpoint (unofficial) | `getCompatibilityRating(steamAppId): ProtonDbRating \| null` |
 | `IHowLongToBeatService` | HLTB internal POST (unofficial) | `getGameDuration(title): HltbResult \| null` |
@@ -95,7 +95,7 @@ Consumed by ViewModels. ViewModels always depend on these interfaces, never on i
 | `IWishlistUseCase` | `getWishlist`, `addToWishlist`, `removeFromWishlist` |
 | `IGameDetailUseCase` | `getGameDetail(gameId, userId): Promise<GameDetailDTO>` |
 | `ISearchUseCase` | `searchGames(query, userId): Promise<SearchResult[]>` |
-| `IPlatformLinkUseCase` | `getSteamLoginUrl`, `getEpicAuthUrl`, `linkSteam`, `linkSteamById`, `linkEpic`, `linkEpicByAuthCode`, `unlinkPlatform`, `getLinkedPlatforms` |
+| `IPlatformLinkUseCase` | `getSteamLoginUrl`, `getEpicLoginUrl`, `getEpicAuthUrl`, `linkSteam`, `linkSteamById`, `linkEpic`, `linkEpicByAuthCode`, `unlinkPlatform`, `getLinkedPlatforms` |
 | `ISettingsUseCase` | `getProfile(userId): Promise<UserProfileDTO>`, `updateNotificationPreferences` |
 | `IHomeUseCase` | `getPopularGames`, `getRecentlyPlayed(userId)`, `getMostPlayed(userId, limit?)`, `searchGames(query, userId)` |
 

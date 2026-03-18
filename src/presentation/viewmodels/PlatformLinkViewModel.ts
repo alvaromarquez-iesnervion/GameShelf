@@ -88,6 +88,10 @@ export class PlatformLinkViewModel {
         return this.platformLinkUseCase.getEpicAuthUrl();
     }
 
+    getEpicLoginUrl(): string {
+        return this.platformLinkUseCase.getEpicLoginUrl();
+    }
+
     /**
      * Vincula Epic Games usando el authorization code obtenido del navegador.
      * Flujo preferido — requiere que el usuario haya copiado el código de ~32 chars.

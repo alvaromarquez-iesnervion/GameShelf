@@ -75,15 +75,8 @@ export const PlatformLinkScreen: React.FC = observer(() => {
         vm.clearError();
     }, [vm]);
 
-    const handleOpenEpicLoginInBrowser = useCallback(() => {
-        const url = 'https://www.epicgames.com/login';
-        Linking.openURL(url).catch(() => {
-            Alert.alert('Error', 'No se pudo abrir el navegador. Visita manualmente:\n\n' + url);
-        });
-    }, []);
-
     const handleOpenEpicInBrowser = useCallback(() => {
-        const url = vm.getEpicAuthUrl();
+        const url = vm.getEpicLoginUrl();
         Linking.openURL(url).catch(() => {
             Alert.alert('Error', 'No se pudo abrir el navegador. Copia esta URL manualmente:\n\n' + url);
         });
@@ -225,9 +218,9 @@ export const PlatformLinkScreen: React.FC = observer(() => {
                 visible={epicModalVisible}
                 isLinking={vm.isLinking}
                 errorMessage={vm.errorMessage}
+                loginUrl={vm.getEpicLoginUrl()}
                 onConfirmAuthCode={handleConfirmEpicAuthCode}
                 onConfirmGdpr={handleConfirmEpicGdpr}
-                onOpenLogin={handleOpenEpicLoginInBrowser}
                 onOpenBrowser={handleOpenEpicInBrowser}
                 onClose={handleCloseEpicModal}
             />
