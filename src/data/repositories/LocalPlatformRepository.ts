@@ -6,6 +6,7 @@ import { LinkedPlatform } from '../../domain/entities/LinkedPlatform';
 import { Platform } from '../../domain/enums/Platform';
 import { GogAuthToken } from '../../domain/dtos/GogAuthToken';
 import { EpicAuthToken } from '../../domain/dtos/EpicAuthToken';
+import { PsnAuthToken } from '../../domain/dtos/PsnAuthToken';
 import { GUEST_KEY_PLATFORMS } from '../../domain/utils/guestUtils';
 
 const GUEST_KEY_GOG_TOKEN = '@gameshelf/guest_gog_token';
@@ -80,6 +81,16 @@ export class LocalPlatformRepository implements IPlatformRepository {
                 expiresAt: tokens.expiresAt.toISOString(),
                 userId: tokens.userId,
             }));
+            return linked;
+        });
+    }
+
+    async linkPsnPlatform(_userId: string, psnAccountId: string, _tokens: PsnAuthToken): Promise<LinkedPlatform> {
+        return this.withMutex(async () => {
+            const linked = new LinkedPlatform(Platform.PSN, psnAccountId, new Date());
+            const current = await this.readAll();
+            const filtered = current.filter(p => p.getPlatform() !== Platform.PSN);
+            await this.writeAll([...filtered, linked]);
             return linked;
         });
     }

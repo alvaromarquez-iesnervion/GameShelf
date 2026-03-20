@@ -16,10 +16,12 @@ import {
 } from 'firebase/firestore';
 import { loadGogTokens, saveGogTokens } from '../utils/GogTokenStore';
 import { loadEpicTokens, saveEpicTokens } from '../utils/EpicTokenStore';
+import { loadPsnTokens, savePsnTokens } from '../utils/PsnTokenStore';
 import { IGameRepository, LibraryPage } from '../../domain/interfaces/repositories/IGameRepository';
 import { ISteamApiService } from '../../domain/interfaces/services/ISteamApiService';
 import { IEpicGamesApiService } from '../../domain/interfaces/services/IEpicGamesApiService';
 import { IGogApiService } from '../../domain/interfaces/services/IGogApiService';
+import { IPsnApiService } from '../../domain/interfaces/services/IPsnApiService';
 import { IIsThereAnyDealService } from '../../domain/interfaces/services/IIsThereAnyDealService';
 import { Game } from '../../domain/entities/Game';
 import { SearchResult } from '../../domain/entities/SearchResult';
@@ -37,6 +39,7 @@ export class GameRepositoryImpl implements IGameRepository {
         @inject(TYPES.IEpicGamesApiService) private epicGamesApiService: IEpicGamesApiService,
         @inject(TYPES.IGogApiService) private gogApiService: IGogApiService,
         @inject(TYPES.IIsThereAnyDealService) private itadService: IIsThereAnyDealService,
+        @inject(TYPES.IPsnApiService) private psnApiService: IPsnApiService,
     ) {}
 
     async getLibraryGames(userId: string): Promise<Game[]> {
@@ -180,6 +183,22 @@ export class GameRepositoryImpl implements IGameRepository {
 
             // 3. Obtener biblioteca de GOG
             games = await this.gogApiService.getUserGames(accessToken);
+        } else if (platform === Platform.PSN) {
+            // 1. Leer tokens desde SecureStore del dispositivo
+            const stored = await loadPsnTokens();
+            if (!stored) return [];
+
+            let accessToken = stored.accessToken;
+
+            // 2. Renovar token si ha expirado (con margen de 60 s)
+            if (stored.isExpired()) {
+                const renewed = await this.psnApiService.refreshToken(stored.refreshToken);
+                accessToken = renewed.accessToken;
+                await savePsnTokens(renewed);
+            }
+
+            // 3. Obtener juegos jugados de PSN
+            games = await this.psnApiService.fetchPlayedGames(accessToken);
         }
 
         if (games.length === 0) return [];
@@ -206,6 +225,21 @@ export class GameRepositoryImpl implements IGameRepository {
 
     async storeEpicGames(userId: string, games: Game[]): Promise<void> {
         // Almacenar juegos de Epic en Firestore
+        if (games.length === 0) return;
+
+        const BATCH_SIZE = 500;
+        for (let i = 0; i < games.length; i += BATCH_SIZE) {
+            const batch = writeBatch(this.firestore);
+            const chunk = games.slice(i, i + BATCH_SIZE);
+            for (const game of chunk) {
+                const ref = doc(this.firestore, 'users', userId, 'library', game.getId());
+                batch.set(ref, FirestoreGameMapper.toFirestore(game), { merge: true });
+            }
+            await batch.commit();
+        }
+    }
+
+    async storePsnGames(userId: string, games: Game[]): Promise<void> {
         if (games.length === 0) return;
 
         const BATCH_SIZE = 500;

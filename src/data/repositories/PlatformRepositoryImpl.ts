@@ -16,8 +16,10 @@ import { LinkedPlatform } from '../../domain/entities/LinkedPlatform';
 import { Platform } from '../../domain/enums/Platform';
 import { GogAuthToken } from '../../domain/dtos/GogAuthToken';
 import { EpicAuthToken } from '../../domain/dtos/EpicAuthToken';
+import { PsnAuthToken } from '../../domain/dtos/PsnAuthToken';
 import { saveGogTokens, clearGogTokens } from '../utils/GogTokenStore';
 import { saveEpicTokens, clearEpicTokens } from '../utils/EpicTokenStore';
+import { savePsnTokens, clearPsnTokens } from '../utils/PsnTokenStore';
 import { TYPES } from '../../di/types';
 
 // Mapa de enum a nombre de documento en Firestore (solo plataformas vinculables)
@@ -25,6 +27,7 @@ const PLATFORM_DOC_ID: Record<Exclude<Platform, Platform.UNKNOWN>, string> = {
     [Platform.STEAM]: 'steam',
     [Platform.EPIC_GAMES]: 'epic_games',
     [Platform.GOG]: 'gog',
+    [Platform.PSN]: 'psn',
 };
 
 @injectable()
@@ -87,6 +90,24 @@ export class PlatformRepositoryImpl implements IPlatformRepository {
         return new LinkedPlatform(Platform.GOG, gogUserId, linkedAt);
     }
 
+    async linkPsnPlatform(userId: string, psnAccountId: string, tokens: PsnAuthToken): Promise<LinkedPlatform> {
+        const linkedAt = new Date();
+
+        // Los tokens se guardan en SecureStore (Keychain/Keystore), nunca en Firestore.
+        await Promise.all([
+            savePsnTokens(tokens),
+            setDoc(
+                doc(this.firestore, 'users', userId, 'platforms', 'psn'),
+                {
+                    externalUserId: psnAccountId,
+                    linkedAt: linkedAt.toISOString(),
+                },
+            ),
+        ]);
+
+        return new LinkedPlatform(Platform.PSN, psnAccountId, linkedAt);
+    }
+
     async unlinkPlatform(userId: string, platform: Platform): Promise<void> {
         if (platform === Platform.UNKNOWN) return;
         const docId = PLATFORM_DOC_ID[platform as Exclude<Platform, Platform.UNKNOWN>];
@@ -96,6 +117,8 @@ export class PlatformRepositoryImpl implements IPlatformRepository {
             await clearGogTokens();
         } else if (platform === Platform.EPIC_GAMES) {
             await clearEpicTokens();
+        } else if (platform === Platform.PSN) {
+            await clearPsnTokens();
         }
 
         // 2. Batch-delete juegos de esta plataforma usando where() para evitar leer toda la biblioteca

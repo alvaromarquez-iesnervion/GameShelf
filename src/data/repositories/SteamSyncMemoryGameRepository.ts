@@ -158,6 +158,10 @@ export class SteamSyncMemoryGameRepository implements IGameRepository {
         this.epicGamesByUser.set(userId, games);
     }
 
+    async storePsnGames(_userId: string, _games: Game[]): Promise<void> {
+        // Repositorio en memoria de Steam: PSN no soportado en este modo
+    }
+
     async searchGames(query: string): Promise<SearchResult[]> {
         if (!query.trim()) return [];
         return this.itadService.searchGames(query);

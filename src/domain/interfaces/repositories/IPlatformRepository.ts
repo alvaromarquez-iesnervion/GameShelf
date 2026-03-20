@@ -2,6 +2,7 @@ import { LinkedPlatform } from '../../entities/LinkedPlatform';
 import { Platform } from '../../enums/Platform';
 import { GogAuthToken } from '../../dtos/GogAuthToken';
 import { EpicAuthToken } from '../../dtos/EpicAuthToken';
+import { PsnAuthToken } from '../../dtos/PsnAuthToken';
 
 /**
  * Métodos separados por plataforma porque cada una tiene un flujo diferente:
@@ -27,6 +28,12 @@ export interface IPlatformRepository {
      * se guardan en SecureStore del dispositivo (Keychain/Keystore).
      */
     linkGogPlatform(userId: string, gogUserId: string, tokens: GogAuthToken): Promise<LinkedPlatform>;
+    /**
+     * Almacena la vinculación de PlayStation Network.
+     * El psnAccountId se guarda en Firestore; access_token y refresh_token
+     * se guardan en SecureStore del dispositivo (Keychain/Keystore).
+     */
+    linkPsnPlatform(userId: string, psnAccountId: string, tokens: PsnAuthToken): Promise<LinkedPlatform>;
     /** Elimina vinculación y juegos de esa plataforma de Firestore. */
     unlinkPlatform(userId: string, platform: Platform): Promise<void>;
     getLinkedPlatforms(userId: string): Promise<LinkedPlatform[]>;

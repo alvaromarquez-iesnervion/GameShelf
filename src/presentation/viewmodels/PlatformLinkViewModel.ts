@@ -131,6 +131,20 @@ export class PlatformLinkViewModel {
         return result ?? false;
     }
 
+    /**
+     * Vincula PlayStation Network: abre el navegador para login y luego
+     * intercambia el access code por tokens.
+     */
+    async linkPsn(userId: string): Promise<boolean> {
+        const result = await withLoading(this, '_isLinking', '_errorMessage', async () => {
+            const accessCode = await this.platformLinkUseCase.authenticatePsn();
+            await this.platformLinkUseCase.linkPsn(userId, accessCode);
+            await this.loadLinkedPlatforms(userId);
+            return true;
+        });
+        return result ?? false;
+    }
+
     async unlinkPlatform(userId: string, platform: Platform): Promise<boolean> {
         const result = await withLoading(this, '_isLinking', '_errorMessage', async () => {
             await this.platformLinkUseCase.unlinkPlatform(userId, platform);

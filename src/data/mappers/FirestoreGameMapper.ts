@@ -42,6 +42,7 @@ export class FirestoreGameMapper {
             data.portraitCoverUrl ?? '',
             gameType,
             data.parentGameId ?? null,
+            data.psnTitleId ?? null,
         );
     }
 
@@ -58,6 +59,7 @@ export class FirestoreGameMapper {
             lastPlayed: game.getLastPlayed(),
             gameType: game.getGameType(),
             parentGameId: game.getParentGameId(),
+            psnTitleId: game.getPsnTitleId(),
         };
     }
 }

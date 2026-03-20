@@ -160,6 +160,12 @@ export class LocalGameRepository implements IGameRepository {
         await this.writeAll([...nonEpic, ...games]);
     }
 
+    async storePsnGames(_userId: string, games: Game[]): Promise<void> {
+        const existing = await this.readAll();
+        const nonPsn = existing.filter(g => g.getPlatform() !== Platform.PSN);
+        await this.writeAll([...nonPsn, ...games]);
+    }
+
     async updateSteamAppId(_userId: string, gameId: string, steamAppId: number): Promise<void> {
         const games = await this.readAll();
         const updated = games.map(g =>

@@ -4,6 +4,7 @@ import { IPlatformRepository } from '../../domain/interfaces/repositories/IPlatf
 import { LinkedPlatform } from '../../domain/entities/LinkedPlatform';
 import { Platform } from '../../domain/enums/Platform';
 import { GogAuthToken } from '../../domain/dtos/GogAuthToken';
+import { PsnAuthToken } from '../../domain/dtos/PsnAuthToken';
 import { TYPES } from '../../di/types';
 import { isGuestUser } from '../../domain/utils/guestUtils';
 
@@ -31,6 +32,10 @@ export class GuestAwarePlatformRepository implements IPlatformRepository {
 
     linkGogPlatform(userId: string, gogUserId: string, tokens: GogAuthToken): Promise<LinkedPlatform> {
         return this.repo(userId).linkGogPlatform(userId, gogUserId, tokens);
+    }
+
+    linkPsnPlatform(userId: string, psnAccountId: string, tokens: PsnAuthToken): Promise<LinkedPlatform> {
+        return this.repo(userId).linkPsnPlatform(userId, psnAccountId, tokens);
     }
 
     unlinkPlatform(userId: string, platform: Platform): Promise<void> {

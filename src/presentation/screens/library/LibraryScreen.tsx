@@ -17,6 +17,8 @@ import { EmptyState } from '../../components/common/EmptyState';
 import { LibrarySkeleton } from '../../components/common/LibrarySkeleton';
 import { BrandAura } from '../../components/common/BrandAura';
 import { SortCriteria } from '../../../domain/enums/SortCriteria';
+import { LibraryTab } from '../../../domain/enums/LibraryTab';
+import { LibraryTabBar } from '../../components/library/LibraryTabBar';
 import { colors } from '../../theme/colors';
 import { spacing } from '../../theme/spacing';
 import { styles } from './LibraryScreen.styles';
@@ -79,6 +81,12 @@ export const LibraryScreen: React.FC = observer(() => {
     const handleSortChange = useCallback((criteria: SortCriteria) => {
         if (Platform.OS !== 'web') Haptics.selectionAsync();
         vm.setSortCriteria(criteria);
+    }, [vm]);
+
+    const handleTabChange = useCallback((tab: LibraryTab) => {
+        if (Platform.OS !== 'web') Haptics.selectionAsync();
+        vm.setActiveTab(tab);
+        setSearchInput('');
     }, [vm]);
 
     const renderGameCard = useCallback(({ item }: { item: MergedLibraryGame }) => (
@@ -169,6 +177,12 @@ export const LibraryScreen: React.FC = observer(() => {
                     })}
                 </View>
             </View>
+            <LibraryTabBar
+                activeTab={vm.activeTab}
+                pcCount={vm.pcGameCount}
+                consoleCount={vm.consoleGameCount}
+                onTabChange={handleTabChange}
+            />
             <FlatList
                 data={vm.mergedFilteredGames}
                 keyExtractor={(item) => item.game.getId()}
@@ -190,7 +204,11 @@ export const LibraryScreen: React.FC = observer(() => {
                 ListEmptyComponent={
                     <View style={styles.emptyContainer}>
                         <EmptyState
-                            message="Tu coleccion esta esperando. Vincula una plataforma para importar tus juegos."
+                            message={
+                                vm.activeTab === LibraryTab.PC
+                                    ? 'Tu coleccion PC esta esperando. Vincula Steam, Epic o GOG para importar tus juegos.'
+                                    : 'Tu coleccion de consola esta esperando. Vincula PlayStation para importar tus juegos.'
+                            }
                             icon="plus-circle"
                         />
                     </View>

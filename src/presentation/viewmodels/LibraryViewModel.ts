@@ -5,12 +5,16 @@ import { ILibraryUseCase } from '../../domain/interfaces/usecases/library/ILibra
 import { Game } from '../../domain/entities/Game';
 import { LinkedPlatform } from '../../domain/entities/LinkedPlatform';
 import { Platform } from '../../domain/enums/Platform';
+import { LibraryTab } from '../../domain/enums/LibraryTab';
 import { SortCriteria } from '../../domain/enums/SortCriteria';
 import { GameType } from '../../domain/enums/GameType';
 import { TYPES } from '../../di/types';
 import { withLoading } from './BaseViewModel';
 
 const LIBRARY_PAGE_SIZE = 200;
+
+const PC_PLATFORMS: Platform[] = [Platform.STEAM, Platform.EPIC_GAMES, Platform.GOG];
+const CONSOLE_PLATFORMS: Platform[] = [Platform.PSN];
 
 export interface MergedLibraryGame {
     game: Game;
@@ -32,6 +36,7 @@ export class LibraryViewModel {
     private _sortCriteria: SortCriteria = SortCriteria.ALPHABETICAL;
     private _errorMessage: string | null = null;
     private _hasSynced: boolean = false;
+    private _activeTab: LibraryTab = LibraryTab.PC;
 
     constructor(
         @inject(TYPES.ILibraryUseCase)
@@ -44,9 +49,28 @@ export class LibraryViewModel {
         return this._games;
     }
 
+    get activeTab(): LibraryTab {
+        return this._activeTab;
+    }
+
+    get pcGameCount(): number {
+        return this._games.filter(
+            g => g.getGameType() !== GameType.DLC && PC_PLATFORMS.includes(g.getPlatform()),
+        ).length;
+    }
+
+    get consoleGameCount(): number {
+        return this._games.filter(
+            g => g.getGameType() !== GameType.DLC && CONSOLE_PLATFORMS.includes(g.getPlatform()),
+        ).length;
+    }
+
     get filteredGames(): Game[] {
-        // 0. Excluir DLCs — se muestran en la pantalla de detalle del juego base
-        const baseGames = this._games.filter(g => g.getGameType() !== GameType.DLC);
+        // 0. Excluir DLCs y filtrar por tab activo
+        const tabPlatforms = this._activeTab === LibraryTab.PC ? PC_PLATFORMS : CONSOLE_PLATFORMS;
+        const baseGames = this._games.filter(
+            g => g.getGameType() !== GameType.DLC && tabPlatforms.includes(g.getPlatform()),
+        );
 
         // 1. Filtrado por búsqueda
         const query = this._searchQuery.trim().toLowerCase();
@@ -168,6 +192,11 @@ export class LibraryViewModel {
         });
     }
 
+    setActiveTab(tab: LibraryTab): void {
+        this._activeTab = tab;
+        this._searchQuery = '';
+    }
+
     setSearchQuery(query: string): void {
         this._searchQuery = query;
     }
@@ -253,6 +282,7 @@ export class LibraryViewModel {
             this._sortCriteria = SortCriteria.ALPHABETICAL;
             this._errorMessage = null;
             this._hasSynced = false;
+            this._activeTab = LibraryTab.PC;
         });
     }
 

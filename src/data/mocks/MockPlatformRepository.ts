@@ -4,6 +4,7 @@ import { IPlatformRepository } from '../../domain/interfaces/repositories/IPlatf
 import { LinkedPlatform } from '../../domain/entities/LinkedPlatform';
 import { Platform } from '../../domain/enums/Platform';
 import { GogAuthToken } from '../../domain/dtos/GogAuthToken';
+import { PsnAuthToken } from '../../domain/dtos/PsnAuthToken';
 import { simulateDelay } from './MockDataProvider';
 
 /**
@@ -39,6 +40,14 @@ export class MockPlatformRepository implements IPlatformRepository {
         await simulateDelay(600);
         const linked = new LinkedPlatform(Platform.GOG, gogUserId, new Date());
         this.platforms = this.platforms.filter(p => p.getPlatform() !== Platform.GOG);
+        this.platforms.push(linked);
+        return linked;
+    }
+
+    async linkPsnPlatform(_userId: string, psnAccountId: string, _tokens: PsnAuthToken): Promise<LinkedPlatform> {
+        await simulateDelay(600);
+        const linked = new LinkedPlatform(Platform.PSN, psnAccountId, new Date());
+        this.platforms = this.platforms.filter(p => p.getPlatform() !== Platform.PSN);
         this.platforms.push(linked);
         return linked;
     }

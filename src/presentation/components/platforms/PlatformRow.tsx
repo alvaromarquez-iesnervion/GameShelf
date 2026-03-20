@@ -11,6 +11,7 @@ const PLATFORM_NAMES: Record<PlatformEnum, string> = {
     [PlatformEnum.STEAM]: 'Steam',
     [PlatformEnum.EPIC_GAMES]: 'Epic Games',
     [PlatformEnum.GOG]: 'GOG',
+    [PlatformEnum.PSN]: 'PlayStation',
     [PlatformEnum.UNKNOWN]: 'Desconocido',
 };
 

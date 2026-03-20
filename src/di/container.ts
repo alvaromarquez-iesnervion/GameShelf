@@ -14,6 +14,7 @@ import { ISteamApiService } from '../domain/interfaces/services/ISteamApiService
 import { IPopularGamesService } from '../domain/interfaces/services/IPopularGamesService';
 import { IEpicGamesApiService } from '../domain/interfaces/services/IEpicGamesApiService';
 import { IGogApiService } from '../domain/interfaces/services/IGogApiService';
+import { IPsnApiService } from '../domain/interfaces/services/IPsnApiService';
 import { IProtonDbService } from '../domain/interfaces/services/IProtonDbService';
 import { IHowLongToBeatService } from '../domain/interfaces/services/IHowLongToBeatService';
 import { IIsThereAnyDealService } from '../domain/interfaces/services/IIsThereAnyDealService';
@@ -41,6 +42,7 @@ import { MockGogApiService } from '../data/mocks/MockGogApiService';
 import { SteamApiServiceImpl } from '../data/services/SteamApiServiceImpl';
 import { EpicGamesApiServiceImpl } from '../data/services/EpicGamesApiServiceImpl';
 import { GogApiServiceImpl } from '../data/services/GogApiServiceImpl';
+import { PsnApiServiceImpl } from '../data/services/PsnApiServiceImpl';
 import { ProtonDbServiceImpl } from '../data/services/ProtonDbServiceImpl';
 import { HowLongToBeatServiceImpl } from '../data/services/HowLongToBeatServiceImpl';
 import { IsThereAnyDealServiceImpl } from '../data/services/IsThereAnyDealServiceImpl';
@@ -171,6 +173,8 @@ if (useFirebase) {
 } else {
     container.bind<IGogApiService>(TYPES.IGogApiService).to(MockGogApiService);
 }
+// PSN: real incondicional (no requiere API key, usa token NPSSO del usuario)
+container.bind<IPsnApiService>(TYPES.IPsnApiService).to(PsnApiServiceImpl);
 container.bind<IProtonDbService>(TYPES.IProtonDbService).to(ProtonDbServiceImpl);
 container.bind<IHowLongToBeatService>(TYPES.IHowLongToBeatService).to(HowLongToBeatServiceImpl);
 container.bind<IIsThereAnyDealService>(TYPES.IIsThereAnyDealService).to(IsThereAnyDealServiceImpl);
@@ -209,6 +213,7 @@ container.bind<IPlatformLinkUseCase>(TYPES.IPlatformLinkUseCase).toDynamicValue(
     ctx.get<ISteamApiService>(TYPES.ISteamApiService),
     ctx.get<IEpicGamesApiService>(TYPES.IEpicGamesApiService),
     ctx.get<IGogApiService>(TYPES.IGogApiService),
+    ctx.get<IPsnApiService>(TYPES.IPsnApiService),
 )).inSingletonScope();
 container.bind<ISettingsUseCase>(TYPES.ISettingsUseCase).toDynamicValue(ctx => new SettingsUseCase(
     ctx.get<IAuthRepository>(TYPES.IAuthRepository),

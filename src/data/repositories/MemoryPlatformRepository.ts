@@ -5,6 +5,7 @@ import { LinkedPlatform } from '../../domain/entities/LinkedPlatform';
 import { Platform } from '../../domain/enums/Platform';
 import { GogAuthToken } from '../../domain/dtos/GogAuthToken';
 import { EpicAuthToken } from '../../domain/dtos/EpicAuthToken';
+import { PsnAuthToken } from '../../domain/dtos/PsnAuthToken';
 
 /**
  * Implementación en memoria de IPlatformRepository.
@@ -36,6 +37,12 @@ export class MemoryPlatformRepository implements IPlatformRepository {
 
     async linkGogPlatform(userId: string, gogUserId: string, _tokens: GogAuthToken): Promise<LinkedPlatform> {
         const linked = new LinkedPlatform(Platform.GOG, gogUserId, new Date());
+        this.upsert(userId, linked);
+        return linked;
+    }
+
+    async linkPsnPlatform(userId: string, psnAccountId: string, _tokens: PsnAuthToken): Promise<LinkedPlatform> {
+        const linked = new LinkedPlatform(Platform.PSN, psnAccountId, new Date());
         this.upsert(userId, linked);
         return linked;
     }

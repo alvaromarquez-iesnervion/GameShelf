@@ -60,6 +60,19 @@ export interface IPlatformLinkUseCase {
      *  3. syncLibrary de GOG (no bloqueante)
      */
     linkGogByCode(userId: string, code: string): Promise<LinkedPlatform>;
+    /** Devuelve la URL OAuth de PlayStation. */
+    getPsnLoginUrl(): string;
+    /** Abre el navegador del sistema para login en PSN y devuelve el access code. */
+    authenticatePsn(): Promise<string>;
+    /**
+     * Vincula PlayStation Network usando el access code obtenido del browser.
+     *  1. exchangeNpssoForTokens (access code → auth tokens)
+     *  2. fetchPlayedGames → Game[] (valida el token)
+     *  3. storePsnGames (guarda en Firestore)
+     *  4. linkPsnPlatform (almacena tokens en SecureStore + doc en Firestore)
+     *  5. syncLibrary de PSN (no bloqueante)
+     */
+    linkPsn(userId: string, accessCode: string): Promise<LinkedPlatform>;
     /** Elimina la vinculación y los juegos de esa plataforma. */
     unlinkPlatform(userId: string, platform: Platform): Promise<void>;
     getLinkedPlatforms(userId: string): Promise<LinkedPlatform[]>;

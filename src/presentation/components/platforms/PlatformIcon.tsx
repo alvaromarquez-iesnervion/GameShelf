@@ -57,6 +57,22 @@ export const PlatformIcon: React.FC<PlatformIconProps> = ({ platform, size = 18 
         );
     }
 
+    if (platform === GamePlatform.PSN) {
+        return (
+            <View style={[
+                styles.container,
+                styles.psnContainer,
+                { width: size + 4, height: size + 4, borderRadius: (size + 4) / 2 },
+            ]}>
+                <MaterialCommunityIcons
+                    name="sony-playstation"
+                    size={size}
+                    color="#fff"
+                />
+            </View>
+        );
+    }
+
     return null;
 };
 
@@ -83,5 +99,8 @@ const styles = StyleSheet.create({
         fontWeight: '800',
         includeFontPadding: false,
         textAlignVertical: 'center',
+    },
+    psnContainer: {
+        backgroundColor: colors.psnAccent ?? '#0070D1',
     },
 });

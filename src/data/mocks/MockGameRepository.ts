@@ -98,6 +98,10 @@ export class MockGameRepository implements IGameRepository {
         await simulateDelay(100);
     }
 
+    async storePsnGames(_userId: string, _games: Game[]): Promise<void> {
+        await simulateDelay(100);
+    }
+
     async updateSteamAppId(_userId: string, _gameId: string, _steamAppId: number): Promise<void> {
         // No-op in mocks
     }

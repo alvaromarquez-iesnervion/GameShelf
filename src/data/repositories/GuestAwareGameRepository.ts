@@ -50,6 +50,10 @@ export class GuestAwareGameRepository implements IGameRepository {
         return this.repo(userId).storeEpicGames(userId, games);
     }
 
+    storePsnGames(userId: string, games: Game[]): Promise<void> {
+        return this.repo(userId).storePsnGames(userId, games);
+    }
+
     updateSteamAppId(userId: string, gameId: string, steamAppId: number): Promise<void> {
         return this.repo(userId).updateSteamAppId(userId, gameId, steamAppId);
     }

@@ -13,6 +13,7 @@ import { ListSkeleton } from '../../components/common/ListItemSkeleton';
 import { SteamLinkModal } from './SteamLinkModal';
 import { EpicLinkModal } from './EpicLinkModal';
 import { GogLinkModal } from './GogLinkModal';
+import { PsnLinkModal } from './PsnLinkModal';
 import { styles } from './PlatformLinkScreen.styles';
 import { Screen } from '../../components/common/Screen';
 
@@ -24,6 +25,7 @@ export const PlatformLinkScreen: React.FC = observer(() => {
     const [steamModalVisible, setSteamModalVisible] = useState(false);
     const [epicModalVisible, setEpicModalVisible] = useState(false);
     const [gogModalVisible, setGogModalVisible] = useState(false);
+    const [psnModalVisible, setPsnModalVisible] = useState(false);
 
     useEffect(() => {
         if (userId) vm.loadLinkedPlatforms(userId);
@@ -159,12 +161,40 @@ export const PlatformLinkScreen: React.FC = observer(() => {
         }
     }, [vm, userId]);
 
+    // ─── Handlers PSN ─────────────────────────────────────────────────────────
+
+    const handleOpenPsnModal = useCallback(() => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        vm.clearError();
+        setPsnModalVisible(true);
+    }, [vm]);
+
+    const handleClosePsnModal = useCallback(() => {
+        setPsnModalVisible(false);
+        vm.clearError();
+    }, [vm]);
+
+    const handlePsnLink = useCallback(async () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        const success = await vm.linkPsn(userId);
+        if (success) {
+            setPsnModalVisible(false);
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            Alert.alert(
+                'PlayStation vinculado',
+                'Tu biblioteca de PlayStation se está sincronizando en segundo plano.\n\nVe a Biblioteca y pulsa ↻ para ver tus juegos.',
+                [{ text: 'Entendido' }],
+            );
+        }
+    }, [vm, userId]);
+
     // ─── Handler desvinculación ───────────────────────────────────────────────
 
     const handleUnlink = useCallback((platform: PlatformEnum) => {
         const name =
             platform === PlatformEnum.STEAM ? 'Steam' :
             platform === PlatformEnum.GOG ? 'GOG' :
+            platform === PlatformEnum.PSN ? 'PlayStation' :
             'Epic Games';
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
         Alert.alert(
@@ -179,20 +209,21 @@ export const PlatformLinkScreen: React.FC = observer(() => {
 
     // ─── Early returns (después de todos los hooks) ───────────────────────────
 
-    if (vm.isLinking && vm.linkedPlatforms.length === 0) return <ListSkeleton count={3} />;
-    if (vm.errorMessage && !steamModalVisible && !epicModalVisible && !gogModalVisible) {
+    if (vm.isLinking && vm.linkedPlatforms.length === 0) return <ListSkeleton count={4} />;
+    if (vm.errorMessage && !steamModalVisible && !epicModalVisible && !gogModalVisible && !psnModalVisible) {
         return <ErrorMessage message={vm.errorMessage} onRetry={handleRetry} />;
     }
 
     const steamLinked = vm.isPlatformLinked(PlatformEnum.STEAM);
     const epicLinked = vm.isPlatformLinked(PlatformEnum.EPIC_GAMES);
     const gogLinked = vm.isPlatformLinked(PlatformEnum.GOG);
+    const psnLinked = vm.isPlatformLinked(PlatformEnum.PSN);
 
     // ─── Render ───────────────────────────────────────────────────────────────
 
     return (
         <Screen style={styles.container} topInset="header">
-            <Text style={styles.sectionLabel}>CUENTAS VINCULADAS</Text>
+            <Text style={styles.sectionLabel}>PC</Text>
 
             <View style={styles.group}>
                 <PlatformRow
@@ -220,8 +251,21 @@ export const PlatformLinkScreen: React.FC = observer(() => {
                 />
             </View>
 
+            <Text style={styles.sectionLabel}>CONSOLA</Text>
+
+            <View style={styles.group}>
+                <PlatformRow
+                    platform={PlatformEnum.PSN}
+                    linked={psnLinked}
+                    loading={vm.isLinking}
+                    onLink={handleOpenPsnModal}
+                    onUnlink={() => handleUnlink(PlatformEnum.PSN)}
+                />
+            </View>
+
             <Text style={styles.footnote}>
-                Steam requiere que tu perfil y la sección &quot;Estado del juego&quot; sean públicos para sincronizar tu biblioteca.
+                Steam requiere que tu perfil y la sección &quot;Estado del juego&quot; sean públicos para sincronizar tu biblioteca.{'\n'}
+                PlayStation solo muestra juegos que hayas iniciado al menos una vez.
             </Text>
 
             <SteamLinkModal
@@ -252,6 +296,14 @@ export const PlatformLinkScreen: React.FC = observer(() => {
                 authUrl={vm.getGogAuthUrl()}
                 onCodeReceived={handleGogCodeReceived}
                 onClose={handleCloseGogModal}
+            />
+
+            <PsnLinkModal
+                visible={psnModalVisible}
+                isLinking={vm.isLinking}
+                errorMessage={vm.errorMessage}
+                onLink={handlePsnLink}
+                onClose={handleClosePsnModal}
             />
         </Screen>
     );

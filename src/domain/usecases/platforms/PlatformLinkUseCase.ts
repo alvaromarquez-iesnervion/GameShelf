@@ -4,6 +4,7 @@ import { IGameRepository } from '../../interfaces/repositories/IGameRepository';
 import { ISteamApiService } from '../../interfaces/services/ISteamApiService';
 import { IEpicGamesApiService } from '../../interfaces/services/IEpicGamesApiService';
 import { IGogApiService } from '../../interfaces/services/IGogApiService';
+import { IPsnApiService } from '../../interfaces/services/IPsnApiService';
 import { LinkedPlatform } from '../../entities/LinkedPlatform';
 import { Platform } from '../../enums/Platform';
 
@@ -27,6 +28,7 @@ export class PlatformLinkUseCase implements IPlatformLinkUseCase {
         private readonly steamService: ISteamApiService,
         private readonly epicService: IEpicGamesApiService,
         private readonly gogService: IGogApiService,
+        private readonly psnService: IPsnApiService,
     ) {}
 
     getSteamLoginUrl(returnUrl: string): string {
@@ -175,6 +177,39 @@ export class PlatformLinkUseCase implements IPlatformLinkUseCase {
 
         // 3. Sincronizar biblioteca GOG (no bloqueante)
         this.gameRepository.syncLibrary(userId, Platform.GOG).catch(() => {});
+
+        return linked;
+    }
+
+    getPsnLoginUrl(): string {
+        return this.psnService.getPsnLoginUrl();
+    }
+
+    /**
+     * Abre el navegador del sistema para login en PSN y devuelve el access code.
+     */
+    async authenticatePsn(): Promise<string> {
+        return this.psnService.authenticateWithBrowser();
+    }
+
+    async linkPsn(userId: string, accessCode: string): Promise<LinkedPlatform> {
+        if (!userId?.trim()) throw new Error('userId requerido');
+        if (!accessCode?.trim()) throw new Error('Access code requerido');
+
+        // 1. Intercambiar el access code por tokens de acceso
+        const token = await this.psnService.exchangeNpssoForTokens(accessCode.trim());
+
+        // 2. Obtener juegos jugados (valida que el token funciona)
+        const psnGames = await this.psnService.fetchPlayedGames(token.accessToken);
+
+        // 3. Guardar juegos en Firestore
+        await this.gameRepository.storePsnGames(userId, psnGames);
+
+        // 4. Almacenar tokens en SecureStore y vinculación en Firestore
+        const linked = await this.platformRepository.linkPsnPlatform(userId, token.accountId, token);
+
+        // 5. Sincronizar biblioteca PSN (no bloqueante)
+        this.gameRepository.syncLibrary(userId, Platform.PSN).catch(() => {});
 
         return linked;
     }
