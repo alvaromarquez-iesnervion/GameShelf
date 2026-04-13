@@ -17,9 +17,5 @@ export { MockWishlistRepository } from './MockWishlistRepository';
 export { MockPlatformRepository } from './MockPlatformRepository';
 export { MockNotificationRepository } from './MockNotificationRepository';
 
-// Servicios mock
-export { MockSteamApiService } from './MockSteamApiService';
-export { MockEpicGamesApiService } from './MockEpicGamesApiService';
-export { MockProtonDbService } from './MockProtonDbService';
-export { MockHowLongToBeatService } from './MockHowLongToBeatService';
-export { MockIsThereAnyDealService } from './MockIsThereAnyDealService';
+// Cliente API mock
+export { MockGameShelfApiClient } from './MockGameShelfApiClient';

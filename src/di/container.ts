@@ -10,14 +10,7 @@ import { IPlatformRepository } from '../domain/interfaces/repositories/IPlatform
 import { INotificationRepository } from '../domain/interfaces/repositories/INotificationRepository';
 
 // ─── Interfaces (servicios) ───────────────────────────────────────────────────
-import { ISteamApiService } from '../domain/interfaces/services/ISteamApiService';
-import { IPopularGamesService } from '../domain/interfaces/services/IPopularGamesService';
-import { IEpicGamesApiService } from '../domain/interfaces/services/IEpicGamesApiService';
-import { IGogApiService } from '../domain/interfaces/services/IGogApiService';
-import { IPsnApiService } from '../domain/interfaces/services/IPsnApiService';
-import { IProtonDbService } from '../domain/interfaces/services/IProtonDbService';
-import { IHowLongToBeatService } from '../domain/interfaces/services/IHowLongToBeatService';
-import { IIsThereAnyDealService } from '../domain/interfaces/services/IIsThereAnyDealService';
+import { IGameShelfApiClient } from '../domain/interfaces/services/IGameShelfApiClient';
 
 // ─── Interfaces (use cases) ───────────────────────────────────────────────────
 import { IAuthUseCase } from '../domain/interfaces/usecases/auth/IAuthUseCase';
@@ -35,24 +28,17 @@ import { MockGameRepository } from '../data/mocks/MockGameRepository';
 import { MockWishlistRepository } from '../data/mocks/MockWishlistRepository';
 import { MockPlatformRepository } from '../data/mocks/MockPlatformRepository';
 import { MockNotificationRepository } from '../data/mocks/MockNotificationRepository';
-import { MockSteamApiService } from '../data/mocks/MockSteamApiService';
-import { MockGogApiService } from '../data/mocks/MockGogApiService';
+import { MockGameShelfApiClient } from '../data/mocks/MockGameShelfApiClient';
 
 // ─── Implementaciones reales (servicios externos) ─────────────────────────────
-import { SteamApiServiceImpl } from '../data/services/SteamApiServiceImpl';
-import { EpicGamesApiServiceImpl } from '../data/services/EpicGamesApiServiceImpl';
-import { GogApiServiceImpl } from '../data/services/GogApiServiceImpl';
-import { PsnApiServiceImpl } from '../data/services/PsnApiServiceImpl';
-import { ProtonDbServiceImpl } from '../data/services/ProtonDbServiceImpl';
-import { HowLongToBeatServiceImpl } from '../data/services/HowLongToBeatServiceImpl';
-import { IsThereAnyDealServiceImpl } from '../data/services/IsThereAnyDealServiceImpl';
+import { GameShelfApiClientImpl } from '../data/services/GameShelfApiClientImpl';
 
-// ─── Implementaciones reales (repositorios Firebase) ─────────────────────────
+// ─── Implementaciones reales (repositorios) ───────────────────────────────────
+import { GameShelfApiGameRepository } from '../data/repositories/GameShelfApiGameRepository';
+import { GameShelfApiWishlistRepository } from '../data/repositories/GameShelfApiWishlistRepository';
+import { GameShelfApiPlatformRepository } from '../data/repositories/GameShelfApiPlatformRepository';
 import { AuthRepositoryImpl } from '../data/repositories/AuthRepositoryImpl';
-import { WishlistRepositoryImpl } from '../data/repositories/WishlistRepositoryImpl';
 import { NotificationRepositoryImpl } from '../data/repositories/NotificationRepositoryImpl';
-import { PlatformRepositoryImpl } from '../data/repositories/PlatformRepositoryImpl';
-import { GameRepositoryImpl } from '../data/repositories/GameRepositoryImpl';
 import { getFirebaseAuth, getFirebaseFirestore } from '../data/config/FirebaseConfig';
 import { Auth } from 'firebase/auth';
 import { Firestore } from 'firebase/firestore';
@@ -63,10 +49,6 @@ import { LocalPlatformRepository } from '../data/repositories/LocalPlatformRepos
 import { LocalGameRepository } from '../data/repositories/LocalGameRepository';
 import { GuestAwarePlatformRepository } from '../data/repositories/GuestAwarePlatformRepository';
 import { GuestAwareGameRepository } from '../data/repositories/GuestAwareGameRepository';
-
-// ─── Repositorios en memoria (fallback Steam sin Firebase) ───────────────────
-import { MemoryPlatformRepository } from '../data/repositories/MemoryPlatformRepository';
-import { SteamSyncMemoryGameRepository } from '../data/repositories/SteamSyncMemoryGameRepository';
 
 // ─── ViewModels ───────────────────────────────────────────────────────────────
 import { AuthViewModel } from '../presentation/viewmodels/AuthViewModel';
@@ -96,21 +78,13 @@ const container = new Container({ defaultScope: 'Singleton' });
 /**
  * Modos de operación:
  *
- *  MODO PRODUCCIÓN (Firebase + Steam configurados — estado actual)
- *    → Todo usa implementaciones reales con persistencia en Firestore.
- *    → Auth, Wishlist, Notifications, Games, Platforms → Firebase Firestore.
- *    → Steam, Epic, ProtonDB, HLTB, ITAD → APIs reales.
- *
- *  MODO STEAM SIN FIREBASE (solo EXPO_PUBLIC_STEAM_API_KEY configurada)
- *    → Steam API real, juegos y plataformas en memoria (se pierden al cerrar).
- *    → Auth, Wishlist, Notifications → mocks.
+ *  MODO PRODUCCIÓN (EXPO_PUBLIC_FIREBASE_API_KEY configurada)
+ *    → Auth via Firebase. Todos los datos via GameShelf API.
+ *    → Invitados usan AsyncStorage local.
  *
  *  MODO MOCK COMPLETO (sin keys)
  *    → Todos los datos son ficticios. Útil para desarrollo de UI sin servicios externos.
  */
-const steamApiKey = process.env['EXPO_PUBLIC_STEAM_API_KEY'] ?? '';
-const useRealSteam = steamApiKey.length > 0;
-
 const firebaseApiKey = process.env['EXPO_PUBLIC_FIREBASE_API_KEY'] ?? '';
 const useFirebase = firebaseApiKey.length > 0;
 
@@ -123,61 +97,31 @@ if (useFirebase) {
 // ─── Sesión de invitado (siempre disponible — AsyncStorage local) ─────────────
 container.bind<IGuestSessionRepository>(TYPES.IGuestSessionRepository).to(GuestSessionRepository);
 
-// ─── Auth, Wishlist, Notificaciones ──────────────────────────────────────────
+// ─── Repositorios principales y cliente API ───────────────────────────────────
 if (useFirebase) {
+    // MODO PRODUCCIÓN: Auth y notificaciones via Firebase; datos via GameShelf API
     container.bind<IAuthRepository>(TYPES.IAuthRepository).to(AuthRepositoryImpl);
-    container.bind<IWishlistRepository>(TYPES.IWishlistRepository).to(WishlistRepositoryImpl);
     container.bind<INotificationRepository>(TYPES.INotificationRepository).to(NotificationRepositoryImpl);
+    // Cliente central — usa FirebaseAuth para Bearer tokens
+    container.bind<IGameShelfApiClient>(TYPES.IGameShelfApiClient).to(GameShelfApiClientImpl).inSingletonScope();
+    // Wishlist directa al API (no hay modo invitado para wishlist)
+    container.bind<IWishlistRepository>(TYPES.IWishlistRepository).to(GameShelfApiWishlistRepository);
+    // Guest-aware: usuarios autenticados → GameShelf API; invitados → AsyncStorage local
+    container.bind<IGameRepository>(TYPES.FirestoreGameRepository).to(GameShelfApiGameRepository);
+    container.bind<IGameRepository>(TYPES.LocalGameRepository).to(LocalGameRepository);
+    container.bind<IGameRepository>(TYPES.IGameRepository).to(GuestAwareGameRepository);
+    container.bind<IPlatformRepository>(TYPES.FirestorePlatformRepository).to(GameShelfApiPlatformRepository);
+    container.bind<IPlatformRepository>(TYPES.LocalPlatformRepository).to(LocalPlatformRepository);
+    container.bind<IPlatformRepository>(TYPES.IPlatformRepository).to(GuestAwarePlatformRepository);
 } else {
+    // MODO MOCK COMPLETO
+    container.bind<IGameShelfApiClient>(TYPES.IGameShelfApiClient).to(MockGameShelfApiClient).inSingletonScope();
     container.bind<IAuthRepository>(TYPES.IAuthRepository).to(MockAuthRepository);
     container.bind<IWishlistRepository>(TYPES.IWishlistRepository).to(MockWishlistRepository);
     container.bind<INotificationRepository>(TYPES.INotificationRepository).to(MockNotificationRepository);
-}
-
-// ─── Steam / Juegos / Plataformas ─────────────────────────────────────────────
-if (useFirebase && useRealSteam) {
-    // MODO PRODUCCIÓN: todo persiste en Firestore (usuarios autenticados)
-    // Los wrappers guest-aware enrutan a AsyncStorage cuando userId empieza por "guest_"
-    container.bind<ISteamApiService>(TYPES.ISteamApiService).to(SteamApiServiceImpl);
-    container.bind<IPopularGamesService>(TYPES.IPopularGamesService).toService(TYPES.ISteamApiService);
-
-    // Concretas Firestore bajo símbolos privados
-    container.bind<IPlatformRepository>(TYPES.FirestorePlatformRepository).to(PlatformRepositoryImpl);
-    container.bind<IGameRepository>(TYPES.FirestoreGameRepository).to(GameRepositoryImpl);
-    // Concretas AsyncStorage bajo símbolos privados
-    container.bind<IPlatformRepository>(TYPES.LocalPlatformRepository).to(LocalPlatformRepository);
-    container.bind<IGameRepository>(TYPES.LocalGameRepository).to(LocalGameRepository);
-    // Públicos apuntan a wrappers enrutadores
-    container.bind<IPlatformRepository>(TYPES.IPlatformRepository).to(GuestAwarePlatformRepository);
-    container.bind<IGameRepository>(TYPES.IGameRepository).to(GuestAwareGameRepository);
-} else if (useRealSteam) {
-    // MODO STEAM SIN FIREBASE: Steam real, datos en memoria
-    container.bind<ISteamApiService>(TYPES.ISteamApiService).to(SteamApiServiceImpl);
-    container.bind<IPopularGamesService>(TYPES.IPopularGamesService).toService(TYPES.ISteamApiService);
-    container.bind<IPlatformRepository>(TYPES.IPlatformRepository).to(MemoryPlatformRepository);
-    container.bind<IGameRepository>(TYPES.IGameRepository).to(SteamSyncMemoryGameRepository);
-} else {
-    // MODO MOCK COMPLETO
-    container.bind<ISteamApiService>(TYPES.ISteamApiService).to(MockSteamApiService);
-    container.bind<IPopularGamesService>(TYPES.IPopularGamesService).toService(TYPES.ISteamApiService);
     container.bind<IPlatformRepository>(TYPES.IPlatformRepository).to(MockPlatformRepository);
     container.bind<IGameRepository>(TYPES.IGameRepository).to(MockGameRepository);
 }
-
-// ─── Servicios externos ───────────────────────────────────────────────────────
-// Epic: usar implementación real (no requiere API key, parsea export GDPR)
-container.bind<IEpicGamesApiService>(TYPES.IEpicGamesApiService).to(EpicGamesApiServiceImpl);
-// GOG: real solo en producción (requiere Cloud Function configurada)
-if (useFirebase) {
-    container.bind<IGogApiService>(TYPES.IGogApiService).to(GogApiServiceImpl);
-} else {
-    container.bind<IGogApiService>(TYPES.IGogApiService).to(MockGogApiService);
-}
-// PSN: real incondicional (no requiere API key, usa token NPSSO del usuario)
-container.bind<IPsnApiService>(TYPES.IPsnApiService).to(PsnApiServiceImpl);
-container.bind<IProtonDbService>(TYPES.IProtonDbService).to(ProtonDbServiceImpl);
-container.bind<IHowLongToBeatService>(TYPES.IHowLongToBeatService).to(HowLongToBeatServiceImpl);
-container.bind<IIsThereAnyDealService>(TYPES.IIsThereAnyDealService).to(IsThereAnyDealServiceImpl);
 
 // ─── Casos de uso (singleton) ─────────────────────────────────────────────────
 // Los use cases son TypeScript puro (sin decoradores Inversify). Se construyen
@@ -186,6 +130,7 @@ container.bind<IIsThereAnyDealService>(TYPES.IIsThereAnyDealService).to(IsThereA
 container.bind<IAuthUseCase>(TYPES.IAuthUseCase).toDynamicValue(ctx => new AuthUseCase(
     ctx.get<IAuthRepository>(TYPES.IAuthRepository),
     ctx.get<IGuestSessionRepository>(TYPES.IGuestSessionRepository),
+    ctx.get<IGameShelfApiClient>(TYPES.IGameShelfApiClient),
 )).inSingletonScope();
 container.bind<ILibraryUseCase>(TYPES.ILibraryUseCase).toDynamicValue(ctx => new LibraryUseCase(
     ctx.get<IGameRepository>(TYPES.IGameRepository),
@@ -193,27 +138,18 @@ container.bind<ILibraryUseCase>(TYPES.ILibraryUseCase).toDynamicValue(ctx => new
 )).inSingletonScope();
 container.bind<IWishlistUseCase>(TYPES.IWishlistUseCase).toDynamicValue(ctx => new WishlistUseCase(
     ctx.get<IWishlistRepository>(TYPES.IWishlistRepository),
-    ctx.get<IIsThereAnyDealService>(TYPES.IIsThereAnyDealService),
 )).inSingletonScope();
 container.bind<IGameDetailUseCase>(TYPES.IGameDetailUseCase).toDynamicValue(ctx => new GameDetailUseCase(
-    ctx.get<IGameRepository>(TYPES.IGameRepository),
+    ctx.get<IGameShelfApiClient>(TYPES.IGameShelfApiClient),
     ctx.get<IWishlistRepository>(TYPES.IWishlistRepository),
-    ctx.get<IProtonDbService>(TYPES.IProtonDbService),
-    ctx.get<IHowLongToBeatService>(TYPES.IHowLongToBeatService),
-    ctx.get<IIsThereAnyDealService>(TYPES.IIsThereAnyDealService),
-    ctx.get<ISteamApiService>(TYPES.ISteamApiService),
 )).inSingletonScope();
 container.bind<ISearchUseCase>(TYPES.ISearchUseCase).toDynamicValue(ctx => new SearchUseCase(
     ctx.get<IGameRepository>(TYPES.IGameRepository),
     ctx.get<IWishlistRepository>(TYPES.IWishlistRepository),
 )).inSingletonScope();
 container.bind<IPlatformLinkUseCase>(TYPES.IPlatformLinkUseCase).toDynamicValue(ctx => new PlatformLinkUseCase(
+    ctx.get<IGameShelfApiClient>(TYPES.IGameShelfApiClient),
     ctx.get<IPlatformRepository>(TYPES.IPlatformRepository),
-    ctx.get<IGameRepository>(TYPES.IGameRepository),
-    ctx.get<ISteamApiService>(TYPES.ISteamApiService),
-    ctx.get<IEpicGamesApiService>(TYPES.IEpicGamesApiService),
-    ctx.get<IGogApiService>(TYPES.IGogApiService),
-    ctx.get<IPsnApiService>(TYPES.IPsnApiService),
 )).inSingletonScope();
 container.bind<ISettingsUseCase>(TYPES.ISettingsUseCase).toDynamicValue(ctx => new SettingsUseCase(
     ctx.get<IAuthRepository>(TYPES.IAuthRepository),
@@ -221,10 +157,7 @@ container.bind<ISettingsUseCase>(TYPES.ISettingsUseCase).toDynamicValue(ctx => n
     ctx.get<INotificationRepository>(TYPES.INotificationRepository),
 )).inSingletonScope();
 container.bind<IHomeUseCase>(TYPES.IHomeUseCase).toDynamicValue(ctx => new HomeUseCase(
-    ctx.get<IGameRepository>(TYPES.IGameRepository),
-    ctx.get<IPlatformRepository>(TYPES.IPlatformRepository),
-    ctx.get<IWishlistRepository>(TYPES.IWishlistRepository),
-    ctx.get<IPopularGamesService>(TYPES.IPopularGamesService),
+    ctx.get<IGameShelfApiClient>(TYPES.IGameShelfApiClient),
 )).inSingletonScope();
 
 // ─── ViewModels ───────────────────────────────────────────────────────────────

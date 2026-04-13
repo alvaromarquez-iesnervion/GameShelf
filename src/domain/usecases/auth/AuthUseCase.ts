@@ -1,6 +1,7 @@
 import { IAuthUseCase } from '../../interfaces/usecases/auth/IAuthUseCase';
 import { IAuthRepository } from '../../interfaces/repositories/IAuthRepository';
 import { IGuestSessionRepository } from '../../interfaces/repositories/IGuestSessionRepository';
+import { IGameShelfApiClient } from '../../interfaces/services/IGameShelfApiClient';
 import { User } from '../../entities/User';
 
 /** Nombre de pantalla para sesiones de invitado. Constante de dominio. */
@@ -10,17 +11,20 @@ export class AuthUseCase implements IAuthUseCase {
     constructor(
         private readonly authRepository: IAuthRepository,
         private readonly guestSessionRepository: IGuestSessionRepository,
+        private readonly api: IGameShelfApiClient,
     ) {}
 
     async login(email: string, password: string): Promise<User> {
         const user = await this.authRepository.login(email, password);
         await this.guestSessionRepository.clearGuestSession();
+        this.api.syncUser().catch(() => {});
         return user;
     }
 
     async register(email: string, password: string): Promise<User> {
         const user = await this.authRepository.register(email, password);
         await this.guestSessionRepository.clearGuestSession();
+        this.api.syncUser().catch(() => {});
         return user;
     }
 

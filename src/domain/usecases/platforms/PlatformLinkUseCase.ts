@@ -1,46 +1,74 @@
 import { IPlatformLinkUseCase } from '../../interfaces/usecases/platforms/IPlatformLinkUseCase';
+import { IGameShelfApiClient } from '../../interfaces/services/IGameShelfApiClient';
 import { IPlatformRepository } from '../../interfaces/repositories/IPlatformRepository';
-import { IGameRepository } from '../../interfaces/repositories/IGameRepository';
-import { ISteamApiService } from '../../interfaces/services/ISteamApiService';
-import { IEpicGamesApiService } from '../../interfaces/services/IEpicGamesApiService';
-import { IGogApiService } from '../../interfaces/services/IGogApiService';
-import { IPsnApiService } from '../../interfaces/services/IPsnApiService';
 import { LinkedPlatform } from '../../entities/LinkedPlatform';
 import { Platform } from '../../enums/Platform';
 
-/**
- * Orquesta la vinculación y desvinculación de plataformas externas.
- *
- * Flujo Steam (OpenID 2.0):
- *   1. getSteamLoginUrl → construye URL para WebView
- *   2. linkSteam → verifica respuesta OpenID, extrae SteamID, comprueba visibilidad,
- *      almacena en Firestore y sincroniza la biblioteca.
- *
- * Flujo Epic (importación manual):
- *   1. linkEpic → parsea el JSON del export GDPR, almacena plataforma en Firestore.
- *      Los juegos parseados se guardan vía syncLibrary.
- */
+const STEAM_OPENID_URL = 'https://steamcommunity.com/openid/login';
+const EPIC_AUTH_CLIENT_ID = process.env.EXPO_PUBLIC_EPIC_CLIENT_ID ?? '';
+const EPIC_AUTH_REDIRECT_URL = `https://www.epicgames.com/id/api/redirect?clientId=${EPIC_AUTH_CLIENT_ID}&responseType=code`;
+const GOG_CLIENT_ID = '46899977096215655';
+const GOG_REDIRECT_URI = 'https://embed.gog.com/on_login_success?origin=client';
+const PSN_AUTH_BASE = 'https://ca.account.sony.com/api/authz/v3/oauth';
+const PSN_CLIENT_ID = '09515159-7237-4370-9b40-3806e67c0891';
+export const PSN_REDIRECT_URI = 'com.scee.psxandroid.scecompcall://redirect';
+
 export class PlatformLinkUseCase implements IPlatformLinkUseCase {
 
     constructor(
+        private readonly api: IGameShelfApiClient,
         private readonly platformRepository: IPlatformRepository,
-        private readonly gameRepository: IGameRepository,
-        private readonly steamService: ISteamApiService,
-        private readonly epicService: IEpicGamesApiService,
-        private readonly gogService: IGogApiService,
-        private readonly psnService: IPsnApiService,
     ) {}
 
     getSteamLoginUrl(returnUrl: string): string {
-        return this.steamService.getOpenIdLoginUrl(returnUrl);
+        let realm: string;
+        try {
+            const parsed = new URL(returnUrl);
+            realm = `${parsed.protocol}//${parsed.host}`;
+        } catch {
+            realm = returnUrl;
+        }
+        const params = new URLSearchParams({
+            'openid.ns': 'http://specs.openid.net/auth/2.0',
+            'openid.mode': 'checkid_setup',
+            'openid.return_to': returnUrl,
+            'openid.realm': realm,
+            'openid.claimed_id': 'http://specs.openid.net/auth/2.0/identifier_select',
+            'openid.identity': 'http://specs.openid.net/auth/2.0/identifier_select',
+        });
+        return `${STEAM_OPENID_URL}?${params.toString()}`;
     }
 
     getEpicLoginUrl(): string {
-        return this.epicService.getLoginUrl?.() ?? this.epicService.getAuthUrl();
+        return `https://www.epicgames.com/id/login?redirectUrl=${encodeURIComponent(EPIC_AUTH_REDIRECT_URL)}`;
     }
 
     getEpicAuthUrl(): string {
-        return this.epicService.getAuthUrl();
+        return EPIC_AUTH_REDIRECT_URL;
+    }
+
+    getGogAuthUrl(): string {
+        const params = new URLSearchParams({
+            client_id: GOG_CLIENT_ID,
+            redirect_uri: GOG_REDIRECT_URI,
+            response_type: 'code',
+        });
+        return `https://auth.gog.com/auth?${params.toString()}`;
+    }
+
+    getPsnLoginUrl(): string {
+        const params = new URLSearchParams({
+            access_type: 'offline',
+            client_id: PSN_CLIENT_ID,
+            redirect_uri: PSN_REDIRECT_URI,
+            response_type: 'code',
+            scope: 'psn:mobile.v2.core psn:clientapp',
+        });
+        return `${PSN_AUTH_BASE}/authorize?${params.toString()}`;
+    }
+
+    async authenticatePsn(): Promise<string> {
+        throw new Error('authenticatePsn: flujo de navegador movido a PlatformLinkViewModel');
     }
 
     async linkSteam(
@@ -49,168 +77,52 @@ export class PlatformLinkUseCase implements IPlatformLinkUseCase {
         params: Record<string, string>,
     ): Promise<LinkedPlatform> {
         if (!userId?.trim()) throw new Error('userId requerido');
-        // 1. Verificar respuesta OpenID con Steam
-        const isValid = await this.steamService.verifyOpenIdResponse(params);
-        if (!isValid) {
-            throw new Error('La verificación OpenID de Steam ha fallado. Inténtalo de nuevo.');
-        }
-
-        // 2. Extraer SteamID del callback
-        const steamId = this.steamService.extractSteamIdFromCallback(callbackUrl);
-
-        // 3. Comprobar visibilidad del perfil (debe ser público)
-        const isPublic = await this.steamService.checkProfileVisibility(steamId);
-        if (!isPublic) {
-            throw new Error(
-                'Tu perfil de Steam es privado. Ve a Ajustes → Privacidad → Estado del juego → Público y vuelve a intentarlo.',
-            );
-        }
-
-        // 4. Almacenar la vinculación en Firestore
-        const linked = await this.platformRepository.linkSteamPlatform(userId, steamId);
-
-        // 5. Sincronizar biblioteca (no bloqueante para el flujo de vinculación)
-        this.gameRepository.syncLibrary(userId, Platform.STEAM).catch(() => {
-            // La sync puede fallar sin romper la vinculación ya completada
-        });
-
+        if (!params['openid.claimed_id']) throw new Error('Respuesta OpenID inválida de Steam');
+        const linked = await this.api.linkSteamOpenId(callbackUrl);
+        this.api.syncLibrary(Platform.STEAM).catch(() => {});
         return linked;
     }
 
     async linkSteamById(userId: string, profileUrlOrId: string): Promise<LinkedPlatform> {
         if (!userId?.trim()) throw new Error('userId requerido');
-        // 1. Validar que el input sea un SteamID64 numérico o una URL de steamcommunity.com
-        const trimmed = profileUrlOrId.trim();
-        const isSteamId64 = /^\d{17}$/.test(trimmed);
-        const isSteamUrl = /^https?:\/\/(www\.)?steamcommunity\.com\/(id|profiles)\//.test(trimmed);
-        if (!isSteamId64 && !isSteamUrl) {
-            throw new Error('Introduce un SteamID (17 dígitos) o una URL de perfil de Steam válida.');
-        }
-
-        // 2. Resolver el SteamID desde la URL/nombre de perfil
-        const steamId = await this.steamService.resolveSteamId(trimmed);
-
-        // 2. Comprobar visibilidad del perfil (debe ser público)
-        const isPublic = await this.steamService.checkProfileVisibility(steamId);
-        if (!isPublic) {
-            throw new Error(
-                'Tu perfil de Steam es privado. Ve a Ajustes de Steam → ' +
-                'Privacidad → Estado del juego → Público y vuelve a intentarlo.',
-            );
-        }
-
-        // 3. Almacenar la vinculación
-        const linked = await this.platformRepository.linkSteamPlatform(userId, steamId);
-
-        // 4. Sincronizar biblioteca (no bloqueante)
-        this.gameRepository.syncLibrary(userId, Platform.STEAM).catch(() => {});
-
+        const linked = await this.api.linkSteamManual(profileUrlOrId.trim());
+        this.api.syncLibrary(Platform.STEAM).catch(() => {});
         return linked;
     }
 
     async linkEpicByAuthCode(userId: string, authCode: string): Promise<LinkedPlatform> {
         if (!userId?.trim()) throw new Error('userId requerido');
-        // 1. Intercambiar el authorization code por un access token
-        const token = await this.epicService.exchangeAuthCode(authCode);
-
-        // 2. Obtener la biblioteca de entitlements con el token
-        const epicGames = await this.epicService.fetchLibrary(token.accessToken, token.accountId);
-
-        if (epicGames.length === 0) {
-            throw new Error(
-                'No se encontraron juegos en tu biblioteca de Epic Games.',
-            );
-        }
-
-        // 3. Almacenar juegos en el repositorio (en memoria, para sincronización posterior)
-        await this.gameRepository.storeEpicGames(userId, epicGames);
-
-        // 4. Marcar Epic como vinculado y guardar tokens en SecureStore
-        const linked = await this.platformRepository.linkEpicPlatform(userId, token.accountId, token);
-
-        // 5. Sincronizar la biblioteca Epic (no bloqueante)
-        this.gameRepository.syncLibrary(userId, Platform.EPIC_GAMES).catch(() => {
-            // La sync puede fallar sin romper la vinculación ya completada
-        });
-
+        const linked = await this.api.linkWithCode(Platform.EPIC_GAMES, authCode);
+        this.api.syncLibrary(Platform.EPIC_GAMES).catch(() => {});
         return linked;
     }
 
     async linkEpic(userId: string, fileContent: string): Promise<LinkedPlatform> {
         if (!userId?.trim()) throw new Error('userId requerido');
-        // 1. Parsear el JSON del export GDPR de Epic
-        // Devuelve array de Game con itadGameId enriquecido
-        const epicGames = await this.epicService.parseExportedLibrary(fileContent);
-
-        if (epicGames.length === 0) {
+        const games = this._parseEpicGdprJson(fileContent);
+        if (games.length === 0) {
             throw new Error(
                 'No se encontraron juegos en el archivo. ' +
                 'Asegúrate de que es el JSON correcto del export GDPR de Epic Games.',
             );
         }
-
-        // 2. Almacenar juegos parseados en el repositorio (en memoria, para sincronización posterior)
-        await this.gameRepository.storeEpicGames(userId, epicGames);
-
-        // 3. Marcar Epic como vinculado en Firestore
-        const linked = await this.platformRepository.linkEpicPlatform(userId);
-
-        // 4. Sincronizar la biblioteca Epic (no bloqueante)
-        this.gameRepository.syncLibrary(userId, Platform.EPIC_GAMES).catch(() => {
-            // La sync puede fallar sin romper la vinculación ya completada
-        });
-
+        const linked = await this.api.linkWithGdpr(games);
+        this.api.syncLibrary(Platform.EPIC_GAMES).catch(() => {});
         return linked;
-    }
-
-    getGogAuthUrl(): string {
-        return this.gogService.getAuthUrl();
     }
 
     async linkGogByCode(userId: string, code: string): Promise<LinkedPlatform> {
         if (!userId?.trim()) throw new Error('userId requerido');
-        // 1. Intercambiar el authorization code por tokens OAuth2
-        const token = await this.gogService.exchangeAuthCode(code);
-
-        // 2. Almacenar la vinculación y los tokens en Firestore
-        const linked = await this.platformRepository.linkGogPlatform(userId, token.userId, token);
-
-        // 3. Sincronizar biblioteca GOG (no bloqueante)
-        this.gameRepository.syncLibrary(userId, Platform.GOG).catch(() => {});
-
+        const linked = await this.api.linkWithCode(Platform.GOG, code);
+        this.api.syncLibrary(Platform.GOG).catch(() => {});
         return linked;
     }
 
-    getPsnLoginUrl(): string {
-        return this.psnService.getPsnLoginUrl();
-    }
-
-    /**
-     * Abre el navegador del sistema para login en PSN y devuelve el access code.
-     */
-    async authenticatePsn(): Promise<string> {
-        return this.psnService.authenticateWithBrowser();
-    }
-
-    async linkPsn(userId: string, accessCode: string): Promise<LinkedPlatform> {
+    async linkPsn(userId: string, npsso: string): Promise<LinkedPlatform> {
         if (!userId?.trim()) throw new Error('userId requerido');
-        if (!accessCode?.trim()) throw new Error('Access code requerido');
-
-        // 1. Intercambiar el access code por tokens de acceso
-        const token = await this.psnService.exchangeNpssoForTokens(accessCode.trim());
-
-        // 2. Obtener juegos jugados (valida que el token funciona)
-        const psnGames = await this.psnService.fetchPlayedGames(token.accessToken);
-
-        // 3. Guardar juegos en Firestore
-        await this.gameRepository.storePsnGames(userId, psnGames);
-
-        // 4. Almacenar tokens en SecureStore y vinculación en Firestore
-        const linked = await this.platformRepository.linkPsnPlatform(userId, token.accountId, token);
-
-        // 5. Sincronizar biblioteca PSN (no bloqueante)
-        this.gameRepository.syncLibrary(userId, Platform.PSN).catch(() => {});
-
+        if (!npsso?.trim()) throw new Error('Código de acceso PSN requerido');
+        const linked = await this.api.linkWithNpsso(npsso.trim());
+        this.api.syncLibrary(Platform.PSN).catch(() => {});
         return linked;
     }
 
@@ -222,5 +134,21 @@ export class PlatformLinkUseCase implements IPlatformLinkUseCase {
     async getLinkedPlatforms(userId: string): Promise<LinkedPlatform[]> {
         if (!userId?.trim()) throw new Error('userId requerido');
         return this.platformRepository.getLinkedPlatforms(userId);
+    }
+
+    private _parseEpicGdprJson(fileContent: string): object[] {
+        let parsed: unknown;
+        try {
+            parsed = JSON.parse(fileContent);
+        } catch {
+            throw new Error('El archivo no es un JSON válido de Epic Games.');
+        }
+        if (Array.isArray(parsed)) return parsed as object[];
+        if (typeof parsed === 'object' && parsed !== null) {
+            const obj = parsed as Record<string, unknown>;
+            const arr = obj.entitlements ?? obj.data;
+            if (Array.isArray(arr)) return arr as object[];
+        }
+        throw new Error('Formato de archivo no reconocido. Asegúrate de que es el export GDPR de Epic Games.');
     }
 }

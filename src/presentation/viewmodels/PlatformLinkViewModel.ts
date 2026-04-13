@@ -1,7 +1,9 @@
 import 'reflect-metadata';
 import { injectable, inject } from 'inversify';
 import { makeAutoObservable, runInAction } from 'mobx';
+import * as WebBrowser from 'expo-web-browser';
 import { IPlatformLinkUseCase } from '../../domain/interfaces/usecases/platforms/IPlatformLinkUseCase';
+import { PSN_REDIRECT_URI } from '../../domain/usecases/platforms/PlatformLinkUseCase';
 import { LinkedPlatform } from '../../domain/entities/LinkedPlatform';
 import { Platform } from '../../domain/enums/Platform';
 import { TYPES } from '../../di/types';
@@ -59,12 +61,15 @@ export class PlatformLinkViewModel {
     }
 
     async linkSteamById(userId: string, profileUrlOrId: string): Promise<boolean> {
-        const result = await withLoading(this, '_isLinking', '_errorMessage', async () => {
+        await withLoading(this, '_isLinking', '_errorMessage', async () => {
             await this.platformLinkUseCase.linkSteamById(userId, profileUrlOrId);
-            await this.loadLinkedPlatforms(userId);
-            return true;
         });
-        return result ?? false;
+        await this.loadLinkedPlatforms(userId);
+        if (this.isPlatformLinked(Platform.STEAM)) {
+            runInAction(() => { this._errorMessage = null; });
+            return true;
+        }
+        return false;
     }
 
     async linkSteam(
@@ -72,12 +77,15 @@ export class PlatformLinkViewModel {
         callbackUrl: string,
         params: Record<string, string>,
     ): Promise<boolean> {
-        const result = await withLoading(this, '_isLinking', '_errorMessage', async () => {
+        await withLoading(this, '_isLinking', '_errorMessage', async () => {
             await this.platformLinkUseCase.linkSteam(userId, callbackUrl, params);
-            await this.loadLinkedPlatforms(userId);
-            return true;
         });
-        return result ?? false;
+        await this.loadLinkedPlatforms(userId);
+        if (this.isPlatformLinked(Platform.STEAM)) {
+            runInAction(() => { this._errorMessage = null; });
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -137,8 +145,14 @@ export class PlatformLinkViewModel {
      */
     async linkPsn(userId: string): Promise<boolean> {
         const result = await withLoading(this, '_isLinking', '_errorMessage', async () => {
-            const accessCode = await this.platformLinkUseCase.authenticatePsn();
-            await this.platformLinkUseCase.linkPsn(userId, accessCode);
+            const loginUrl = this.platformLinkUseCase.getPsnLoginUrl();
+            const redirect = await WebBrowser.openAuthSessionAsync(loginUrl, PSN_REDIRECT_URI);
+            if (redirect.type !== 'success' || !redirect.url) {
+                throw new Error('Autenticación de PSN cancelada o fallida.');
+            }
+            const code = new URL(redirect.url).searchParams.get('code');
+            if (!code) throw new Error('No se recibió el código de acceso de PSN.');
+            await this.platformLinkUseCase.linkPsn(userId, code);
             await this.loadLinkedPlatforms(userId);
             return true;
         });

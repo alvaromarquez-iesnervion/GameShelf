@@ -21,15 +21,8 @@ export const TYPES = {
     FirestoreGameRepository: Symbol.for('FirestoreGameRepository'),
     LocalGameRepository: Symbol.for('LocalGameRepository'),
 
-    // Servicios externos
-    IPopularGamesService: Symbol.for('IPopularGamesService'),
-    ISteamApiService: Symbol.for('ISteamApiService'),
-    IEpicGamesApiService: Symbol.for('IEpicGamesApiService'),
-    IGogApiService: Symbol.for('IGogApiService'),
-    IPsnApiService: Symbol.for('IPsnApiService'),
-    IProtonDbService: Symbol.for('IProtonDbService'),
-    IHowLongToBeatService: Symbol.for('IHowLongToBeatService'),
-    IIsThereAnyDealService: Symbol.for('IIsThereAnyDealService'),
+    // Cliente GameShelfApi
+    IGameShelfApiClient: Symbol.for('IGameShelfApiClient'),
 
     // Casos de uso
     IAuthUseCase: Symbol.for('IAuthUseCase'),

@@ -1,0 +1,439 @@
+import 'reflect-metadata';
+import { injectable, inject } from 'inversify';
+import { Auth } from 'firebase/auth';
+import { IGameShelfApiClient } from '../../domain/interfaces/services/IGameShelfApiClient';
+import { Game } from '../../domain/entities/Game';
+import { GameDetail } from '../../domain/entities/GameDetail';
+import { Deal } from '../../domain/entities/Deal';
+import { WishlistItem } from '../../domain/entities/WishlistItem';
+import { LinkedPlatform } from '../../domain/entities/LinkedPlatform';
+import { SearchResult } from '../../domain/entities/SearchResult';
+import { Platform } from '../../domain/enums/Platform';
+import { GameType } from '../../domain/enums/GameType';
+import { ProtonTier } from '../../domain/entities/ProtonDbRating';
+import { SteamGameMetadata } from '../../domain/dtos/SteamGameMetadata';
+import { LibraryPage } from '../../domain/interfaces/repositories/IGameRepository';
+import { TYPES } from '../../di/types';
+
+const BASE_URL = process.env.EXPO_PUBLIC_GAMESHELF_API_URL ?? 'http://localhost:8000';
+
+// ── Raw API shapes (camelCase from FastAPI) ───────────────────────────────────
+
+interface ApiGame {
+    gameId: string;
+    title: string;
+    description?: string;
+    coverUrl: string;
+    portraitCoverUrl?: string;
+    platform: string;
+    steamAppId: number | null;
+    itadGameId?: string | null;
+    psnTitleId?: string | null;
+    playtime?: number;
+    lastPlayed: string | null;
+    gameType?: string;
+    parentGameId?: string | null;
+}
+
+interface ApiDeal {
+    id: string;
+    storeName: string;
+    price: number;
+    originalPrice: number;
+    discountPercentage: number;
+    url: string;
+    currency?: string;
+}
+
+interface ApiSteamMetadata {
+    name?: string;
+    genres: string[];
+    developers: string[];
+    publishers: string[];
+    releaseDate: string | null;
+    metacriticScore: number | null;
+    metacriticUrl?: string | null;
+    screenshots: string[];
+    recommendationCount: number | null;
+    appType?: string | null;
+    parentSteamAppId?: number | null;
+    dlcAppIds?: number[];
+}
+
+interface ApiProtonDb {
+    tier: string;
+    trendingTier: string;
+    totalReports: number;
+}
+
+interface ApiGameDetail {
+    game: ApiGame;
+    protonDb?: ApiProtonDb | null;
+    hltbMain?: number | null;
+    hltbMainExtra?: number | null;
+    hltbCompletionist?: number | null;
+    deals: ApiDeal[];
+    steamMetadata?: ApiSteamMetadata | null;
+    ownedDlcs?: ApiGame[];
+    isInWishlist: boolean;
+}
+
+interface ApiWishlistItem {
+    id: string;
+    gameId: string;
+    title: string;
+    coverUrl?: string | null;
+    addedAt: string;
+    bestDealPercentage?: number | null;
+}
+
+interface ApiLinkedPlatform {
+    platform: string;
+    externalUserId: string;
+    linkedAt: string;
+}
+
+interface ApiSearchResult {
+    id?: string;
+    title: string;
+    coverUrl?: string;
+    isInWishlist: boolean;
+    steamAppId?: number | null;
+    isOwned: boolean;
+    ownedPlatforms: string[];
+}
+
+interface ApiLibraryPage {
+    games: ApiGame[];
+    total: number;
+    hasMore: boolean;
+}
+
+interface ApiHomeData {
+    popularGames: ApiGame[];
+    recentlyPlayed: ApiGame[];
+    mostPlayed: ApiGame[];
+}
+
+// ── Mappers ───────────────────────────────────────────────────────────────────
+
+function toPlatform(raw: string): Platform {
+    const map: Record<string, Platform> = {
+        steam: Platform.STEAM,
+        epic_games: Platform.EPIC_GAMES,
+        gog: Platform.GOG,
+        psn: Platform.PSN,
+    };
+    return map[raw] ?? Platform.UNKNOWN;
+}
+
+function toGame(r: ApiGame): Game {
+    return new Game(
+        r.gameId,
+        r.title,
+        r.description ?? '',
+        r.coverUrl,
+        toPlatform(r.platform),
+        r.steamAppId ?? null,
+        r.itadGameId ?? null,
+        r.playtime ?? 0,
+        r.lastPlayed ? new Date(r.lastPlayed) : null,
+        r.portraitCoverUrl ?? '',
+        r.gameType?.toLowerCase() === 'dlc' ? GameType.DLC : GameType.GAME,
+        r.parentGameId ?? null,
+        r.psnTitleId ?? null,
+    );
+}
+
+function toDeal(r: ApiDeal): Deal {
+    return new Deal(
+        r.id,
+        r.storeName,
+        r.price,
+        r.originalPrice,
+        r.discountPercentage,
+        r.url,
+        r.currency ?? 'USD',
+    );
+}
+
+function toSteamMetadata(r: ApiSteamMetadata): SteamGameMetadata {
+    return {
+        name: r.name ?? '',
+        genres: r.genres,
+        developers: r.developers,
+        publishers: r.publishers,
+        releaseDate: r.releaseDate,
+        metacriticScore: r.metacriticScore,
+        metacriticUrl: r.metacriticUrl ?? null,
+        screenshots: r.screenshots,
+        recommendationCount: r.recommendationCount,
+        appType: r.appType ?? null,
+        parentSteamAppId: r.parentSteamAppId ?? null,
+        dlcAppIds: r.dlcAppIds ?? [],
+    };
+}
+
+function toGameDetail(r: ApiGameDetail): GameDetail {
+    return new GameDetail(
+        toGame(r.game),
+        (r.protonDb?.tier as ProtonTier | null) ?? null,
+        (r.protonDb?.trendingTier as ProtonTier | null) ?? null,
+        r.protonDb?.totalReports ?? null,
+        r.hltbMain ?? null,
+        r.hltbMainExtra ?? null,
+        r.hltbCompletionist ?? null,
+        r.deals.map(toDeal),
+        r.steamMetadata ? toSteamMetadata(r.steamMetadata) : null,
+        (r.ownedDlcs ?? []).map(toGame),
+    );
+}
+
+function toWishlistItem(r: ApiWishlistItem): WishlistItem {
+    return new WishlistItem(
+        r.id,
+        r.gameId,
+        r.title,
+        r.coverUrl ?? '',
+        new Date(r.addedAt),
+        r.bestDealPercentage ?? null,
+    );
+}
+
+function toLinkedPlatform(r: ApiLinkedPlatform): LinkedPlatform {
+    return new LinkedPlatform(
+        toPlatform(r.platform),
+        r.externalUserId,
+        new Date(r.linkedAt),
+    );
+}
+
+function toSearchResult(r: ApiSearchResult): SearchResult {
+    return new SearchResult(
+        r.id ?? '',
+        r.title,
+        r.coverUrl ?? '',
+        r.isInWishlist,
+        r.steamAppId ?? null,
+        r.isOwned,
+        r.ownedPlatforms.map(toPlatform),
+    );
+}
+
+// ── Client ────────────────────────────────────────────────────────────────────
+
+@injectable()
+export class GameShelfApiClientImpl implements IGameShelfApiClient {
+
+    private _homeCache: { data: ApiHomeData; expiresAt: number } | null = null;
+    private _homePending: Promise<ApiHomeData> | null = null;
+    private static readonly HOME_TTL_MS = 30_000; // 30 s
+
+    constructor(
+        @inject(TYPES.FirebaseAuth) private auth: Auth,
+    ) {}
+
+    private async authHeaders(): Promise<Record<string, string>> {
+        const token = await this.auth.currentUser?.getIdToken();
+        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        return headers;
+    }
+
+    private async request<T>(path: string, options: RequestInit = {}): Promise<T> {
+        const headers = await this.authHeaders();
+        const response = await fetch(`${BASE_URL}${path}`, {
+            ...options,
+            headers: { ...headers, ...(options.headers as Record<string, string> ?? {}) },
+        });
+        if (!response.ok) {
+            const body = await response.text().catch(() => '');
+            throw new Error(`GameShelfApi ${response.status}: ${body}`);
+        }
+        if (response.status === 204) return undefined as unknown as T;
+        return response.json() as Promise<T>;
+    }
+
+    // ── Auth ──────────────────────────────────────────────────────────────
+
+    async syncUser(): Promise<void> {
+        await this.request('/api/v1/auth/sync', { method: 'POST' });
+    }
+
+    // ── Library ───────────────────────────────────────────────────────────
+
+    async getLibraryGames(): Promise<Game[]> {
+        const data = await this.request<ApiLibraryPage>('/api/v1/library?page_size=500');
+        return data.games.map(toGame);
+    }
+
+    async getLibraryGamesPage(pageSize: number, cursor?: string): Promise<LibraryPage> {
+        const page = cursor ? parseInt(cursor, 10) : 1;
+        const data = await this.request<ApiLibraryPage>(
+            `/api/v1/library?page=${page}&page_size=${pageSize}`,
+        );
+        return {
+            games: data.games.map(toGame),
+            nextCursor: data.hasMore ? String(page + 1) : null,
+        };
+    }
+
+    async syncLibrary(platform: Platform): Promise<Game[]> {
+        const data = await this.request<ApiLibraryPage>('/api/v1/library/sync', {
+            method: 'POST',
+            body: JSON.stringify({ platform: platform.toLowerCase() }),
+        });
+        return data.games.map(toGame);
+    }
+
+    // ── Games ─────────────────────────────────────────────────────────────
+
+    async getGameDetail(gameId: string): Promise<GameDetail> {
+        const data = await this.request<ApiGameDetail>(`/api/v1/games/${encodeURIComponent(gameId)}`);
+        return toGameDetail(data);
+    }
+
+    async getOrCreateGame(gameId: string, steamAppId?: number | null): Promise<Game> {
+        const params = new URLSearchParams({ game_id: gameId });
+        if (steamAppId != null) params.set('steam_app_id', String(steamAppId));
+        const data = await this.request<ApiGameDetail>(`/api/v1/games/${encodeURIComponent(gameId)}?${params}`);
+        return toGame(data.game);
+    }
+
+    async getOwnedDlcs(parentGameId: string): Promise<Game[]> {
+        const data = await this.request<{ dlcs: ApiGame[] }>(
+            `/api/v1/games/${encodeURIComponent(parentGameId)}/dlcs`,
+        );
+        return data.dlcs.map(toGame);
+    }
+
+    // ── Search ────────────────────────────────────────────────────────────
+
+    async searchGames(query: string): Promise<SearchResult[]> {
+        const data = await this.request<{ results: ApiSearchResult[] }>(
+            `/api/v1/search?q=${encodeURIComponent(query)}`,
+        );
+        return data.results.map(toSearchResult);
+    }
+
+    // ── Wishlist ──────────────────────────────────────────────────────────
+
+    async getWishlist(): Promise<WishlistItem[]> {
+        const data = await this.request<{ items: ApiWishlistItem[] }>('/api/v1/wishlist');
+        return data.items.map(toWishlistItem);
+    }
+
+    async addToWishlist(gameId: string, title: string, coverUrl: string): Promise<WishlistItem> {
+        const data = await this.request<ApiWishlistItem>('/api/v1/wishlist', {
+            method: 'POST',
+            body: JSON.stringify({ gameId, title, coverUrl }),
+        });
+        return toWishlistItem(data);
+    }
+
+    async removeFromWishlist(itemId: string): Promise<void> {
+        await this.request(`/api/v1/wishlist/${encodeURIComponent(itemId)}`, { method: 'DELETE' });
+    }
+
+    async isInWishlist(gameId: string): Promise<boolean> {
+        const data = await this.request<{ isInWishlist: boolean }>(
+            `/api/v1/wishlist/check/${encodeURIComponent(gameId)}`,
+        );
+        return data.isInWishlist;
+    }
+
+    // ── Platforms ─────────────────────────────────────────────────────────
+
+    async getLinkedPlatforms(): Promise<LinkedPlatform[]> {
+        const data = await this.request<ApiLinkedPlatform[]>('/api/v1/platforms');
+        return data.map(toLinkedPlatform);
+    }
+
+    async getPlatformAuthUrl(platform: Platform): Promise<string> {
+        const slug = platform.toLowerCase();
+        const data = await this.request<{ url: string }>(`/api/v1/platforms/${slug}/auth-url`);
+        return data.url;
+    }
+
+    async linkSteamOpenId(callbackUrl: string): Promise<LinkedPlatform> {
+        const data = await this.request<ApiLinkedPlatform>('/api/v1/platforms/steam/link/openid', {
+            method: 'POST',
+            body: JSON.stringify({ callbackUrl }),
+        });
+        return toLinkedPlatform(data);
+    }
+
+    async linkSteamManual(profileUrlOrId: string): Promise<LinkedPlatform> {
+        const data = await this.request<ApiLinkedPlatform>('/api/v1/platforms/steam/link', {
+            method: 'POST',
+            body: JSON.stringify({ profileUrlOrId }),
+        });
+        return toLinkedPlatform(data);
+    }
+
+    async linkWithCode(platform: Platform, code: string): Promise<LinkedPlatform> {
+        const path = platform === Platform.GOG
+            ? '/api/v1/platforms/gog/link'
+            : `/api/v1/platforms/${platform.toLowerCase()}/link/authcode`;
+        const data = await this.request<ApiLinkedPlatform>(path, {
+            method: 'POST',
+            body: JSON.stringify({ authCode: code }),
+        });
+        return toLinkedPlatform(data);
+    }
+
+    async linkWithNpsso(npsso: string): Promise<LinkedPlatform> {
+        const data = await this.request<ApiLinkedPlatform>('/api/v1/platforms/psn/link', {
+            method: 'POST',
+            body: JSON.stringify({ npssoCode: npsso }),
+        });
+        return toLinkedPlatform(data);
+    }
+
+    async linkWithGdpr(games: object[]): Promise<LinkedPlatform> {
+        const data = await this.request<ApiLinkedPlatform>('/api/v1/platforms/epic/link/gdpr', {
+            method: 'POST',
+            body: JSON.stringify({ jsonContent: JSON.stringify(games) }),
+        });
+        return toLinkedPlatform(data);
+    }
+
+    async unlinkPlatform(platform: Platform): Promise<void> {
+        const slug = platform.toLowerCase();
+        await this.request(`/api/v1/platforms/${slug}`, { method: 'DELETE' });
+    }
+
+    // ── Home ──────────────────────────────────────────────────────────────
+
+    private _getHomeData(): Promise<ApiHomeData> {
+        const now = Date.now();
+        if (this._homeCache && this._homeCache.expiresAt > now) {
+            return Promise.resolve(this._homeCache.data);
+        }
+        if (this._homePending) return this._homePending;
+        this._homePending = this.request<ApiHomeData>('/api/v1/home').then(data => {
+            this._homeCache = { data, expiresAt: Date.now() + GameShelfApiClientImpl.HOME_TTL_MS };
+            this._homePending = null;
+            return data;
+        }).catch(err => {
+            this._homePending = null;
+            throw err;
+        });
+        return this._homePending;
+    }
+
+    async getPopularGames(): Promise<Game[]> {
+        const data = await this._getHomeData();
+        return data.popularGames.map(toGame);
+    }
+
+    async getRecentlyPlayed(): Promise<Game[]> {
+        const data = await this._getHomeData();
+        return data.recentlyPlayed.map(toGame);
+    }
+
+    async getMostPlayed(): Promise<Game[]> {
+        const data = await this._getHomeData();
+        return data.mostPlayed.map(toGame);
+    }
+}
