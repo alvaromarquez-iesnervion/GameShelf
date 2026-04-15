@@ -66,12 +66,16 @@ interface ApiProtonDb {
     totalReports: number;
 }
 
+interface ApiHltb {
+    mainHours: number | null;
+    mainExtraHours: number | null;
+    completionistHours: number | null;
+}
+
 interface ApiGameDetail {
     game: ApiGame;
     protonDb?: ApiProtonDb | null;
-    hltbMain?: number | null;
-    hltbMainExtra?: number | null;
-    hltbCompletionist?: number | null;
+    howLongToBeat?: ApiHltb | null;
     deals: ApiDeal[];
     steamMetadata?: ApiSteamMetadata | null;
     ownedDlcs?: ApiGame[];
@@ -180,9 +184,9 @@ function toGameDetail(r: ApiGameDetail): GameDetail {
         (r.protonDb?.tier as ProtonTier | null) ?? null,
         (r.protonDb?.trendingTier as ProtonTier | null) ?? null,
         r.protonDb?.totalReports ?? null,
-        r.hltbMain ?? null,
-        r.hltbMainExtra ?? null,
-        r.hltbCompletionist ?? null,
+        r.howLongToBeat?.mainHours ?? null,
+        r.howLongToBeat?.mainExtraHours ?? null,
+        r.howLongToBeat?.completionistHours ?? null,
         r.deals.map(toDeal),
         r.steamMetadata ? toSteamMetadata(r.steamMetadata) : null,
         (r.ownedDlcs ?? []).map(toGame),
@@ -323,10 +327,10 @@ export class GameShelfApiClientImpl implements IGameShelfApiClient {
         return data.items.map(toWishlistItem);
     }
 
-    async addToWishlist(gameId: string, title: string, coverUrl: string): Promise<WishlistItem> {
+    async addToWishlist(gameId: string, title: string, coverUrl: string, platform?: string | null): Promise<WishlistItem> {
         const data = await this.request<ApiWishlistItem>('/api/v1/wishlist', {
             method: 'POST',
-            body: JSON.stringify({ gameId, title, coverUrl }),
+            body: JSON.stringify({ gameId, title, coverUrl, platform }),
         });
         return toWishlistItem(data);
     }

@@ -127,9 +127,10 @@ export const GameDetailScreen: React.FC = observer(() => {
             const item = wishlistVm.items.find(i => i.getGameId() === game.getId());
             if (item) await wishlistVm.removeFromWishlist(userId, item.getId());
         } else {
+            const wishlistPlatform = steamAppId != null ? 'steam' : null;
             const newItem = new WishlistItem(
                 Date.now().toString(), game.getId(), game.getTitle(),
-                game.getCoverUrl(), new Date(), null,
+                game.getCoverUrl(), new Date(), null, wishlistPlatform,
             );
             await wishlistVm.addToWishlist(userId, newItem);
         }

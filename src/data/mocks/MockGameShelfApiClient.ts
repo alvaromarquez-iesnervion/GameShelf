@@ -31,7 +31,7 @@ export class MockGameShelfApiClient implements IGameShelfApiClient {
     searchGames(_query: string): Promise<SearchResult[]> { return Promise.resolve([]); }
 
     getWishlist(): Promise<WishlistItem[]> { return Promise.resolve([]); }
-    addToWishlist(_gameId: string, _title: string, _coverUrl: string): Promise<WishlistItem> {
+    addToWishlist(_gameId: string, _title: string, _coverUrl: string, _platform?: string | null): Promise<WishlistItem> {
         return Promise.reject(new Error('MockGameShelfApiClient: addToWishlist not available in mock mode'));
     }
     removeFromWishlist(_itemId: string): Promise<void> { return Promise.resolve(); }

@@ -6,6 +6,7 @@ export class WishlistItem {
     private coverUrl: string;
     private addedAt: Date;
     private bestDealPercentage: number | null;
+    private platform: string | null;
 
     constructor(
         id: string,
@@ -14,6 +15,7 @@ export class WishlistItem {
         coverUrl: string,
         addedAt: Date,
         bestDealPercentage: number | null,
+        platform: string | null = null,
     ) {
         this.id = id;
         this.gameId = gameId;
@@ -21,6 +23,7 @@ export class WishlistItem {
         this.coverUrl = coverUrl;
         this.addedAt = addedAt;
         this.bestDealPercentage = bestDealPercentage;
+        this.platform = platform;
     }
 
     getId(): string { return this.id; }
@@ -30,8 +33,9 @@ export class WishlistItem {
     getAddedAt(): Date { return this.addedAt; }
     // null = sin oferta activa. Se enriquece en WishlistUseCase via ITAD.
     getBestDealPercentage(): number | null { return this.bestDealPercentage; }
+    getPlatform(): string | null { return this.platform; }
 
     withBestDealPercentage(percentage: number | null): WishlistItem {
-        return new WishlistItem(this.id, this.gameId, this.title, this.coverUrl, this.addedAt, percentage);
+        return new WishlistItem(this.id, this.gameId, this.title, this.coverUrl, this.addedAt, percentage, this.platform);
     }
 }

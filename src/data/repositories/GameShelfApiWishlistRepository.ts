@@ -17,7 +17,7 @@ export class GameShelfApiWishlistRepository implements IWishlistRepository {
     }
 
     async addToWishlist(_userId: string, item: WishlistItem): Promise<void> {
-        await this.api.addToWishlist(item.getGameId(), item.getTitle(), item.getCoverUrl());
+        await this.api.addToWishlist(item.getGameId(), item.getTitle(), item.getCoverUrl(), item.getPlatform());
     }
 
     async removeFromWishlist(_userId: string, itemId: string): Promise<void> {

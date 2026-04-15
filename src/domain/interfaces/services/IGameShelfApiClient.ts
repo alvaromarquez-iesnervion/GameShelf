@@ -39,7 +39,7 @@ export interface IGameShelfApiClient {
 
     // ── Wishlist ──────────────────────────────────────────────────────────
     getWishlist(): Promise<WishlistItem[]>;
-    addToWishlist(gameId: string, title: string, coverUrl: string): Promise<WishlistItem>;
+    addToWishlist(gameId: string, title: string, coverUrl: string, platform?: string | null): Promise<WishlistItem>;
     removeFromWishlist(itemId: string): Promise<void>;
     isInWishlist(gameId: string): Promise<boolean>;
 
