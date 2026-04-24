@@ -86,6 +86,7 @@ interface ApiWishlistItem {
     id: string;
     gameId: string;
     title: string;
+    platform?: string | null;
     coverUrl?: string | null;
     addedAt: string;
     bestDealPercentage?: number | null;
@@ -201,6 +202,7 @@ function toWishlistItem(r: ApiWishlistItem): WishlistItem {
         r.coverUrl ?? '',
         new Date(r.addedAt),
         r.bestDealPercentage ?? null,
+        r.platform ? toPlatform(r.platform) : null,
     );
 }
 
@@ -292,8 +294,11 @@ export class GameShelfApiClientImpl implements IGameShelfApiClient {
 
     // ── Games ─────────────────────────────────────────────────────────────
 
-    async getGameDetail(gameId: string): Promise<GameDetail> {
-        const data = await this.request<ApiGameDetail>(`/api/v1/games/${encodeURIComponent(gameId)}`);
+    async getGameDetail(gameId: string, steamAppId?: number | null): Promise<GameDetail> {
+        const params = new URLSearchParams();
+        if (steamAppId != null) params.set('steam_app_id', String(steamAppId));
+        const query = params.toString();
+        const data = await this.request<ApiGameDetail>(`/api/v1/games/${encodeURIComponent(gameId)}${query ? `?${query}` : ''}`);
         return toGameDetail(data);
     }
 

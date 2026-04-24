@@ -10,9 +10,9 @@ export class GameDetailUseCase implements IGameDetailUseCase {
         private readonly wishlistRepository: IWishlistRepository,
     ) {}
 
-    async getGameDetail(gameId: string, userId: string, _steamAppId?: number): Promise<GameDetailDTO> {
+    async getGameDetail(gameId: string, userId: string, steamAppId?: number): Promise<GameDetailDTO> {
         const [detailResult, wishlistResult] = await Promise.allSettled([
-            this.api.getGameDetail(gameId),
+            this.api.getGameDetail(gameId, steamAppId),
             this.wishlistRepository.isInWishlist(userId, gameId),
         ]);
 

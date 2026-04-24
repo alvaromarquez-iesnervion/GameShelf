@@ -35,8 +35,8 @@ export const WishlistScreen: React.FC = observer(() => {
         if (userId) vm.loadWishlist(userId);
     }, [userId, vm]);
 
-    const handleGamePress = useCallback((gameId: string) => {
-        navigation.navigate('GameDetail', { gameId });
+    const handleGamePress = useCallback((gameId: string, platform?: string | null) => {
+        navigation.navigate('GameDetail', { gameId, platforms: platform ? [platform] : undefined });
     }, [navigation]);
 
     const handleRemove = useCallback((itemId: string) => {
@@ -48,7 +48,7 @@ export const WishlistScreen: React.FC = observer(() => {
             coverUrl={item.getCoverUrl()}
             title={item.getTitle()}
             discountPercentage={item.getBestDealPercentage()}
-            onPress={() => handleGamePress(item.getGameId())}
+            onPress={() => handleGamePress(item.getGameId(), item.getPlatform())}
             onRemove={() => handleRemove(item.getId())}
         />
     ), [handleGamePress, handleRemove]);

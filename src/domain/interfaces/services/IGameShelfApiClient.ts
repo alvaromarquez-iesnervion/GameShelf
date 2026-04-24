@@ -24,7 +24,7 @@ export interface IGameShelfApiClient {
 
     // ── Games ─────────────────────────────────────────────────────────────
     /** Detalle enriquecido: ProtonDB + HLTB + ITAD + metadata Steam. */
-    getGameDetail(gameId: string): Promise<GameDetail>;
+    getGameDetail(gameId: string, steamAppId?: number | null): Promise<GameDetail>;
     /**
      * Busca el juego en la biblioteca del usuario.
      * Si no existe, lo resuelve desde el catálogo (ITAD/Steam).
