@@ -5,6 +5,7 @@ import { IGameDetailUseCase } from '../../domain/interfaces/usecases/games/IGame
 import { GameDetailDTO } from '../../domain/dtos/GameDetailDTO';
 import { TYPES } from '../../di/types';
 import { withLoading } from './BaseViewModel';
+import { Platform } from '../../domain/enums/Platform';
 
 /**
  * ViewModel para el detalle de un juego.
@@ -38,10 +39,10 @@ export class GameDetailViewModel {
         return this._errorMessage;
     }
 
-    async loadGameDetail(gameId: string, userId: string, steamAppId?: number): Promise<void> {
+    async loadGameDetail(gameId: string, userId: string, steamAppId?: number | null, platform?: Platform | null): Promise<void> {
         const loadId = ++this._loadId;
         await withLoading(this, '_isLoading', '_errorMessage', async () => {
-            const detail = await this.gameDetailUseCase.getGameDetail(gameId, userId, steamAppId);
+            const detail = await this.gameDetailUseCase.getGameDetail(gameId, userId, steamAppId, platform);
             runInAction(() => {
                 if (loadId !== this._loadId) return;
                 this._gameDetail = detail;

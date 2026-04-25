@@ -11,11 +11,14 @@ interface WishlistGameCardProps {
     coverUrl: string;
     title: string;
     discountPercentage?: number | null;
-    onPress: () => void;
+    gameId?: string;
+    platform?: string | null;
+    steamAppId?: number | null;
+    onPress: (gameId?: string, platform?: string | null, steamAppId?: number | null) => void;
     onRemove: () => void;
 }
 
-export const WishlistGameCard = React.memo(({ coverUrl, title, discountPercentage, onPress, onRemove }: WishlistGameCardProps) => {
+export const WishlistGameCard = React.memo(({ coverUrl, title, discountPercentage, gameId, platform, steamAppId, onPress, onRemove }: WishlistGameCardProps) => {
     const hasDiscount = discountPercentage && discountPercentage > 0;
 
     const handleRemove = () => {
@@ -25,7 +28,7 @@ export const WishlistGameCard = React.memo(({ coverUrl, title, discountPercentag
 
     const handlePress = () => {
         Haptics.selectionAsync();
-        onPress();
+        onPress(gameId, platform, steamAppId);
     };
 
     return (

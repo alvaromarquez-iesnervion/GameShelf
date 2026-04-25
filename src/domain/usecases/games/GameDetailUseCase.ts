@@ -2,6 +2,7 @@ import { IGameDetailUseCase } from '../../interfaces/usecases/games/IGameDetailU
 import { IGameShelfApiClient } from '../../interfaces/services/IGameShelfApiClient';
 import { IWishlistRepository } from '../../interfaces/repositories/IWishlistRepository';
 import { GameDetailDTO } from '../../dtos/GameDetailDTO';
+import { Platform } from '../../enums/Platform';
 
 export class GameDetailUseCase implements IGameDetailUseCase {
 
@@ -10,9 +11,9 @@ export class GameDetailUseCase implements IGameDetailUseCase {
         private readonly wishlistRepository: IWishlistRepository,
     ) {}
 
-    async getGameDetail(gameId: string, userId: string, steamAppId?: number): Promise<GameDetailDTO> {
+    async getGameDetail(gameId: string, userId: string, steamAppId?: number | null, platform?: Platform | null): Promise<GameDetailDTO> {
         const [detailResult, wishlistResult] = await Promise.allSettled([
-            this.api.getGameDetail(gameId, steamAppId),
+            this.api.getGameDetail(gameId, steamAppId, platform),
             this.wishlistRepository.isInWishlist(userId, gameId),
         ]);
 

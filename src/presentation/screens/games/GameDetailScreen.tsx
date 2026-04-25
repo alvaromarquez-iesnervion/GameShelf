@@ -105,15 +105,16 @@ export const GameDetailScreen: React.FC = observer(() => {
     const vm = useInjection<GameDetailViewModel>(TYPES.GameDetailViewModel);
     const wishlistVm = useInjection<WishlistViewModel>(TYPES.WishlistViewModel);
     const userId = authVm.currentUser?.getId() ?? '';
+    const platformHint = navPlatforms?.find(p => p !== GamePlatform.UNKNOWN) ?? null;
 
     useEffect(() => {
-        if (userId) vm.loadGameDetail(gameId, userId, steamAppId);
+        if (userId) vm.loadGameDetail(gameId, userId, steamAppId, platformHint);
         return () => vm.clear();
-    }, [gameId, userId, steamAppId, vm]);
+    }, [gameId, userId, steamAppId, platformHint, vm]);
 
     const handleRetry = useCallback(() => {
-        vm.loadGameDetail(gameId, userId, steamAppId);
-    }, [vm, gameId, userId, steamAppId]);
+        vm.loadGameDetail(gameId, userId, steamAppId, platformHint);
+    }, [vm, gameId, userId, steamAppId, platformHint]);
 
     const toggleWishlist = useCallback(async () => {
         if (!vm.gameDetail) return;
@@ -127,7 +128,7 @@ export const GameDetailScreen: React.FC = observer(() => {
             const item = wishlistVm.items.find(i => i.getGameId() === game.getId());
             if (item) await wishlistVm.removeFromWishlist(userId, item.getId());
         } else {
-            const wishlistPlatform = steamAppId != null ? 'steam' : null;
+            const wishlistPlatform = steamAppId != null ? GamePlatform.STEAM : null;
             const newItem = new WishlistItem(
                 Date.now().toString(), game.getId(), game.getTitle(),
                 game.getCoverUrl(), new Date(), null, wishlistPlatform,

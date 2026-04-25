@@ -14,6 +14,7 @@ import { WishlistGameCard } from '../../components/games/WishlistGameCard';
 import { ErrorMessage } from '../../components/common/ErrorMessage';
 import { EmptyState } from '../../components/common/EmptyState';
 import { ListSkeleton } from '../../components/common/ListItemSkeleton';
+import { Platform } from '../../../domain/enums/Platform';
 import { spacing } from '../../theme/spacing';
 import { styles } from './WishlistScreen.styles';
 
@@ -35,8 +36,8 @@ export const WishlistScreen: React.FC = observer(() => {
         if (userId) vm.loadWishlist(userId);
     }, [userId, vm]);
 
-    const handleGamePress = useCallback((gameId: string, platform?: string | null) => {
-        navigation.navigate('GameDetail', { gameId, platforms: platform ? [platform] : undefined });
+    const handleGamePress = useCallback((gameId: string, platform?: Platform | null, steamAppId?: number | null) => {
+        navigation.navigate('GameDetail', { gameId, steamAppId: steamAppId ?? undefined, platforms: platform ? [platform] : undefined });
     }, [navigation]);
 
     const handleRemove = useCallback((itemId: string) => {
@@ -48,7 +49,7 @@ export const WishlistScreen: React.FC = observer(() => {
             coverUrl={item.getCoverUrl()}
             title={item.getTitle()}
             discountPercentage={item.getBestDealPercentage()}
-            onPress={() => handleGamePress(item.getGameId(), item.getPlatform())}
+            onPress={() => handleGamePress(item.getGameId(), item.getPlatform(), item.getSteamAppId() ?? undefined)}
             onRemove={() => handleRemove(item.getId())}
         />
     ), [handleGamePress, handleRemove]);

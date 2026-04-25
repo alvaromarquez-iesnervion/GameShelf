@@ -127,7 +127,7 @@ export const SearchScreen: React.FC = observer(() => {
         }, 400);
     }, [userId, searchVm]);
 
-    const toggleWishlist = useCallback(async (result: { getId: () => string; getTitle: () => string; getCoverUrl: () => string; getIsOwned: () => boolean; getSteamAppId: () => number | null }) => {
+    const toggleWishlist = useCallback(async (result: { getId: () => string; getTitle: () => string; getCoverUrl: () => string; getIsOwned: () => boolean; getSteamAppId: () => number | null; getOwnedPlatforms: () => GamePlatform[] }) => {
         if (result.getIsOwned()) return;
 
         if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -137,10 +137,13 @@ export const SearchScreen: React.FC = observer(() => {
             const item = wishlistVm.items.find(i => i.getGameId() === result.getId());
             if (item) await wishlistVm.removeFromWishlist(userId, item.getId());
         } else {
-            const wishlistPlatform = result.getSteamAppId() != null ? 'steam' : null;
+            const ownedPlatforms = result.getOwnedPlatforms();
+            const wishlistPlatform = ownedPlatforms.find(p => p !== GamePlatform.UNKNOWN) ?? null;
+            const steamAppId = result.getSteamAppId();
             const newItem = new WishlistItem(
                 Date.now().toString(), result.getId(), result.getTitle(),
                 result.getCoverUrl(), new Date(), null, wishlistPlatform,
+                steamAppId,
             );
             await wishlistVm.addToWishlist(userId, newItem);
         }

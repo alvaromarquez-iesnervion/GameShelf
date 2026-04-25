@@ -24,7 +24,7 @@ export interface IGameShelfApiClient {
 
     // ── Games ─────────────────────────────────────────────────────────────
     /** Detalle enriquecido: ProtonDB + HLTB + ITAD + metadata Steam. */
-    getGameDetail(gameId: string, steamAppId?: number | null): Promise<GameDetail>;
+    getGameDetail(gameId: string, steamAppId?: number | null, platform?: Platform | null): Promise<GameDetail>;
     /**
      * Busca el juego en la biblioteca del usuario.
      * Si no existe, lo resuelve desde el catálogo (ITAD/Steam).
@@ -39,7 +39,7 @@ export interface IGameShelfApiClient {
 
     // ── Wishlist ──────────────────────────────────────────────────────────
     getWishlist(): Promise<WishlistItem[]>;
-    addToWishlist(gameId: string, title: string, coverUrl: string, platform?: string | null): Promise<WishlistItem>;
+    addToWishlist(gameId: string, title: string, coverUrl: string, platform?: Platform | null): Promise<WishlistItem>;
     removeFromWishlist(itemId: string): Promise<void>;
     isInWishlist(gameId: string): Promise<boolean>;
 

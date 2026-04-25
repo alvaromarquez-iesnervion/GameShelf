@@ -1,3 +1,5 @@
+import { Platform as GamePlatform } from '../enums/Platform';
+
 export class WishlistItem {
 
     private id: string;
@@ -6,7 +8,8 @@ export class WishlistItem {
     private coverUrl: string;
     private addedAt: Date;
     private bestDealPercentage: number | null;
-    private platform: string | null;
+    private platform: GamePlatform | null;
+    private steamAppId: number | null;
 
     constructor(
         id: string,
@@ -15,7 +18,8 @@ export class WishlistItem {
         coverUrl: string,
         addedAt: Date,
         bestDealPercentage: number | null,
-        platform: string | null = null,
+        platform: GamePlatform | null = null,
+        steamAppId: number | null = null,
     ) {
         this.id = id;
         this.gameId = gameId;
@@ -24,6 +28,7 @@ export class WishlistItem {
         this.addedAt = addedAt;
         this.bestDealPercentage = bestDealPercentage;
         this.platform = platform;
+        this.steamAppId = steamAppId;
     }
 
     getId(): string { return this.id; }
@@ -33,9 +38,10 @@ export class WishlistItem {
     getAddedAt(): Date { return this.addedAt; }
     // null = sin oferta activa. Se enriquece en WishlistUseCase via ITAD.
     getBestDealPercentage(): number | null { return this.bestDealPercentage; }
-    getPlatform(): string | null { return this.platform; }
+    getPlatform(): GamePlatform | null { return this.platform; }
+    getSteamAppId(): number | null { return this.steamAppId; }
 
     withBestDealPercentage(percentage: number | null): WishlistItem {
-        return new WishlistItem(this.id, this.gameId, this.title, this.coverUrl, this.addedAt, percentage, this.platform);
+        return new WishlistItem(this.id, this.gameId, this.title, this.coverUrl, this.addedAt, percentage, this.platform, this.steamAppId);
     }
 }

@@ -87,6 +87,7 @@ interface ApiWishlistItem {
     gameId: string;
     title: string;
     platform?: string | null;
+    steamAppId?: number | null;
     coverUrl?: string | null;
     addedAt: string;
     bestDealPercentage?: number | null;
@@ -203,6 +204,7 @@ function toWishlistItem(r: ApiWishlistItem): WishlistItem {
         new Date(r.addedAt),
         r.bestDealPercentage ?? null,
         r.platform ? toPlatform(r.platform) : null,
+        r.steamAppId ?? null,
     );
 }
 
@@ -294,9 +296,10 @@ export class GameShelfApiClientImpl implements IGameShelfApiClient {
 
     // ── Games ─────────────────────────────────────────────────────────────
 
-    async getGameDetail(gameId: string, steamAppId?: number | null): Promise<GameDetail> {
+    async getGameDetail(gameId: string, steamAppId?: number | null, platform?: Platform | null): Promise<GameDetail> {
         const params = new URLSearchParams();
         if (steamAppId != null) params.set('steam_app_id', String(steamAppId));
+        if (platform) params.set('platform', platform.toLowerCase());
         const query = params.toString();
         const data = await this.request<ApiGameDetail>(`/api/v1/games/${encodeURIComponent(gameId)}${query ? `?${query}` : ''}`);
         return toGameDetail(data);
@@ -332,10 +335,11 @@ export class GameShelfApiClientImpl implements IGameShelfApiClient {
         return data.items.map(toWishlistItem);
     }
 
-    async addToWishlist(gameId: string, title: string, coverUrl: string, platform?: string | null): Promise<WishlistItem> {
+    async addToWishlist(gameId: string, title: string, coverUrl: string, platform?: Platform | null, steamAppId?: number | null): Promise<WishlistItem> {
+        const platformStr = platform ? platform.toLowerCase() : null;
         const data = await this.request<ApiWishlistItem>('/api/v1/wishlist', {
             method: 'POST',
-            body: JSON.stringify({ gameId, title, coverUrl, platform }),
+            body: JSON.stringify({ gameId, title, coverUrl, platform: platformStr, steamAppId }),
         });
         return toWishlistItem(data);
     }

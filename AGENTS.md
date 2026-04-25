@@ -235,4 +235,18 @@ After every significant change, update ALL affected `.md` files:
   4. Preserving the chronological order (most recent first)
 - The goal is to maintain a clear, scannable history without losing critical context.
 
-Then commit and push to `main`. Commit messages should briefly describe what changed.
+Then commit and push to `feat/gameshelf-api-migration`. Commit messages should briefly describe what changed.
+
+---
+
+## Branching Strategy
+
+All work must be done on the `feat/gameshelf-api-migration` branch, which is the active development branch for the frontend. This branch tracks the migration to the unified GameShelf API backend.
+
+```bash
+git checkout feat/gameshelf-api-migration
+git pull origin feat/gameshelf-api-migration
+git checkout -b <feature-or-fix-branch>
+```
+
+Push and open PR targeting `feat/gameshelf-api-migration`.
