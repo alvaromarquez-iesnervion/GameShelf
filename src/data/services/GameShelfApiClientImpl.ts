@@ -115,8 +115,16 @@ interface ApiLibraryPage {
     hasMore: boolean;
 }
 
+interface ApiPopularGame {
+    gameId: string;
+    steamAppId: number;
+    title: string;
+    currentPlayers: number;
+    coverUrl?: string | null;
+}
+
 interface ApiHomeData {
-    popularGames: ApiGame[];
+    popularNow: ApiPopularGame[];
     recentlyPlayed: ApiGame[];
     mostPlayed: ApiGame[];
 }
@@ -225,6 +233,24 @@ function toSearchResult(r: ApiSearchResult): SearchResult {
         r.steamAppId ?? null,
         r.isOwned,
         r.ownedPlatforms.map(toPlatform),
+    );
+}
+
+function toPopularGame(r: ApiPopularGame): Game {
+    return new Game(
+        r.gameId,
+        r.title,
+        '',
+        r.coverUrl ?? '',
+        Platform.STEAM,
+        r.steamAppId,
+        null,
+        0,
+        null,
+        '',
+        GameType.GAME,
+        null,
+        null,
     );
 }
 
@@ -437,7 +463,7 @@ export class GameShelfApiClientImpl implements IGameShelfApiClient {
 
     async getPopularGames(): Promise<Game[]> {
         const data = await this._getHomeData();
-        return data.popularGames.map(toGame);
+        return (data.popularNow ?? []).map(toPopularGame);
     }
 
     async getRecentlyPlayed(): Promise<Game[]> {
