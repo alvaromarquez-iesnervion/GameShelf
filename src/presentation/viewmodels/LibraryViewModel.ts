@@ -3,6 +3,7 @@ import { injectable, inject } from 'inversify';
 import { makeAutoObservable, runInAction } from 'mobx';
 import { ILibraryUseCase } from '../../domain/interfaces/usecases/library/ILibraryUseCase';
 import { Game } from '../../domain/entities/Game';
+import { LibraryStats } from '../../domain/entities/LibraryStats';
 import { LinkedPlatform } from '../../domain/entities/LinkedPlatform';
 import { Platform } from '../../domain/enums/Platform';
 import { LibraryTab } from '../../domain/enums/LibraryTab';
@@ -30,6 +31,7 @@ export interface MergedLibraryGame {
 export class LibraryViewModel {
     private _games: Game[] = [];
     private _linkedPlatforms: LinkedPlatform[] = [];
+    private _stats: LibraryStats | null = null;
     private _isLoading: boolean = false;
     private _isSyncing: boolean = false;
     private _searchQuery: string = '';
@@ -54,12 +56,14 @@ export class LibraryViewModel {
     }
 
     get pcGameCount(): number {
+        if (this._stats) return this._stats.pcUnique;
         return this._games.filter(
             g => g.getGameType() !== GameType.DLC && PC_PLATFORMS.includes(g.getPlatform()),
         ).length;
     }
 
     get consoleGameCount(): number {
+        if (this._stats) return this._stats.consoleUnique;
         return this._games.filter(
             g => g.getGameType() !== GameType.DLC && CONSOLE_PLATFORMS.includes(g.getPlatform()),
         ).length;
@@ -143,6 +147,18 @@ export class LibraryViewModel {
         return this._errorMessage;
     }
 
+    get uniqueGameCount(): number {
+        if (this._stats) return this._stats.totalUnique;
+        // Fallback for guest users (no API stats available)
+        if (this._games.length === 0) return 0;
+        const seen = new Set<string>();
+        for (const game of this._games) {
+            if (game.getGameType() === GameType.DLC) continue;
+            seen.add(game.getTitle().toLowerCase().trim());
+        }
+        return seen.size;
+    }
+
     async loadLibrary(userId: string): Promise<void> {
         runInAction(() => {
             this._isLoading = true;
@@ -150,14 +166,16 @@ export class LibraryViewModel {
             this._games = [];
         });
         try {
-            // Primera página y plataformas en paralelo — la UI se muestra en cuanto llegan
-            const [firstPage, platforms] = await Promise.all([
+            // Primera página, plataformas y stats en paralelo — la UI se muestra en cuanto llegan
+            const [firstPage, platforms, stats] = await Promise.all([
                 this.libraryUseCase.getLibraryPage(userId, LIBRARY_PAGE_SIZE),
                 this.libraryUseCase.getLinkedPlatforms(userId),
+                this.libraryUseCase.getLibraryStats(userId),
             ]);
             runInAction(() => {
                 this._games = firstPage.games;
                 this._linkedPlatforms = platforms;
+                this._stats = stats;
                 this._isLoading = false;
             });
 
@@ -226,14 +244,16 @@ export class LibraryViewModel {
         });
 
         try {
-            // Primera página + plataformas en paralelo (respuesta rápida)
-            const [firstPage, platforms] = await Promise.all([
+            // Primera página, plataformas y stats en paralelo (respuesta rápida)
+            const [firstPage, platforms, stats] = await Promise.all([
                 this.libraryUseCase.getLibraryPage(userId, LIBRARY_PAGE_SIZE),
                 this.libraryUseCase.getLinkedPlatforms(userId),
+                this.libraryUseCase.getLibraryStats(userId),
             ]);
             runInAction(() => {
                 this._games = firstPage.games;
                 this._linkedPlatforms = platforms;
+                this._stats = stats;
                 this._isLoading = false;
             });
 
@@ -276,6 +296,7 @@ export class LibraryViewModel {
         runInAction(() => {
             this._games = [];
             this._linkedPlatforms = [];
+            this._stats = null;
             this._isLoading = false;
             this._isSyncing = false;
             this._searchQuery = '';

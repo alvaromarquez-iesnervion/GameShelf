@@ -2,6 +2,7 @@ import 'reflect-metadata';
 import { injectable } from 'inversify';
 import { IGameRepository, LibraryPage } from '../../domain/interfaces/repositories/IGameRepository';
 import { Game } from '../../domain/entities/Game';
+import { LibraryStats } from '../../domain/entities/LibraryStats';
 import { SearchResult } from '../../domain/entities/SearchResult';
 import { Platform } from '../../domain/enums/Platform';
 import {
@@ -108,6 +109,10 @@ export class MockGameRepository implements IGameRepository {
 
     async getOwnedDlcsForGame(_userId: string, _parentGameId: string): Promise<Game[]> {
         return [];
+    }
+
+    async getLibraryStats(_userId: string): Promise<LibraryStats> {
+        return new LibraryStats(0, 0, 0, 0);
     }
 
 }

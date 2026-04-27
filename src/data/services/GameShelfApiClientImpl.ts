@@ -12,6 +12,7 @@ import { Platform } from '../../domain/enums/Platform';
 import { GameType } from '../../domain/enums/GameType';
 import { ProtonTier } from '../../domain/entities/ProtonDbRating';
 import { SteamGameMetadata } from '../../domain/dtos/SteamGameMetadata';
+import { LibraryStats } from '../../domain/entities/LibraryStats';
 import { LibraryPage } from '../../domain/interfaces/repositories/IGameRepository';
 import { TYPES } from '../../di/types';
 
@@ -113,6 +114,16 @@ interface ApiLibraryPage {
     games: ApiGame[];
     total: number;
     hasMore: boolean;
+}
+
+interface ApiLibraryStats {
+    totalGames: number;
+    pcGames: number;
+    consoleGames: number;
+    totalPlaytime: number;
+    totalUnique: number;
+    pcUnique: number;
+    consoleUnique: number;
 }
 
 interface ApiPopularGame {
@@ -310,6 +321,11 @@ export class GameShelfApiClientImpl implements IGameShelfApiClient {
             games: data.games.map(toGame),
             nextCursor: data.hasMore ? String(page + 1) : null,
         };
+    }
+
+    async getLibraryStats(): Promise<LibraryStats> {
+        const data = await this.request<ApiLibraryStats>('/api/v1/library/stats');
+        return new LibraryStats(data.totalUnique, data.pcUnique, data.consoleUnique, data.totalPlaytime);
     }
 
     async syncLibrary(platform: Platform): Promise<Game[]> {

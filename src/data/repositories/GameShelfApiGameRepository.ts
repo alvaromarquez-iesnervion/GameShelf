@@ -3,6 +3,7 @@ import { injectable, inject } from 'inversify';
 import { IGameRepository, LibraryPage } from '../../domain/interfaces/repositories/IGameRepository';
 import { IGameShelfApiClient } from '../../domain/interfaces/services/IGameShelfApiClient';
 import { Game } from '../../domain/entities/Game';
+import { LibraryStats } from '../../domain/entities/LibraryStats';
 import { SearchResult } from '../../domain/entities/SearchResult';
 import { Platform } from '../../domain/enums/Platform';
 import { TYPES } from '../../di/types';
@@ -45,5 +46,9 @@ export class GameShelfApiGameRepository implements IGameRepository {
 
     async getOwnedDlcsForGame(_userId: string, parentGameId: string): Promise<Game[]> {
         return this.api.getOwnedDlcs(parentGameId);
+    }
+
+    async getLibraryStats(_userId: string): Promise<LibraryStats> {
+        return this.api.getLibraryStats();
     }
 }

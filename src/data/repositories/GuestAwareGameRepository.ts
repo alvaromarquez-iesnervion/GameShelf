@@ -2,6 +2,7 @@ import 'reflect-metadata';
 import { injectable, inject } from 'inversify';
 import { IGameRepository, LibraryPage } from '../../domain/interfaces/repositories/IGameRepository';
 import { Game } from '../../domain/entities/Game';
+import { LibraryStats } from '../../domain/entities/LibraryStats';
 import { SearchResult } from '../../domain/entities/SearchResult';
 import { Platform } from '../../domain/enums/Platform';
 import { TYPES } from '../../di/types';
@@ -60,5 +61,9 @@ export class GuestAwareGameRepository implements IGameRepository {
 
     getOwnedDlcsForGame(userId: string, parentGameId: string): Promise<Game[]> {
         return this.repo(userId).getOwnedDlcsForGame(userId, parentGameId);
+    }
+
+    getLibraryStats(userId: string): Promise<LibraryStats> {
+        return this.repo(userId).getLibraryStats(userId);
     }
 }

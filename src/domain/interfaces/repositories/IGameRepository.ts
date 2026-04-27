@@ -1,4 +1,5 @@
 import { Game } from '../../entities/Game';
+import { LibraryStats } from '../../entities/LibraryStats';
 import { SearchResult } from '../../entities/SearchResult';
 import { Platform } from '../../enums/Platform';
 
@@ -42,4 +43,6 @@ export interface IGameRepository {
     updateSteamAppId(userId: string, gameId: string, steamAppId: number): Promise<void>;
     /** Devuelve los DLCs poseídos cuyo parentGameId coincida con el juego indicado. */
     getOwnedDlcsForGame(userId: string, parentGameId: string): Promise<Game[]>;
+    /** Devuelve estadísticas agregadas de la biblioteca (únicos por plataforma, playtime). */
+    getLibraryStats(userId: string): Promise<LibraryStats>;
 }

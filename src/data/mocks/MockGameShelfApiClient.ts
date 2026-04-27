@@ -3,6 +3,7 @@ import 'reflect-metadata';
 import { IGameShelfApiClient } from '../../domain/interfaces/services/IGameShelfApiClient';
 import { Game } from '../../domain/entities/Game';
 import { GameDetail } from '../../domain/entities/GameDetail';
+import { LibraryStats } from '../../domain/entities/LibraryStats';
 import { WishlistItem } from '../../domain/entities/WishlistItem';
 import { LinkedPlatform } from '../../domain/entities/LinkedPlatform';
 import { SearchResult } from '../../domain/entities/SearchResult';
@@ -61,4 +62,6 @@ export class MockGameShelfApiClient implements IGameShelfApiClient {
     getPopularGames(): Promise<Game[]> { return Promise.resolve([]); }
     getRecentlyPlayed(): Promise<Game[]> { return Promise.resolve([]); }
     getMostPlayed(): Promise<Game[]> { return Promise.resolve([]); }
+
+    getLibraryStats(): Promise<LibraryStats> { return Promise.resolve(new LibraryStats(0, 0, 0, 0)); }
 }

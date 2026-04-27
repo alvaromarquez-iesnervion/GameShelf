@@ -104,8 +104,6 @@ export const LibraryScreen: React.FC = observer(() => {
     if (vm.isLoading && vm.games.length === 0) return <LibrarySkeleton />;
     if (vm.errorMessage) return <ErrorMessage message={vm.errorMessage} onRetry={handleRefresh} />;
 
-    const gameCount = vm.mergedFilteredGames.length;
-
     return (
         <View style={styles.container}>
             {/* Header aura (signature) */}
@@ -114,11 +112,6 @@ export const LibraryScreen: React.FC = observer(() => {
                 <View style={styles.titleRow}>
                     <View style={styles.titleLeft}>
                         <Text style={styles.largeTitle}>Biblioteca</Text>
-                        {gameCount > 0 && (
-                            <View style={styles.countBadge}>
-                                <Text style={styles.countText}>{gameCount}</Text>
-                            </View>
-                        )}
                     </View>
                     <View style={styles.headerActions}>
                         <TouchableOpacity

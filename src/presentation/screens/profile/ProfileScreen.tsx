@@ -19,6 +19,8 @@ export const ProfileScreen: React.FC = observer(() => {
 
     if (!user) return <LoadingSpinner message="Cargando perfil..." />;
 
+    if (vm.isLoading) return <LoadingSpinner message="Cargando perfil..." />;
+
     const initial = user.getDisplayName().charAt(0).toUpperCase();
     const memberSince = user.getCreatedAt().toLocaleDateString('es-ES', {
         month: 'long',

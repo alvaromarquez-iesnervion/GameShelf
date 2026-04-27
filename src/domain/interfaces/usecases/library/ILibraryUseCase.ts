@@ -1,4 +1,5 @@
 import { Game } from '../../../entities/Game';
+import { LibraryStats } from '../../../entities/LibraryStats';
 import { LinkedPlatform } from '../../../entities/LinkedPlatform';
 import { Platform } from '../../../enums/Platform';
 import { LibraryPage } from '../../repositories/IGameRepository';
@@ -23,4 +24,6 @@ export interface ILibraryUseCase {
     autoSyncLibrary(userId: string): Promise<Game[]>;
     /** Devuelve las plataformas vinculadas del usuario. */
     getLinkedPlatforms(userId: string): Promise<LinkedPlatform[]>;
+    /** Devuelve estadísticas agregadas de la biblioteca desde la API. */
+    getLibraryStats(userId: string): Promise<LibraryStats>;
 }

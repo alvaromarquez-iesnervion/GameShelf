@@ -1,5 +1,6 @@
 import { Game } from '../../entities/Game';
 import { GameDetail } from '../../entities/GameDetail';
+import { LibraryStats } from '../../entities/LibraryStats';
 import { WishlistItem } from '../../entities/WishlistItem';
 import { LinkedPlatform } from '../../entities/LinkedPlatform';
 import { SearchResult } from '../../entities/SearchResult';
@@ -14,6 +15,8 @@ export interface IGameShelfApiClient {
     // ── Library ───────────────────────────────────────────────────────────
     /** Devuelve todos los juegos de la biblioteca del usuario autenticado. */
     getLibraryGames(): Promise<Game[]>;
+    /** Devuelve estadísticas agregadas de la biblioteca (únicos por plataforma, playtime). */
+    getLibraryStats(): Promise<LibraryStats>;
     /**
      * Devuelve una página de la biblioteca.
      * El cursor es el ID del último juego de la página anterior (undefined = primera).

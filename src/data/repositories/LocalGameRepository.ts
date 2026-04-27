@@ -3,6 +3,7 @@ import { injectable } from 'inversify';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { IGameRepository, LibraryPage } from '../../domain/interfaces/repositories/IGameRepository';
 import { Game } from '../../domain/entities/Game';
+import { LibraryStats } from '../../domain/entities/LibraryStats';
 import { SearchResult } from '../../domain/entities/SearchResult';
 import { Platform } from '../../domain/enums/Platform';
 import { GameType } from '../../domain/enums/GameType';
@@ -128,6 +129,18 @@ export class LocalGameRepository implements IGameRepository {
     async getOwnedDlcsForGame(_userId: string, parentGameId: string): Promise<Game[]> {
         const games = await this.readAll();
         return games.filter(g => g.getGameType() === GameType.DLC && g.getParentGameId() === parentGameId);
+    }
+
+    async getLibraryStats(_userId: string): Promise<LibraryStats> {
+        const games = await this.readAll();
+        const nonDlc = games.filter(g => g.getGameType() !== GameType.DLC);
+        const pcPlatforms: Platform[] = [Platform.STEAM, Platform.EPIC_GAMES, Platform.GOG];
+        const consolePlatforms: Platform[] = [Platform.PSN];
+        const allTitles = new Set(nonDlc.map(g => g.getTitle().toLowerCase().trim()));
+        const pcTitles = new Set(nonDlc.filter(g => pcPlatforms.includes(g.getPlatform())).map(g => g.getTitle().toLowerCase().trim()));
+        const consoleTitles = new Set(nonDlc.filter(g => consolePlatforms.includes(g.getPlatform())).map(g => g.getTitle().toLowerCase().trim()));
+        const totalPlaytimeHours = Math.round(games.reduce((sum, g) => sum + g.getPlaytime(), 0) / 60 * 100) / 100;
+        return new LibraryStats(allTitles.size, pcTitles.size, consoleTitles.size, totalPlaytimeHours);
     }
 
 }

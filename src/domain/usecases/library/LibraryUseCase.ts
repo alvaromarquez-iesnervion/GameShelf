@@ -2,6 +2,7 @@ import { ILibraryUseCase } from '../../interfaces/usecases/library/ILibraryUseCa
 import { IGameRepository, LibraryPage } from '../../interfaces/repositories/IGameRepository';
 import { IPlatformRepository } from '../../interfaces/repositories/IPlatformRepository';
 import { Game } from '../../entities/Game';
+import { LibraryStats } from '../../entities/LibraryStats';
 import { LinkedPlatform } from '../../entities/LinkedPlatform';
 import { Platform } from '../../enums/Platform';
 
@@ -63,5 +64,9 @@ export class LibraryUseCase implements ILibraryUseCase {
 
     async getLinkedPlatforms(userId: string): Promise<LinkedPlatform[]> {
         return this.platformRepository.getLinkedPlatforms(userId);
+    }
+
+    async getLibraryStats(userId: string): Promise<LibraryStats> {
+        return this.gameRepository.getLibraryStats(userId);
     }
 }
