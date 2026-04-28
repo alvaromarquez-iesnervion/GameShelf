@@ -74,9 +74,12 @@ export const LibraryScreen: React.FC = observer(() => {
         (navigation as any).navigate('WishlistStack');
     }, [navigation]);
 
-    const handleGamePress = useCallback((gameId: string, platforms: MergedLibraryGame['platforms']) => {
-        navigation.navigate('GameDetail', { gameId, platforms });
-    }, [navigation]);
+    const handleGamePress = useCallback(
+        (gameId: string, platforms: MergedLibraryGame['platforms'], steamAppId?: number) => {
+            navigation.navigate('GameDetail', { gameId, platforms, steamAppId });
+        },
+        [navigation],
+    );
 
     const handleSortChange = useCallback((criteria: SortCriteria) => {
         if (Platform.OS !== 'web') Haptics.selectionAsync();
@@ -97,7 +100,7 @@ export const LibraryScreen: React.FC = observer(() => {
             title={item.game.getTitle()}
             platforms={item.platforms}
             cardWidth={cardWidth}
-            onPress={(id) => handleGamePress(id, item.platforms)}
+            onPress={(id) => handleGamePress(id, item.platforms, item.game.getSteamAppId() ?? undefined)}
         />
     ), [handleGamePress, cardWidth]);
 

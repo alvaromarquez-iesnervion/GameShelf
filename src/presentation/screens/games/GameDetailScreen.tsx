@@ -143,7 +143,7 @@ export const GameDetailScreen: React.FC = observer(() => {
 
     const detail = vm.gameDetail.detail;
     const game = detail.getGame();
-    const isOwned = game.getPlatform() !== GamePlatform.UNKNOWN;
+    const isOwned = detail.getIsInLibrary();
     const displayPlatforms = navPlatforms && navPlatforms.length > 0
         ? navPlatforms
         : [game.getPlatform()];
@@ -324,7 +324,7 @@ export const GameDetailScreen: React.FC = observer(() => {
                     )}
 
                     {/* ── Deals ── */}
-                    {!isOwned && detail.getDeals().length > 0 && (
+                    {detail.getDeals().length > 0 && (
                         <View style={styles.dealsSection}>
                             <View style={styles.sectionHeader}>
                                 <Text style={styles.sectionTitle}>{strings.bestDeals}</Text>

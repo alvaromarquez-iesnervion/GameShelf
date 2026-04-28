@@ -15,6 +15,7 @@ export class GameDetail {
     private deals: Deal[];
     private steamMetadata: SteamGameMetadata | null;
     private ownedDlcs: Game[];
+    private isInLibrary: boolean;
 
     constructor(
         game: Game,
@@ -27,6 +28,7 @@ export class GameDetail {
         deals: Deal[],
         steamMetadata: SteamGameMetadata | null,
         ownedDlcs: Game[] = [],
+        isInLibrary: boolean = false,
     ) {
         this.game = game;
         this.protonDbRating = protonDbRating;
@@ -38,6 +40,7 @@ export class GameDetail {
         this.deals = deals;
         this.steamMetadata = steamMetadata;
         this.ownedDlcs = ownedDlcs;
+        this.isInLibrary = isInLibrary;
     }
 
     getGame(): Game { return this.game; }
@@ -54,4 +57,5 @@ export class GameDetail {
     getSteamMetadata(): SteamGameMetadata | null { return this.steamMetadata; }
     /** DLCs poseídos por el usuario para este juego base. */
     getOwnedDlcs(): Game[] { return this.ownedDlcs; }
+    getIsInLibrary(): boolean { return this.isInLibrary; }
 }

@@ -81,6 +81,7 @@ interface ApiGameDetail {
     steamMetadata?: ApiSteamMetadata | null;
     ownedDlcs?: ApiGame[];
     isInWishlist: boolean;
+    isInLibrary: boolean;
 }
 
 interface ApiWishlistItem {
@@ -211,6 +212,7 @@ function toGameDetail(r: ApiGameDetail): GameDetail {
         r.deals.map(toDeal),
         r.steamMetadata ? toSteamMetadata(r.steamMetadata) : null,
         (r.ownedDlcs ?? []).map(toGame),
+        r.isInLibrary,
     );
 }
 
