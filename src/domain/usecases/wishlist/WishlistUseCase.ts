@@ -8,9 +8,9 @@ export class WishlistUseCase implements IWishlistUseCase {
         private readonly wishlistRepository: IWishlistRepository,
     ) {}
 
-    async getWishlist(userId: string): Promise<WishlistItem[]> {
+    async getWishlist(userId: string, country?: string): Promise<WishlistItem[]> {
         if (!userId?.trim()) throw new Error('userId requerido');
-        return this.wishlistRepository.getWishlist(userId);
+        return this.wishlistRepository.getWishlist(userId, country);
     }
 
     async addToWishlist(userId: string, item: WishlistItem): Promise<void> {

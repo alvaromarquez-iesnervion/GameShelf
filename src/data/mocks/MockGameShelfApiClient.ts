@@ -64,4 +64,7 @@ export class MockGameShelfApiClient implements IGameShelfApiClient {
     getMostPlayed(): Promise<Game[]> { return Promise.resolve([]); }
 
     getLibraryStats(): Promise<LibraryStats> { return Promise.resolve(new LibraryStats(0, 0, 0, 0)); }
+
+    getSavedCountry(): Promise<string | null> { return Promise.resolve(null); }
+    setSavedCountry(_country: string): Promise<void> { return Promise.resolve(); }
 }

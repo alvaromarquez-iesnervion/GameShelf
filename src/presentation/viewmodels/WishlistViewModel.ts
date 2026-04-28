@@ -5,6 +5,7 @@ import { IWishlistUseCase } from '../../domain/interfaces/usecases/wishlist/IWis
 import { WishlistItem } from '../../domain/entities/WishlistItem';
 import { TYPES } from '../../di/types';
 import { withLoading } from './BaseViewModel';
+import { UserPreferencesStore } from '../../data/utils/UserPreferencesStore';
 
 /**
  * ViewModel para la wishlist.
@@ -16,10 +17,14 @@ export class WishlistViewModel {
     private _items: WishlistItem[] = [];
     private _isLoading: boolean = false;
     private _errorMessage: string | null = null;
+    // Track current userId for reactive reload when country changes.
+    private _currentUserId: string = '';
 
     constructor(
         @inject(TYPES.IWishlistUseCase)
         private readonly wishlistUseCase: IWishlistUseCase,
+        @inject(TYPES.UserPreferencesStore)
+        private readonly userPrefs: UserPreferencesStore,
     ) {
         makeAutoObservable(this);
     }
@@ -37,12 +42,20 @@ export class WishlistViewModel {
     }
 
     async loadWishlist(userId: string): Promise<void> {
+        this._currentUserId = userId;
         await withLoading(this, '_isLoading', '_errorMessage', async () => {
-            const items = await this.wishlistUseCase.getWishlist(userId);
+            const country = this.userPrefs.effectiveCountry;
+            const items = await this.wishlistUseCase.getWishlist(userId, country);
             runInAction(() => {
                 this._items = items;
             });
         });
+    }
+
+    /** Recarga la wishlist usando el userId actual con la moneda del país efectivo. */
+    async reloadWithCountry(): Promise<void> {
+        if (!this._currentUserId) return;
+        await this.loadWishlist(this._currentUserId);
     }
 
     async addToWishlist(userId: string, item: WishlistItem): Promise<boolean> {

@@ -8,6 +8,7 @@ import { IGameRepository } from '../domain/interfaces/repositories/IGameReposito
 import { IWishlistRepository } from '../domain/interfaces/repositories/IWishlistRepository';
 import { IPlatformRepository } from '../domain/interfaces/repositories/IPlatformRepository';
 import { INotificationRepository } from '../domain/interfaces/repositories/INotificationRepository';
+import { ISettingsRepository } from '../domain/interfaces/repositories/ISettingsRepository';
 
 // ─── Interfaces (servicios) ───────────────────────────────────────────────────
 import { IGameShelfApiClient } from '../domain/interfaces/services/IGameShelfApiClient';
@@ -39,6 +40,7 @@ import { GameShelfApiWishlistRepository } from '../data/repositories/GameShelfAp
 import { GameShelfApiPlatformRepository } from '../data/repositories/GameShelfApiPlatformRepository';
 import { AuthRepositoryImpl } from '../data/repositories/AuthRepositoryImpl';
 import { NotificationRepositoryImpl } from '../data/repositories/NotificationRepositoryImpl';
+import { SettingsRepositoryImpl } from '../data/repositories/SettingsRepositoryImpl';
 import { getFirebaseAuth, getFirebaseFirestore } from '../data/config/FirebaseConfig';
 import { Auth } from 'firebase/auth';
 import { Firestore } from 'firebase/firestore';
@@ -60,6 +62,7 @@ import { SearchViewModel } from '../presentation/viewmodels/SearchViewModel';
 import { PlatformLinkViewModel } from '../presentation/viewmodels/PlatformLinkViewModel';
 import { SettingsViewModel } from '../presentation/viewmodels/SettingsViewModel';
 import { ProfileViewModel } from '../presentation/viewmodels/ProfileViewModel';
+import { UserPreferencesStore } from '../data/utils/UserPreferencesStore';
 
 // ─── Use case implementations ─────────────────────────────────────────────────
 import { AuthUseCase } from '../domain/usecases/auth/AuthUseCase';
@@ -113,6 +116,8 @@ if (useFirebase) {
     container.bind<IPlatformRepository>(TYPES.FirestorePlatformRepository).to(GameShelfApiPlatformRepository);
     container.bind<IPlatformRepository>(TYPES.LocalPlatformRepository).to(LocalPlatformRepository);
     container.bind<IPlatformRepository>(TYPES.IPlatformRepository).to(GuestAwarePlatformRepository);
+    // Settings / country preference
+    container.bind<ISettingsRepository>(TYPES.ISettingsRepository).to(SettingsRepositoryImpl);
 } else {
     // MODO MOCK COMPLETO
     container.bind<IGameShelfApiClient>(TYPES.IGameShelfApiClient).to(MockGameShelfApiClient).inSingletonScope();
@@ -174,5 +179,8 @@ container.bind<SearchViewModel>(TYPES.SearchViewModel).to(SearchViewModel).inTra
 container.bind<PlatformLinkViewModel>(TYPES.PlatformLinkViewModel).to(PlatformLinkViewModel).inTransientScope();
 container.bind<SettingsViewModel>(TYPES.SettingsViewModel).to(SettingsViewModel).inTransientScope();
 container.bind<ProfileViewModel>(TYPES.ProfileViewModel).to(ProfileViewModel).inTransientScope();
+
+// ─── User Preferences Store (singleton) ────────────────────────────────────────
+container.bind<UserPreferencesStore>(TYPES.UserPreferencesStore).to(UserPreferencesStore).inSingletonScope();
 
 export { container };

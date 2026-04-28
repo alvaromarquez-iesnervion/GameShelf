@@ -14,6 +14,7 @@ export const TYPES = {
     IWishlistRepository: Symbol.for('IWishlistRepository'),
     IPlatformRepository: Symbol.for('IPlatformRepository'),
     INotificationRepository: Symbol.for('INotificationRepository'),
+    ISettingsRepository: Symbol.for('ISettingsRepository'),
 
     // Símbolos internos para los wrappers guest-aware (no usar fuera de container.ts)
     FirestorePlatformRepository: Symbol.for('FirestorePlatformRepository'),
@@ -44,4 +45,7 @@ export const TYPES = {
     SettingsViewModel: Symbol.for('SettingsViewModel'),
     HomeViewModel: Symbol.for('HomeViewModel'),
     ProfileViewModel: Symbol.for('ProfileViewModel'),
+
+    // User Preferences Store
+    UserPreferencesStore: Symbol.for('UserPreferencesStore'),
 };

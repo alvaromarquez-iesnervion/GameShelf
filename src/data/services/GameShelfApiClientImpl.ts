@@ -338,12 +338,31 @@ export class GameShelfApiClientImpl implements IGameShelfApiClient {
         return data.games.map(toGame);
     }
 
+    // ── Settings / Preferences ────────────────────────────────────────────
+
+    async getSavedCountry(): Promise<string | null> {
+        try {
+            const data = await this.request<{ country_code: string } | null>('/api/v1/settings/country');
+            return data?.country_code ?? null;
+        } catch {
+            return null;
+        }
+    }
+
+    async setSavedCountry(country: string): Promise<void> {
+        await this.request('/api/v1/settings/country', {
+            method: 'PUT',
+            body: JSON.stringify({ country_code: country }),
+        });
+    }
+
     // ── Games ─────────────────────────────────────────────────────────────
 
-    async getGameDetail(gameId: string, steamAppId?: number | null, platform?: Platform | null): Promise<GameDetail> {
+    async getGameDetail(gameId: string, steamAppId?: number | null, platform?: Platform | null, country?: string): Promise<GameDetail> {
         const params = new URLSearchParams();
         if (steamAppId != null) params.set('steam_app_id', String(steamAppId));
         if (platform) params.set('platform', platform.toLowerCase());
+        if (country) params.set('country', country);
         const query = params.toString();
         const data = await this.request<ApiGameDetail>(`/api/v1/games/${encodeURIComponent(gameId)}${query ? `?${query}` : ''}`);
         return toGameDetail(data);
@@ -374,8 +393,11 @@ export class GameShelfApiClientImpl implements IGameShelfApiClient {
 
     // ── Wishlist ──────────────────────────────────────────────────────────
 
-    async getWishlist(): Promise<WishlistItem[]> {
-        const data = await this.request<{ items: ApiWishlistItem[] }>('/api/v1/wishlist');
+    async getWishlist(country?: string): Promise<WishlistItem[]> {
+        const params = new URLSearchParams();
+        if (country) params.set('country', country);
+        const query = params.toString();
+        const data = await this.request<{ items: ApiWishlistItem[] }>(`/api/v1/wishlist${query ? `?${query}` : ''}`);
         return data.items.map(toWishlistItem);
     }
 

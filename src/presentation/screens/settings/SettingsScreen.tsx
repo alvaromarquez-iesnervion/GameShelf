@@ -10,6 +10,7 @@ import Constants from 'expo-constants';
 import { useInjection } from '../../../di/hooks/useInjection';
 import { AuthViewModel } from '../../viewmodels/AuthViewModel';
 import { SettingsViewModel } from '../../viewmodels/SettingsViewModel';
+import { UserPreferencesStore } from '../../../data/utils/UserPreferencesStore';
 import { TYPES } from '../../../di/types';
 import { SettingsStackParamList } from '../../../core/navigation/navigationTypes';
 import { ListSkeleton } from '../../components/common/ListItemSkeleton';
@@ -17,7 +18,9 @@ import { colors } from '../../theme/colors';
 import { spacing } from '../../theme/spacing';
 import { styles } from './SettingsScreen.styles';
 import { strings } from '../../../core/constants/strings';
-import { UserPreferencesStore, SUPPORTED_COUNTRIES, DEFAULT_COUNTRY } from '../../../data/utils/UserPreferencesStore';
+import { SUPPORTED_COUNTRIES, DEFAULT_COUNTRY } from '../../../data/utils/UserPreferencesStore';
+import { ConfirmDialog } from '../../components/common/ConfirmDialog';
+import { CurrencyDropdown } from '../../components/common/CurrencyDropdown';
 
 type Nav = NativeStackNavigationProp<SettingsStackParamList, 'Settings'>;
 
@@ -47,18 +50,23 @@ export const SettingsScreen: React.FC = observer(() => {
     const insets = useSafeAreaInsets();
     const authVm = useInjection<AuthViewModel>(TYPES.AuthViewModel);
     const vm = useInjection<SettingsViewModel>(TYPES.SettingsViewModel);
+    const store = useInjection<UserPreferencesStore>(TYPES.UserPreferencesStore);
     const navigation = useNavigation<Nav>();
     const userId = authVm.currentUser?.getId() ?? '';
 
     const [preferredCountry, setPreferredCountry] = useState(DEFAULT_COUNTRY);
+    const [currencyDropdownVisible, setCurrencyDropdownVisible] = useState(false);
+    const [logoutConfirmVisible, setLogoutConfirmVisible] = useState(false);
 
     useEffect(() => {
         if (userId && !authVm.isGuest) vm.loadProfile(userId);
     }, [userId, vm, authVm.isGuest]);
 
     useEffect(() => {
-        UserPreferencesStore.getCountry().then(setPreferredCountry);
-    }, []);
+        store.loadSavedPreference().then(() => {
+            setPreferredCountry(store.effectiveCountry);
+        });
+    }, [store]);
 
     const handleNavigateProfile = useCallback(() => {
         navigation.navigate('Profile');
@@ -77,37 +85,23 @@ export const SettingsScreen: React.FC = observer(() => {
     }, []);
 
     const handleCurrencySelect = useCallback(() => {
-        const options = SUPPORTED_COUNTRIES.map(c => ({
-            text: `${c.label} (${c.currency})`,
-            onPress: async () => {
-                await UserPreferencesStore.setCountry(c.code);
-                setPreferredCountry(c.code);
-            },
-        }));
-        Alert.alert(
-            strings.preferredCurrency,
-            UserPreferencesStore.getCountryOption(preferredCountry).label,
-            [...options, { text: strings.cancel, style: 'cancel' as const }],
-        );
-    }, [preferredCountry]);
+        setCurrencyDropdownVisible(true);
+    }, []);
+
+    const handleCurrencyChange = useCallback(async (code: string) => {
+        await store.setCountryAndSync(code);
+        setPreferredCountry(code);
+        setCurrencyDropdownVisible(false);
+    }, [store]);
 
     const handleLogout = useCallback(() => {
         if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-        if (authVm.isGuest) {
-            Alert.alert(
-                strings.deleteGuestDataTitle,
-                strings.deleteGuestDataMessage,
-                [
-                    { text: strings.cancel, style: 'cancel' },
-                    { text: strings.deleteAll, style: 'destructive', onPress: () => authVm.logout() },
-                ],
-            );
-        } else {
-            Alert.alert(strings.logoutConfirmTitle, strings.logoutConfirmMessage, [
-                { text: strings.cancel, style: 'cancel' },
-                { text: strings.exit, style: 'destructive', onPress: () => authVm.logout() },
-            ]);
-        }
+        setLogoutConfirmVisible(true);
+    }, []);
+
+    const handleLogoutConfirm = useCallback(() => {
+        authVm.logout();
+        setLogoutConfirmVisible(false);
     }, [authVm]);
 
     if (vm.isLoading && !vm.profile && !authVm.isGuest) return <ListSkeleton count={4} />;
@@ -171,11 +165,20 @@ export const SettingsScreen: React.FC = observer(() => {
                 <Text style={styles.sectionTitle}>{strings.sectionSupport}</Text>
                 <View style={styles.group}>
                     <SettingRow
-                        label={`${strings.preferredCurrency} · ${UserPreferencesStore.getCountryOption(preferredCountry).currency}`}
+                        label={`${strings.preferredCurrency} · ${store.getCountryOption(preferredCountry).currency}`}
                         icon="dollar-sign"
                         onPress={handleCurrencySelect}
                         color={colors.iosGreen}
                     />
+                    {currencyDropdownVisible && (
+                        <CurrencyDropdown
+                            visible
+                            options={SUPPORTED_COUNTRIES.map(c => ({ label: `${c.label} (${c.currency})`, value: c.code }))}
+                            selectedValue={preferredCountry}
+                            onSelect={handleCurrencyChange}
+                            onClose={() => setCurrencyDropdownVisible(false)}
+                        />
+                    )}
                     <SettingRow
                         label={strings.helpCenter}
                         icon="help-circle"
@@ -197,6 +200,16 @@ export const SettingsScreen: React.FC = observer(() => {
                     {authVm.isGuest ? strings.logoutGuest : strings.logoutRegistered}
                 </Text>
             </TouchableOpacity>
+
+            <ConfirmDialog
+                visible={logoutConfirmVisible}
+                title={authVm.isGuest ? strings.deleteGuestDataTitle : strings.logoutConfirmTitle}
+                message={authVm.isGuest ? strings.deleteGuestDataMessage : strings.logoutConfirmMessage}
+                confirmText={authVm.isGuest ? strings.deleteAll : strings.exit}
+                destructive
+                onConfirm={handleLogoutConfirm}
+                onCancel={() => setLogoutConfirmVisible(false)}
+            />
 
             <Text style={styles.version}>{`GameShelf v${Constants.expoConfig?.version ?? '1.0.0'} (OLED Edition)`}</Text>
         </ScrollView>

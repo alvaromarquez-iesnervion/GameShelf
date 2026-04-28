@@ -25,9 +25,15 @@ export interface IGameShelfApiClient {
     /** Sincroniza la biblioteca de la plataforma indicada y devuelve los juegos actualizados. */
     syncLibrary(platform: Platform): Promise<Game[]>;
 
+    // ── Settings / Preferences ────────────────────────────────────────────
+    /** Obtiene el código de país guardado en el backend, o null si no hay preferencia. */
+    getSavedCountry(): Promise<string | null>;
+    /** Guarda la preferencia de país del usuario (ej: "ES", "MX"). */
+    setSavedCountry(country: string): Promise<void>;
+
     // ── Games ─────────────────────────────────────────────────────────────
     /** Detalle enriquecido: ProtonDB + HLTB + ITAD + metadata Steam. */
-    getGameDetail(gameId: string, steamAppId?: number | null, platform?: Platform | null): Promise<GameDetail>;
+    getGameDetail(gameId: string, steamAppId?: number | null, platform?: Platform | null, country?: string): Promise<GameDetail>;
     /**
      * Busca el juego en la biblioteca del usuario.
      * Si no existe, lo resuelve desde el catálogo (ITAD/Steam).
@@ -41,7 +47,8 @@ export interface IGameShelfApiClient {
     searchGames(query: string): Promise<SearchResult[]>;
 
     // ── Wishlist ──────────────────────────────────────────────────────────
-    getWishlist(): Promise<WishlistItem[]>;
+    /** Obtiene la wishlist del usuario, opcionalmente con precios en una moneda específica. */
+    getWishlist(country?: string): Promise<WishlistItem[]>;
     addToWishlist(gameId: string, title: string, coverUrl: string, platform?: Platform | null): Promise<WishlistItem>;
     removeFromWishlist(itemId: string): Promise<void>;
     isInWishlist(gameId: string): Promise<boolean>;

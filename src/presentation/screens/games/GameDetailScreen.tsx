@@ -13,6 +13,7 @@ import { useInjection } from '../../../di/hooks/useInjection';
 import { AuthViewModel } from '../../viewmodels/AuthViewModel';
 import { GameDetailViewModel } from '../../viewmodels/GameDetailViewModel';
 import { WishlistViewModel } from '../../viewmodels/WishlistViewModel';
+import { UserPreferencesStore } from '../../../data/utils/UserPreferencesStore';
 import { TYPES } from '../../../di/types';
 import { LibraryStackParamList } from '../../../core/navigation/navigationTypes';
 import { ProtonDbBadge } from '../../components/games/ProtonDbBadge';
@@ -104,13 +105,14 @@ export const GameDetailScreen: React.FC = observer(() => {
     const authVm = useInjection<AuthViewModel>(TYPES.AuthViewModel);
     const vm = useInjection<GameDetailViewModel>(TYPES.GameDetailViewModel);
     const wishlistVm = useInjection<WishlistViewModel>(TYPES.WishlistViewModel);
+    const store = useInjection<UserPreferencesStore>(TYPES.UserPreferencesStore);
     const userId = authVm.currentUser?.getId() ?? '';
     const platformHint = navPlatforms?.find(p => p !== GamePlatform.UNKNOWN) ?? null;
 
     useEffect(() => {
         if (userId) vm.loadGameDetail(gameId, userId, steamAppId, platformHint);
         return () => vm.clear();
-    }, [gameId, userId, steamAppId, platformHint, vm]);
+    }, [gameId, userId, steamAppId, platformHint, vm, store]);
 
     const handleRetry = useCallback(() => {
         vm.loadGameDetail(gameId, userId, steamAppId, platformHint);

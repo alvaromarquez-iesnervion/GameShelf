@@ -12,8 +12,8 @@ export class GameShelfApiWishlistRepository implements IWishlistRepository {
         @inject(TYPES.IGameShelfApiClient) private api: IGameShelfApiClient,
     ) {}
 
-    async getWishlist(_userId: string): Promise<WishlistItem[]> {
-        return this.api.getWishlist();
+    async getWishlist(_userId: string, country?: string): Promise<WishlistItem[]> {
+        return this.api.getWishlist(country);
     }
 
     async addToWishlist(_userId: string, item: WishlistItem): Promise<void> {
@@ -28,8 +28,8 @@ export class GameShelfApiWishlistRepository implements IWishlistRepository {
         return this.api.isInWishlist(gameId);
     }
 
-    async getWishlistGameIds(_userId: string): Promise<Set<string>> {
-        const items = await this.api.getWishlist();
+    async getWishlistGameIds(_userId: string, country?: string): Promise<Set<string>> {
+        const items = await this.api.getWishlist(country);
         return new Set(items.map(i => i.getGameId()));
     }
 }
