@@ -7,9 +7,7 @@ import { Platform } from '../../domain/enums/Platform';
 import { GogAuthToken } from '../../domain/dtos/GogAuthToken';
 import { EpicAuthToken } from '../../domain/dtos/EpicAuthToken';
 import { PsnAuthToken } from '../../domain/dtos/PsnAuthToken';
-import { GUEST_KEY_PLATFORMS } from '../../domain/utils/guestUtils';
-
-const GUEST_KEY_GOG_TOKEN = '@gameshelf/guest_gog_token';
+import { GUEST_KEY_PLATFORMS, GUEST_KEY_GOG_TOKEN } from '../../domain/utils/guestUtils';
 
 interface StoredPlatform {
     platform: Platform;

@@ -2,6 +2,8 @@ export const GUEST_ID_PREFIX = 'guest_';
 export const GUEST_KEY_ID = '@gameshelf/guest_id';
 export const GUEST_KEY_PLATFORMS = '@gameshelf/guest_platforms';
 export const GUEST_KEY_LIBRARY = '@gameshelf/guest_library';
+export const GUEST_KEY_GOG_TOKEN = '@gameshelf/guest_gog_token';
+export const PREF_KEY_COUNTRY = '@gameshelf/preferred_country';
 
 /** Returns true when a userId belongs to a guest session. */
 export function isGuestUser(userId: string): boolean {

@@ -6,6 +6,8 @@ import {
     GUEST_KEY_ID,
     GUEST_KEY_PLATFORMS,
     GUEST_KEY_LIBRARY,
+    GUEST_KEY_GOG_TOKEN,
+    PREF_KEY_COUNTRY,
     generateGuestId,
 } from '../../domain/utils/guestUtils';
 
@@ -25,6 +27,12 @@ export class GuestSessionRepository implements IGuestSessionRepository {
     }
 
     async clearGuestSession(): Promise<void> {
-        await AsyncStorage.multiRemove([GUEST_KEY_ID, GUEST_KEY_PLATFORMS, GUEST_KEY_LIBRARY]);
+        await AsyncStorage.multiRemove([
+            GUEST_KEY_ID,
+            GUEST_KEY_PLATFORMS,
+            GUEST_KEY_LIBRARY,
+            GUEST_KEY_GOG_TOKEN,
+            PREF_KEY_COUNTRY,
+        ]);
     }
 }

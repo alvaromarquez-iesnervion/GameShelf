@@ -117,4 +117,10 @@ export class UserPreferencesStore {
         return SUPPORTED_COUNTRIES.find(c => c.code === code)
             ?? SUPPORTED_COUNTRIES[0];
     }
+
+    reset(): void {
+        this._savedCountry = null;
+        this._localCountry = DEFAULT_COUNTRY;
+        AsyncStorage.removeItem(COUNTRY_KEY).catch(() => {});
+    }
 }

@@ -2,6 +2,7 @@ import 'reflect-metadata';
 import { injectable, inject } from 'inversify';
 import { makeAutoObservable, runInAction } from 'mobx';
 import { IAuthUseCase } from '../../domain/interfaces/usecases/auth/IAuthUseCase';
+import { IGameShelfApiClient } from '../../domain/interfaces/services/IGameShelfApiClient';
 import { User } from '../../domain/entities/User';
 import { TYPES } from '../../di/types';
 import { withLoading } from './BaseViewModel';
@@ -10,6 +11,8 @@ import { mapFirebaseError } from '../../core/utils/firebaseErrors';
 import { HomeViewModel } from './HomeViewModel';
 import { LibraryViewModel } from './LibraryViewModel';
 import { WishlistViewModel } from './WishlistViewModel';
+import { UserPreferencesStore } from '../../data/utils/UserPreferencesStore';
+import { LocalGameRepository } from '../../data/repositories/LocalGameRepository';
 
 /**
  * ViewModel para autenticación.
@@ -32,6 +35,12 @@ export class AuthViewModel {
         private readonly libraryVm: LibraryViewModel,
         @inject(TYPES.WishlistViewModel)
         private readonly wishlistVm: WishlistViewModel,
+        @inject(TYPES.IGameShelfApiClient)
+        private readonly apiClient: IGameShelfApiClient,
+        @inject(TYPES.UserPreferencesStore)
+        private readonly userPreferences: UserPreferencesStore,
+        @inject(TYPES.LocalGameRepository)
+        private readonly localGameRepo: LocalGameRepository,
     ) {
         makeAutoObservable(this);
     }
@@ -97,6 +106,9 @@ export class AuthViewModel {
             this.homeVm.reset();
             this.libraryVm.reset();
             this.wishlistVm.reset();
+            this.apiClient.clearCache();
+            this.userPreferences.reset();
+            this.localGameRepo.clearCache();
         });
     }
 
