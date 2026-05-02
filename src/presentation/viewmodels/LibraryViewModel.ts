@@ -2,34 +2,26 @@ import 'reflect-metadata';
 import { injectable, inject } from 'inversify';
 import { makeAutoObservable, runInAction } from 'mobx';
 import { ILibraryUseCase } from '../../domain/interfaces/usecases/library/ILibraryUseCase';
-import { Game } from '../../domain/entities/Game';
 import { LibraryStats } from '../../domain/entities/LibraryStats';
 import { LinkedPlatform } from '../../domain/entities/LinkedPlatform';
 import { Platform } from '../../domain/enums/Platform';
 import { LibraryTab } from '../../domain/enums/LibraryTab';
 import { SortCriteria } from '../../domain/enums/SortCriteria';
-import { GameType } from '../../domain/enums/GameType';
+import { MergedLibraryGame } from '../../domain/interfaces/repositories/IGameRepository';
 import { TYPES } from '../../di/types';
 import { withLoading } from './BaseViewModel';
 
-const LIBRARY_PAGE_SIZE = 200;
-
-const PC_PLATFORMS: Platform[] = [Platform.STEAM, Platform.EPIC_GAMES, Platform.GOG];
-const CONSOLE_PLATFORMS: Platform[] = [Platform.PSN];
-
-export interface MergedLibraryGame {
-    game: Game;
-    platforms: Platform[];
-}
+const LIBRARY_PAGE_SIZE = 20;
 
 /**
  * ViewModel para la biblioteca de juegos.
  *
  * Singleton: compartido entre pantallas para evitar recargas innecesarias.
+ * La paginación, filtrado y ordenación se realizan server-side.
  */
 @injectable()
 export class LibraryViewModel {
-    private _games: Game[] = [];
+    private _games: MergedLibraryGame[] = [];
     private _linkedPlatforms: LinkedPlatform[] = [];
     private _stats: LibraryStats | null = null;
     private _isLoading: boolean = false;
@@ -39,6 +31,11 @@ export class LibraryViewModel {
     private _errorMessage: string | null = null;
     private _hasSynced: boolean = false;
     private _activeTab: LibraryTab = LibraryTab.PC;
+    private _currentUserId: string = '';
+    private _currentPage: number = 1;
+    private _totalPages: number = 0;
+    private _selectedPlatforms: Platform[] = [];
+    private _isLoadingMore: boolean = false;
 
     constructor(
         @inject(TYPES.ILibraryUseCase)
@@ -47,7 +44,7 @@ export class LibraryViewModel {
         makeAutoObservable(this);
     }
 
-    get games(): Game[] {
+    get games(): MergedLibraryGame[] {
         return this._games;
     }
 
@@ -57,70 +54,12 @@ export class LibraryViewModel {
 
     get pcGameCount(): number {
         if (this._stats) return this._stats.pcUnique;
-        return this._games.filter(
-            g => g.getGameType() !== GameType.DLC && PC_PLATFORMS.includes(g.getPlatform()),
-        ).length;
+        return 0;
     }
 
     get consoleGameCount(): number {
         if (this._stats) return this._stats.consoleUnique;
-        return this._games.filter(
-            g => g.getGameType() !== GameType.DLC && CONSOLE_PLATFORMS.includes(g.getPlatform()),
-        ).length;
-    }
-
-    get filteredGames(): Game[] {
-        // 0. Excluir DLCs y filtrar por tab activo
-        const tabPlatforms = this._activeTab === LibraryTab.PC ? PC_PLATFORMS : CONSOLE_PLATFORMS;
-        const baseGames = this._games.filter(
-            g => g.getGameType() !== GameType.DLC && tabPlatforms.includes(g.getPlatform()),
-        );
-
-        // 1. Filtrado por búsqueda
-        const query = this._searchQuery.trim().toLowerCase();
-        const filtered = query
-            ? baseGames.filter(game => game.getTitle().toLowerCase().includes(query))
-            : [...baseGames];
-
-        // 2. Ordenación — slice implícito evita mutar el array original
-        switch (this._sortCriteria) {
-            case SortCriteria.ALPHABETICAL:
-                return filtered.sort((a, b) => a.getTitle().localeCompare(b.getTitle()));
-            case SortCriteria.LAST_PLAYED: {
-                return filtered.sort((a, b) => {
-                    const aTime = a.getLastPlayed()?.getTime() ?? 0;
-                    const bTime = b.getLastPlayed()?.getTime() ?? 0;
-                    return bTime - aTime; // más reciente primero
-                });
-            }
-            case SortCriteria.PLAYTIME:
-                return filtered.sort((a, b) => b.getPlaytime() - a.getPlaytime()); // mayor primero
-            default:
-                return filtered;
-        }
-    }
-
-    get mergedFilteredGames(): MergedLibraryGame[] {
-        const map = new Map<string, MergedLibraryGame>();
-        for (const game of this.filteredGames) {
-            // Normalized title is the only identifier shared across all platforms
-            // (steamAppId is Steam-only, itadGameId is often null for GOG/Steam).
-            const key = game.getTitle().toLowerCase().trim();
-
-            const existing = map.get(key);
-            if (existing) {
-                if (!existing.platforms.includes(game.getPlatform())) {
-                    existing.platforms.push(game.getPlatform());
-                }
-                // Prefer Steam game as canonical (richer metadata: playtime, cover, etc.)
-                if (game.getPlatform() === Platform.STEAM) {
-                    existing.game = game;
-                }
-            } else {
-                map.set(key, { game, platforms: [game.getPlatform()] });
-            }
-        }
-        return [...map.values()];
+        return 0;
     }
 
     get sortCriteria(): SortCriteria {
@@ -147,136 +86,216 @@ export class LibraryViewModel {
         return this._errorMessage;
     }
 
-    get uniqueGameCount(): number {
+    get totalUniqueCount(): number {
         if (this._stats) return this._stats.totalUnique;
-        // Fallback for guest users (no API stats available)
-        if (this._games.length === 0) return 0;
-        const seen = new Set<string>();
-        for (const game of this._games) {
-            if (game.getGameType() === GameType.DLC) continue;
-            seen.add(game.getTitle().toLowerCase().trim());
-        }
-        return seen.size;
+        return this._games.length;
     }
 
-    async loadLibrary(userId: string): Promise<void> {
+    get currentPage(): number {
+        return this._currentPage;
+    }
+
+    get totalPages(): number {
+        return this._totalPages;
+    }
+
+    get selectedPlatforms(): Platform[] {
+        return this._selectedPlatforms;
+    }
+
+    get isLoadingMore(): boolean {
+        return this._isLoadingMore;
+    }
+
+    async loadLibrary(userId: string, page: number = 1): Promise<void> {
         runInAction(() => {
             this._isLoading = true;
             this._errorMessage = null;
-            this._games = [];
+            this._currentUserId = userId;
         });
         try {
-            // Primera página, plataformas y stats en paralelo — la UI se muestra en cuanto llegan
-            const [firstPage, platforms, stats] = await Promise.all([
-                this.libraryUseCase.getLibraryPage(userId, LIBRARY_PAGE_SIZE),
+            const [result, platforms, stats] = await Promise.all([
+                this.libraryUseCase.getLibraryPage(
+                    userId,
+                    LIBRARY_PAGE_SIZE,
+                    page,
+                    this._activeTab,
+                    this._sortCriteria,
+                    this._searchQuery || undefined,
+                    this._selectedPlatforms.length > 0 ? this._selectedPlatforms : undefined,
+                ),
                 this.libraryUseCase.getLinkedPlatforms(userId),
                 this.libraryUseCase.getLibraryStats(userId),
             ]);
             runInAction(() => {
-                this._games = firstPage.games;
+                this._games = result.games;
                 this._linkedPlatforms = platforms;
                 this._stats = stats;
+                this._currentPage = page;
+                this._totalPages = Math.ceil(result.total / LIBRARY_PAGE_SIZE);
                 this._isLoading = false;
+                this._isLoadingMore = false;
             });
-
-            // Páginas restantes en background — MobX actualiza la UI reactivamente
-            let cursor = firstPage.nextCursor;
-            while (cursor !== null) {
-                const page = await this.libraryUseCase.getLibraryPage(userId, LIBRARY_PAGE_SIZE, cursor);
-                runInAction(() => { this._games = [...this._games, ...page.games]; });
-                cursor = page.nextCursor;
-            }
         } catch (err) {
             const message = err instanceof Error ? err.message : String(err);
             runInAction(() => {
                 this._errorMessage = message;
                 this._isLoading = false;
+                this._isLoadingMore = false;
             });
+        }
+    }
+
+    loadMore(): void {
+        if (this._currentPage < this._totalPages && !this._isLoadingMore) {
+            runInAction(() => { this._isLoadingMore = true; });
+            this.loadLibrary(this._currentUserId, this._currentPage + 1);
+        }
+    }
+
+    goToPage(page: number): void {
+        if (page >= 1 && page <= this._totalPages && page !== this._currentPage) {
+            this.loadLibrary(this._currentUserId, page);
+        }
+    }
+
+    goToFirstPage(): void {
+        if (this._currentPage > 1) {
+            this.loadLibrary(this._currentUserId, 1);
+        }
+    }
+
+    goToLastPage(): void {
+        if (this._currentPage < this._totalPages) {
+            this.loadLibrary(this._currentUserId, this._totalPages);
         }
     }
 
     async syncLibrary(userId: string, platform: Platform): Promise<void> {
         await withLoading(this, '_isSyncing', '_errorMessage', async () => {
             await this.libraryUseCase.syncLibrary(userId, platform);
-            // Recargar la biblioteca completa para no perder juegos de otras plataformas.
-            const [games, platforms] = await Promise.all([
-                this.libraryUseCase.getLibrary(userId),
+            const [gamesResult, platforms] = await Promise.all([
+                this.libraryUseCase.getLibraryPage(
+                    userId, LIBRARY_PAGE_SIZE, 1,
+                    this._activeTab, this._sortCriteria,
+                    this._searchQuery || undefined,
+                    this._selectedPlatforms.length > 0 ? this._selectedPlatforms : undefined,
+                ),
                 this.libraryUseCase.getLinkedPlatforms(userId),
             ]);
             runInAction(() => {
-                this._games = games;
+                this._games = gamesResult.games;
                 this._linkedPlatforms = platforms;
+                this._currentPage = 1;
+                this._totalPages = Math.ceil(gamesResult.total / LIBRARY_PAGE_SIZE);
             });
         });
     }
 
     setActiveTab(tab: LibraryTab): void {
         this._activeTab = tab;
+        this._selectedPlatforms = [];
         this._searchQuery = '';
+        this._currentPage = 1;
+        if (this._currentUserId) {
+            this.loadLibrary(this._currentUserId, 1);
+        }
     }
 
     setSearchQuery(query: string): void {
         this._searchQuery = query;
+        this._currentPage = 1;
+        if (this._currentUserId) {
+            this.loadLibrary(this._currentUserId, 1);
+        }
     }
 
     clearSearch(): void {
         this._searchQuery = '';
+        this._currentPage = 1;
+        if (this._currentUserId) {
+            this.loadLibrary(this._currentUserId, 1);
+        }
     }
 
     setSortCriteria(criteria: SortCriteria): void {
         this._sortCriteria = criteria;
+        this._currentPage = 1;
+        if (this._currentUserId) {
+            this.loadLibrary(this._currentUserId, 1);
+        }
+    }
+
+    setSelectedPlatforms(platforms: Platform[]): void {
+        this._selectedPlatforms = platforms;
+        this._currentPage = 1;
+        if (this._currentUserId) {
+            this.loadLibrary(this._currentUserId, 1);
+        }
+    }
+
+    togglePlatform(platform: Platform): void {
+        const exists = this._selectedPlatforms.includes(platform);
+        if (exists) {
+            this._selectedPlatforms = this._selectedPlatforms.filter(p => p !== platform);
+        } else {
+            this._selectedPlatforms = [...this._selectedPlatforms, platform];
+        }
+        this._currentPage = 1;
+        if (this._currentUserId) {
+            this.loadLibrary(this._currentUserId, 1);
+        }
     }
 
     /**
      * Llamado al arrancar la app tras autenticarse.
-     * 1. Carga la biblioteca Firestore inmediatamente (respuesta rápida).
-     * 2. Si el usuario tiene plataformas vinculadas y no hemos sincronizado
-     *    en esta sesión, lanza una sincronización en background y actualiza la UI cuando termina.
+     * Carga página 1 de la biblioteca, plataformas y stats en paralelo.
      */
     async autoSyncIfNeeded(userId: string): Promise<void> {
         if (this._hasSynced) return;
 
-        // Marcar hasSynced y activar isLoading antes de cualquier await para
-        // cerrar la ventana de carrera con LibraryScreen (que comprueba isLoading).
         runInAction(() => {
             this._hasSynced = true;
             this._isLoading = true;
+            this._currentUserId = userId;
         });
 
         try {
-            // Primera página, plataformas y stats en paralelo (respuesta rápida)
-            const [firstPage, platforms, stats] = await Promise.all([
-                this.libraryUseCase.getLibraryPage(userId, LIBRARY_PAGE_SIZE),
+            const [result, platforms, stats] = await Promise.all([
+                this.libraryUseCase.getLibraryPage(
+                    userId, LIBRARY_PAGE_SIZE, 1,
+                    this._activeTab, this._sortCriteria,
+                ),
                 this.libraryUseCase.getLinkedPlatforms(userId),
                 this.libraryUseCase.getLibraryStats(userId),
             ]);
             runInAction(() => {
-                this._games = firstPage.games;
+                this._games = result.games;
                 this._linkedPlatforms = platforms;
                 this._stats = stats;
+                this._currentPage = 1;
+                this._totalPages = Math.ceil(result.total / LIBRARY_PAGE_SIZE);
                 this._isLoading = false;
             });
 
-            // Páginas restantes en background antes de comenzar el sync de plataformas
-            let cursor = firstPage.nextCursor;
-            while (cursor !== null) {
-                const page = await this.libraryUseCase.getLibraryPage(userId, LIBRARY_PAGE_SIZE, cursor);
-                runInAction(() => { this._games = [...this._games, ...page.games]; });
-                cursor = page.nextCursor;
-            }
-
             if (platforms.length === 0) return;
 
-            // Sincronización en background — la UI ya muestra la caché
             runInAction(() => { this._isSyncing = true; });
 
             try {
                 const synced = await this.libraryUseCase.autoSyncLibrary(userId);
                 if (synced.length > 0) {
-                    runInAction(() => { this._games = synced; });
+                    // Recargar página 1 después del sync para tener datos actualizados
+                    const refreshed = await this.libraryUseCase.getLibraryPage(
+                        userId, LIBRARY_PAGE_SIZE, 1,
+                        this._activeTab, this._sortCriteria,
+                    );
+                    runInAction(() => {
+                        this._games = refreshed.games;
+                        this._totalPages = Math.ceil(refreshed.total / LIBRARY_PAGE_SIZE);
+                    });
                 }
             } catch (error) {
-                // El error de sync no es crítico — la biblioteca en caché sigue disponible
                 const message = error instanceof Error ? error.message : String(error);
                 runInAction(() => { this._errorMessage = message; });
             } finally {
@@ -304,6 +323,11 @@ export class LibraryViewModel {
             this._errorMessage = null;
             this._hasSynced = false;
             this._activeTab = LibraryTab.PC;
+            this._currentUserId = '';
+            this._currentPage = 1;
+            this._totalPages = 0;
+            this._selectedPlatforms = [];
+            this._isLoadingMore = false;
         });
     }
 

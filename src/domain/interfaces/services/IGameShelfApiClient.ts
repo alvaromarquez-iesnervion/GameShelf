@@ -1,11 +1,13 @@
 import { Game } from '../../entities/Game';
 import { GameDetail } from '../../entities/GameDetail';
-import { LibraryStats } from '../../entities/LibraryStats';
 import { WishlistItem } from '../../entities/WishlistItem';
 import { LinkedPlatform } from '../../entities/LinkedPlatform';
+import { LibraryStats } from '../../entities/LibraryStats';
 import { SearchResult } from '../../entities/SearchResult';
 import { Platform } from '../../enums/Platform';
 import { LibraryPage } from '../repositories/IGameRepository';
+import { LibraryTab } from '../../enums/LibraryTab';
+import { SortCriteria } from '../../enums/SortCriteria';
 
 export interface IGameShelfApiClient {
     // ── Auth ──────────────────────────────────────────────────────────────
@@ -13,15 +15,25 @@ export interface IGameShelfApiClient {
     syncUser(): Promise<void>;
 
     // ── Library ───────────────────────────────────────────────────────────
-    /** Devuelve todos los juegos de la biblioteca del usuario autenticado. */
-    getLibraryGames(): Promise<Game[]>;
     /** Devuelve estadísticas agregadas de la biblioteca (únicos por plataforma, playtime). */
     getLibraryStats(): Promise<LibraryStats>;
     /**
-     * Devuelve una página de la biblioteca.
-     * El cursor es el ID del último juego de la página anterior (undefined = primera).
+     * Devuelve una página paginada y filtrada de la biblioteca.
+     * @param pageSize     Número máximo de juegos por página.
+     * @param page         Número de página (1-indexed).
+     * @param tab          Filtro por pestaña PC/Consola.
+     * @param sortCriteria Criterio de ordenación.
+     * @param searchQuery  Término de búsqueda.
+     * @param platforms    Lista de plataformas a filtrar.
      */
-    getLibraryGamesPage(pageSize: number, cursor?: string): Promise<LibraryPage>;
+    getLibraryGamesPage(
+        pageSize: number,
+        page?: number,
+        tab?: LibraryTab,
+        sortCriteria?: SortCriteria,
+        searchQuery?: string,
+        platforms?: Platform[],
+    ): Promise<LibraryPage>;
     /** Sincroniza la biblioteca de la plataforma indicada y devuelve los juegos actualizados. */
     syncLibrary(platform: Platform): Promise<Game[]>;
 
@@ -73,4 +85,7 @@ export interface IGameShelfApiClient {
     getPopularGames(): Promise<Game[]>;
     getRecentlyPlayed(): Promise<Game[]>;
     getMostPlayed(): Promise<Game[]>;
+
+    // ── Cache ─────────────────────────────────────────────────────────────
+    clearCache(): void;
 }

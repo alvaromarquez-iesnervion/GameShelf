@@ -115,4 +115,42 @@ export const styles = StyleSheet.create({
     sortChipTextActive: {
         color: colors.primary,
     },
+    paginationContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: spacing.sm,
+        paddingVertical: spacing.md,
+        paddingHorizontal: spacing.lg,
+    },
+    pageButton: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        backgroundColor: colors.surface,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: StyleSheet.hairlineWidth,
+        borderColor: colors.borderSubtle,
+    },
+    pageButtonDisabled: {
+        opacity: 0.4,
+    },
+    pageInfo: {
+        paddingHorizontal: spacing.md,
+    },
+    pageText: {
+        ...typography.caption,
+        color: colors.textSecondary,
+        fontWeight: '600',
+    },
+    loadingMoreContainer: {
+        paddingVertical: spacing.sm,
+        alignItems: 'center',
+    },
+    loadingMoreText: {
+        ...typography.caption,
+        color: colors.textTertiary,
+        fontStyle: 'italic',
+    },
 });

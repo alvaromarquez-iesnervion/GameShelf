@@ -6,6 +6,8 @@ import { Game } from '../../domain/entities/Game';
 import { LibraryStats } from '../../domain/entities/LibraryStats';
 import { SearchResult } from '../../domain/entities/SearchResult';
 import { Platform } from '../../domain/enums/Platform';
+import { LibraryTab } from '../../domain/enums/LibraryTab';
+import { SortCriteria } from '../../domain/enums/SortCriteria';
 import { TYPES } from '../../di/types';
 
 @injectable()
@@ -16,11 +18,20 @@ export class GameShelfApiGameRepository implements IGameRepository {
     ) {}
 
     async getLibraryGames(_userId: string): Promise<Game[]> {
-        return this.api.getLibraryGames();
+        const page = await this.api.getLibraryGamesPage(500);
+        return page.games.map(g => g.game);
     }
 
-    async getLibraryGamesPage(_userId: string, pageSize: number, cursor?: string): Promise<LibraryPage> {
-        return this.api.getLibraryGamesPage(pageSize, cursor);
+    async getLibraryGamesPage(
+        _userId: string,
+        pageSize: number,
+        page?: number,
+        tab?: LibraryTab,
+        sortCriteria?: SortCriteria,
+        searchQuery?: string,
+        platforms?: Platform[],
+    ): Promise<LibraryPage> {
+        return this.api.getLibraryGamesPage(pageSize, page, tab, sortCriteria, searchQuery, platforms);
     }
 
     async getGameById(_userId: string, gameId: string): Promise<Game> {

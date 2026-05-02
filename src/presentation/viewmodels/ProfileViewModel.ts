@@ -31,7 +31,7 @@ export class ProfileViewModel {
         if (this.libraryVm.isLoading) {
             return 0;
         }
-        return this.libraryVm.uniqueGameCount;
+        return this.libraryVm.totalUniqueCount;
     }
 
     get platformCount(): number {

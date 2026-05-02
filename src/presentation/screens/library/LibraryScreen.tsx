@@ -8,7 +8,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as Haptics from 'expo-haptics';
 import { useInjection } from '../../../di/hooks/useInjection';
 import { AuthViewModel } from '../../viewmodels/AuthViewModel';
-import { LibraryViewModel, MergedLibraryGame } from '../../viewmodels/LibraryViewModel';
+import { LibraryViewModel } from '../../viewmodels/LibraryViewModel';
 import { TYPES } from '../../../di/types';
 import { LibraryStackParamList } from '../../../core/navigation/navigationTypes';
 import { GameCard } from '../../components/games/GameCard';
@@ -18,7 +18,10 @@ import { LibrarySkeleton } from '../../components/common/LibrarySkeleton';
 import { BrandAura } from '../../components/common/BrandAura';
 import { SortCriteria } from '../../../domain/enums/SortCriteria';
 import { LibraryTab } from '../../../domain/enums/LibraryTab';
+import { MergedLibraryGame } from '../../../domain/interfaces/repositories/IGameRepository';
 import { LibraryTabBar } from '../../components/library/LibraryTabBar';
+import { PlatformFilterChips } from '../../components/library/PlatformFilterChips';
+import { Platform as GamePlatform } from '../../../domain/enums/Platform';
 import { colors } from '../../theme/colors';
 import { spacing } from '../../theme/spacing';
 import { styles } from './LibraryScreen.styles';
@@ -38,6 +41,7 @@ export const LibraryScreen: React.FC = observer(() => {
     const vm = useInjection<LibraryViewModel>(TYPES.LibraryViewModel);
     const navigation = useNavigation<Nav>();
     const userId = authVm.currentUser?.getId() ?? '';
+    const flatListRef = useRef<FlatList>(null);
 
     // 3-column grid with perfect gutters (aligned with screen padding)
     const cardWidth = Math.floor((windowWidth - (spacing.lg * 2) - (spacing.sm * 2)) / 3);
@@ -65,9 +69,15 @@ export const LibraryScreen: React.FC = observer(() => {
         };
     }, []);
 
+    useEffect(() => {
+        if (vm.currentPage > 1 && flatListRef.current) {
+            flatListRef.current.scrollToOffset({ offset: 0, animated: false });
+        }
+    }, [vm.currentPage]);
+
     const handleRefresh = useCallback(() => {
         if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        vm.loadLibrary(userId);
+        vm.loadLibrary(userId, 1);
     }, [vm, userId]);
 
     const handleNavigateWishlist = useCallback(() => {
@@ -92,6 +102,11 @@ export const LibraryScreen: React.FC = observer(() => {
         setSearchInput('');
     }, [vm]);
 
+    const handleTogglePlatform = useCallback((platform: GamePlatform) => {
+        if (Platform.OS !== 'web') Haptics.selectionAsync();
+        vm.togglePlatform(platform);
+    }, [vm]);
+
     const renderGameCard = useCallback(({ item }: { item: MergedLibraryGame }) => (
         <GameCard
             gameId={item.game.getId()}
@@ -103,6 +118,63 @@ export const LibraryScreen: React.FC = observer(() => {
             onPress={(id) => handleGamePress(id, item.platforms, item.game.getSteamAppId() ?? undefined)}
         />
     ), [handleGamePress, cardWidth]);
+
+    const renderPaginationFooter = useCallback(() => {
+        if (vm.totalPages <= 1) return null;
+
+        return (
+            <View style={styles.paginationContainer}>
+                <TouchableOpacity
+                    style={[styles.pageButton, vm.currentPage === 1 && styles.pageButtonDisabled]}
+                    onPress={() => vm.goToFirstPage()}
+                    disabled={vm.currentPage === 1}
+                    activeOpacity={0.7}
+                >
+                    <Feather name="chevrons-left" size={16} color={vm.currentPage === 1 ? colors.textTertiary : colors.primary} />
+                </TouchableOpacity>
+                <TouchableOpacity
+                    style={[styles.pageButton, vm.currentPage === 1 && styles.pageButtonDisabled]}
+                    onPress={() => vm.goToPage(vm.currentPage - 1)}
+                    disabled={vm.currentPage === 1}
+                    activeOpacity={0.7}
+                >
+                    <Feather name="chevron-left" size={16} color={vm.currentPage === 1 ? colors.textTertiary : colors.primary} />
+                </TouchableOpacity>
+
+                <View style={styles.pageInfo}>
+                    <Text style={styles.pageText}>
+                        {vm.currentPage} / {vm.totalPages}
+                    </Text>
+                </View>
+
+                <TouchableOpacity
+                    style={[styles.pageButton, vm.currentPage === vm.totalPages && styles.pageButtonDisabled]}
+                    onPress={() => vm.goToPage(vm.currentPage + 1)}
+                    disabled={vm.currentPage === vm.totalPages}
+                    activeOpacity={0.7}
+                >
+                    <Feather name="chevron-right" size={16} color={vm.currentPage === vm.totalPages ? colors.textTertiary : colors.primary} />
+                </TouchableOpacity>
+                <TouchableOpacity
+                    style={[styles.pageButton, vm.currentPage === vm.totalPages && styles.pageButtonDisabled]}
+                    onPress={() => vm.goToLastPage()}
+                    disabled={vm.currentPage === vm.totalPages}
+                    activeOpacity={0.7}
+                >
+                    <Feather name="chevrons-right" size={16} color={vm.currentPage === vm.totalPages ? colors.textTertiary : colors.primary} />
+                </TouchableOpacity>
+            </View>
+        );
+    }, [vm]);
+
+    const renderLoadingMoreIndicator = useCallback(() => {
+        if (!vm.isLoadingMore) return null;
+        return (
+            <View style={styles.loadingMoreContainer}>
+                <Text style={styles.loadingMoreText}>Cargando más...</Text>
+            </View>
+        );
+    }, [vm.isLoadingMore]);
 
     if (vm.isLoading && vm.games.length === 0) return <LibrarySkeleton />;
     if (vm.errorMessage) return <ErrorMessage message={vm.errorMessage} onRetry={handleRefresh} />;
@@ -179,8 +251,14 @@ export const LibraryScreen: React.FC = observer(() => {
                 consoleCount={vm.consoleGameCount}
                 onTabChange={handleTabChange}
             />
+            <PlatformFilterChips
+                activeTab={vm.activeTab}
+                selectedPlatforms={vm.selectedPlatforms}
+                onTogglePlatform={handleTogglePlatform}
+            />
             <FlatList
-                data={vm.mergedFilteredGames}
+                ref={flatListRef}
+                data={vm.games}
                 keyExtractor={(item) => item.game.getId()}
                 numColumns={3}
                 columnWrapperStyle={styles.row}
@@ -197,6 +275,12 @@ export const LibraryScreen: React.FC = observer(() => {
                     />
                 }
                 renderItem={renderGameCard}
+                ListFooterComponent={() => (
+                    <>
+                        {renderLoadingMoreIndicator()}
+                        {renderPaginationFooter()}
+                    </>
+                )}
                 ListEmptyComponent={
                     <View style={styles.emptyContainer}>
                         <EmptyState

@@ -5,6 +5,8 @@ import { Game } from '../../domain/entities/Game';
 import { LibraryStats } from '../../domain/entities/LibraryStats';
 import { SearchResult } from '../../domain/entities/SearchResult';
 import { Platform } from '../../domain/enums/Platform';
+import { LibraryTab } from '../../domain/enums/LibraryTab';
+import { SortCriteria } from '../../domain/enums/SortCriteria';
 import {
     MOCK_ALL_GAMES,
     MOCK_STEAM_GAMES,
@@ -89,9 +91,14 @@ export class MockGameRepository implements IGameRepository {
         );
     }
 
-    async getLibraryGamesPage(_userId: string, _pageSize: number, _cursor?: string): Promise<LibraryPage> {
+    async getLibraryGamesPage(_userId: string, _pageSize: number, _page?: number, _tab?: LibraryTab, _sortCriteria?: SortCriteria, _searchQuery?: string, _platforms?: Platform[]): Promise<LibraryPage> {
         const games = await this.getLibraryGames(_userId);
-        return { games, nextCursor: null };
+        return { 
+            games: games.map(g => ({ game: g, platforms: [g.getPlatform()] })), 
+            total: games.length, 
+            hasMore: false, 
+            currentPage: _page ?? 1 
+        };
     }
 
     async storeEpicGames(_userId: string, _games: Game[]): Promise<void> {

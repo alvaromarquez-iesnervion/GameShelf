@@ -9,15 +9,16 @@ import { LinkedPlatform } from '../../domain/entities/LinkedPlatform';
 import { SearchResult } from '../../domain/entities/SearchResult';
 import { Platform } from '../../domain/enums/Platform';
 import { LibraryPage } from '../../domain/interfaces/repositories/IGameRepository';
+import { LibraryTab } from '../../domain/enums/LibraryTab';
+import { SortCriteria } from '../../domain/enums/SortCriteria';
 
 /** Stub sin estado — devuelve colecciones vacías. Solo para modo mock (sin Firebase). */
 @injectable()
 export class MockGameShelfApiClient implements IGameShelfApiClient {
     syncUser(): Promise<void> { return Promise.resolve(); }
 
-    getLibraryGames(): Promise<Game[]> { return Promise.resolve([]); }
-    getLibraryGamesPage(_pageSize: number, _cursor?: string): Promise<LibraryPage> {
-        return Promise.resolve({ games: [], nextCursor: null });
+    getLibraryGamesPage(_pageSize: number, _page?: number, _tab?: LibraryTab, _sortCriteria?: SortCriteria, _searchQuery?: string, _platforms?: Platform[]): Promise<LibraryPage> {
+        return Promise.resolve({ games: [], total: 0, hasMore: false, currentPage: _page ?? 1 });
     }
     syncLibrary(_platform: Platform): Promise<Game[]> { return Promise.resolve([]); }
 
@@ -67,4 +68,6 @@ export class MockGameShelfApiClient implements IGameShelfApiClient {
 
     getSavedCountry(): Promise<string | null> { return Promise.resolve(null); }
     setSavedCountry(_country: string): Promise<void> { return Promise.resolve(); }
+
+    clearCache(): void {}
 }

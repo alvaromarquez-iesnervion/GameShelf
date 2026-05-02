@@ -5,6 +5,8 @@ import { Game } from '../../domain/entities/Game';
 import { LibraryStats } from '../../domain/entities/LibraryStats';
 import { SearchResult } from '../../domain/entities/SearchResult';
 import { Platform } from '../../domain/enums/Platform';
+import { LibraryTab } from '../../domain/enums/LibraryTab';
+import { SortCriteria } from '../../domain/enums/SortCriteria';
 import { TYPES } from '../../di/types';
 import { isGuestUser } from '../../domain/utils/guestUtils';
 
@@ -26,8 +28,10 @@ export class GuestAwareGameRepository implements IGameRepository {
         return this.repo(userId).getLibraryGames(userId);
     }
 
-    getLibraryGamesPage(userId: string, pageSize: number, cursor?: string): Promise<LibraryPage> {
-        return this.repo(userId).getLibraryGamesPage(userId, pageSize, cursor);
+    getLibraryGamesPage(
+        userId: string, pageSize: number, page?: number, tab?: LibraryTab, sortCriteria?: SortCriteria, searchQuery?: string, platforms?: Platform[],
+    ): Promise<LibraryPage> {
+        return this.repo(userId).getLibraryGamesPage(userId, pageSize, page, tab, sortCriteria, searchQuery, platforms);
     }
 
     getGameById(userId: string, gameId: string): Promise<Game> {

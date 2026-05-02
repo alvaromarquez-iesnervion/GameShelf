@@ -13,7 +13,9 @@ import { GameType } from '../../domain/enums/GameType';
 import { ProtonTier } from '../../domain/entities/ProtonDbRating';
 import { SteamGameMetadata } from '../../domain/dtos/SteamGameMetadata';
 import { LibraryStats } from '../../domain/entities/LibraryStats';
-import { LibraryPage } from '../../domain/interfaces/repositories/IGameRepository';
+import { LibraryPage, MergedLibraryGame } from '../../domain/interfaces/repositories/IGameRepository';
+import { LibraryTab } from '../../domain/enums/LibraryTab';
+import { SortCriteria } from '../../domain/enums/SortCriteria';
 import { TYPES } from '../../di/types';
 
 const BASE_URL = process.env.EXPO_PUBLIC_GAMESHELF_API_URL ?? 'http://localhost:8000';
@@ -111,10 +113,16 @@ interface ApiSearchResult {
     ownedPlatforms: string[];
 }
 
+interface ApiMergedGame {
+    game: ApiGame;
+    platforms: string[];
+}
+
 interface ApiLibraryPage {
-    games: ApiGame[];
+    games: ApiMergedGame[];
     total: number;
     hasMore: boolean;
+    currentPage: number;
 }
 
 interface ApiLibraryStats {
@@ -169,6 +177,13 @@ function toGame(r: ApiGame): Game {
         r.parentGameId ?? null,
         r.psnTitleId ?? null,
     );
+}
+
+function toMergedGame(r: ApiMergedGame): MergedLibraryGame {
+    return {
+        game: toGame(r.game),
+        platforms: r.platforms.map(toPlatform),
+    };
 }
 
 function toDeal(r: ApiDeal): Deal {
@@ -309,19 +324,36 @@ export class GameShelfApiClientImpl implements IGameShelfApiClient {
 
     // ── Library ───────────────────────────────────────────────────────────
 
+    /** @deprecated Usar getLibraryGamesPage con paginación. */
     async getLibraryGames(): Promise<Game[]> {
         const data = await this.request<ApiLibraryPage>('/api/v1/library?page_size=500');
-        return data.games.map(toGame);
+        return data.games.map(r => toGame(r.game));
     }
 
-    async getLibraryGamesPage(pageSize: number, cursor?: string): Promise<LibraryPage> {
-        const page = cursor ? parseInt(cursor, 10) : 1;
-        const data = await this.request<ApiLibraryPage>(
-            `/api/v1/library?page=${page}&page_size=${pageSize}`,
-        );
+    async getLibraryGamesPage(
+        pageSize: number,
+        page: number = 1,
+        tab?: LibraryTab,
+        sortCriteria?: SortCriteria,
+        searchQuery?: string,
+        platforms?: Platform[],
+    ): Promise<LibraryPage> {
+        const params = new URLSearchParams({
+            page: String(page),
+            page_size: String(pageSize),
+        });
+        if (tab) params.set('tab', tab.toLowerCase());
+        if (sortCriteria) params.set('sort', sortCriteria.toLowerCase());
+        if (searchQuery && searchQuery.trim()) params.set('search', searchQuery.trim());
+        if (platforms && platforms.length > 0) {
+            for (const p of platforms) params.append('platforms', p.toLowerCase());
+        }
+        const data = await this.request<ApiLibraryPage>(`/api/v1/library?${params}`);
         return {
-            games: data.games.map(toGame),
-            nextCursor: data.hasMore ? String(page + 1) : null,
+            games: data.games.map(toMergedGame),
+            total: data.total,
+            hasMore: data.hasMore,
+            currentPage: page,
         };
     }
 
@@ -331,7 +363,7 @@ export class GameShelfApiClientImpl implements IGameShelfApiClient {
     }
 
     async syncLibrary(platform: Platform): Promise<Game[]> {
-        const data = await this.request<ApiLibraryPage>('/api/v1/library/sync', {
+        const data = await this.request<{ games: ApiGame[] }>(`/api/v1/library/sync`, {
             method: 'POST',
             body: JSON.stringify({ platform: platform.toLowerCase() }),
         });
@@ -514,5 +546,10 @@ export class GameShelfApiClientImpl implements IGameShelfApiClient {
     async getMostPlayed(): Promise<Game[]> {
         const data = await this._getHomeData();
         return data.mostPlayed.map(toGame);
+    }
+
+    clearCache(): void {
+        this._homeCache = null;
+        this._homePending = null;
     }
 }

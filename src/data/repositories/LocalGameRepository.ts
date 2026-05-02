@@ -71,9 +71,15 @@ export class LocalGameRepository implements IGameRepository {
         return this.readAll();
     }
 
-    async getLibraryGamesPage(_userId: string, _pageSize: number, _cursor?: string): Promise<LibraryPage> {
+    async getLibraryGamesPage(_userId: string, _pageSize: number, _page?: number, _tab?: any, _sortCriteria?: any, _searchQuery?: string, _platforms?: any[]): Promise<LibraryPage> {
         // La biblioteca local (modo invitado) es siempre pequeña — se devuelve completa en una página.
-        return { games: await this.readAll(), nextCursor: null };
+        const games = await this.readAll();
+        return { 
+            games: games.map(g => ({ game: g, platforms: [g.getPlatform()] as Platform[] })), 
+            total: games.length, 
+            hasMore: false, 
+            currentPage: _page ?? 1 
+        };
     }
 
     async getGameById(_userId: string, gameId: string): Promise<Game> {
@@ -141,6 +147,10 @@ export class LocalGameRepository implements IGameRepository {
         const consoleTitles = new Set(nonDlc.filter(g => consolePlatforms.includes(g.getPlatform())).map(g => g.getTitle().toLowerCase().trim()));
         const totalPlaytimeHours = Math.round(games.reduce((sum, g) => sum + g.getPlaytime(), 0) / 60 * 100) / 100;
         return new LibraryStats(allTitles.size, pcTitles.size, consoleTitles.size, totalPlaytimeHours);
+    }
+
+    clearCache(): void {
+        this._cache = null;
     }
 
 }
