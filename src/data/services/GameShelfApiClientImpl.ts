@@ -109,6 +109,7 @@ interface ApiSearchResult {
     coverUrl?: string;
     isInWishlist: boolean;
     steamAppId?: number | null;
+    gameType?: string | null;
     isOwned: boolean;
     ownedPlatforms: string[];
 }
@@ -253,12 +254,18 @@ function toLinkedPlatform(r: ApiLinkedPlatform): LinkedPlatform {
 }
 
 function toSearchResult(r: ApiSearchResult): SearchResult {
+    let gameType: GameType | null = null;
+    if (r.gameType) {
+        const normalized = r.gameType.toLowerCase();
+        gameType = normalized === 'dlc' ? GameType.DLC : GameType.GAME;
+    }
     return new SearchResult(
         r.id ?? '',
         r.title,
         r.coverUrl ?? '',
         r.isInWishlist,
         r.steamAppId ?? null,
+        gameType,
         r.isOwned,
         r.ownedPlatforms.map(toPlatform),
     );
