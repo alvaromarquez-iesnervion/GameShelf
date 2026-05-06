@@ -216,4 +216,27 @@ export const styles = StyleSheet.create({
     dealsSection: {
         marginTop: spacing.md,
     },
+
+    // ─── DLC horizontal list ────────────────────────────────────────────────
+    dlcList: {
+        paddingHorizontal: spacing.xs,
+        gap: spacing.sm,
+    },
+    dlcCard: {
+        width: 120,
+        borderRadius: radius.md,
+        overflow: 'hidden',
+        backgroundColor: colors.surface,
+    },
+    dlcCover: {
+        width: 120,
+        height: 68,
+        backgroundColor: colors.surfaceElevated,
+    },
+    dlcTitle: {
+        ...typography.small,
+        fontWeight: '600',
+        paddingHorizontal: spacing.xs,
+        paddingVertical: spacing.xs,
+    },
 });

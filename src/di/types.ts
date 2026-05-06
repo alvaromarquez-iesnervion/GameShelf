@@ -46,6 +46,9 @@ export const TYPES = {
     HomeViewModel: Symbol.for('HomeViewModel'),
     ProfileViewModel: Symbol.for('ProfileViewModel'),
 
-    // User Preferences Store
-    UserPreferencesStore: Symbol.for('UserPreferencesStore'),
+    // Country Preference Service
+    ICountryPreferenceService: Symbol.for('ICountryPreferenceService'),
+
+    // Push Notification Service
+    PushNotificationService: Symbol.for('PushNotificationService'),
 };

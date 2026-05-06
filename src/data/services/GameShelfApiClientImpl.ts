@@ -555,6 +555,38 @@ export class GameShelfApiClientImpl implements IGameShelfApiClient {
         return data.mostPlayed.map(toGame);
     }
 
+    // ── Notification Preferences ──────────────────────────────────────────
+
+    async getNotificationPreferences(): Promise<{ dealsEnabled: boolean }> {
+        const data = await this.request<{ dealsEnabled: boolean }>('/api/v1/settings/notifications');
+        return { dealsEnabled: data.dealsEnabled ?? false };
+    }
+
+    async updateNotificationPreferences(dealsEnabled: boolean): Promise<void> {
+        await this.request('/api/v1/settings/notifications', {
+            method: 'PUT',
+            body: JSON.stringify({ dealsEnabled }),
+        });
+    }
+
+    // ── Push Notifications ────────────────────────────────────────────────
+
+    async registerPushToken(expoToken: string, platform: 'ios' | 'android' | 'web'): Promise<{ tokenId: string }> {
+        const data = await this.request<{ token_id: string }>('/api/v1/settings/push-tokens', {
+            method: 'POST',
+            body: JSON.stringify({ expo_token: expoToken, platform }),
+        });
+        return { tokenId: data.token_id };
+    }
+
+    async removePushToken(tokenId: string): Promise<void> {
+        await this.request(`/api/v1/settings/push-tokens/${encodeURIComponent(tokenId)}`, { method: 'DELETE' });
+    }
+
+    async unregisterAllPushTokens(): Promise<void> {
+        await this.request('/api/v1/settings/push-tokens', { method: 'DELETE' });
+    }
+
     clearCache(): void {
         this._homeCache = null;
         this._homePending = null;

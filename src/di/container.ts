@@ -62,7 +62,9 @@ import { SearchViewModel } from '../presentation/viewmodels/SearchViewModel';
 import { PlatformLinkViewModel } from '../presentation/viewmodels/PlatformLinkViewModel';
 import { SettingsViewModel } from '../presentation/viewmodels/SettingsViewModel';
 import { ProfileViewModel } from '../presentation/viewmodels/ProfileViewModel';
-import { UserPreferencesStore } from '../data/utils/UserPreferencesStore';
+import { CountryPreferenceServiceImpl } from '../data/services/CountryPreferenceServiceImpl';
+import { ICountryPreferenceService } from '../domain/interfaces/usecases/settings/ICountryPreferenceService';
+import { PushNotificationService } from '../data/services/PushNotificationService';
 
 // ─── Use case implementations ─────────────────────────────────────────────────
 import { AuthUseCase } from '../domain/usecases/auth/AuthUseCase';
@@ -180,7 +182,10 @@ container.bind<PlatformLinkViewModel>(TYPES.PlatformLinkViewModel).to(PlatformLi
 container.bind<SettingsViewModel>(TYPES.SettingsViewModel).to(SettingsViewModel).inTransientScope();
 container.bind<ProfileViewModel>(TYPES.ProfileViewModel).to(ProfileViewModel).inTransientScope();
 
-// ─── User Preferences Store (singleton) ────────────────────────────────────────
-container.bind<UserPreferencesStore>(TYPES.UserPreferencesStore).to(UserPreferencesStore).inSingletonScope();
+// ─── Country Preference Service (singleton) ────────────────────────────────────
+container.bind<ICountryPreferenceService>(TYPES.ICountryPreferenceService).to(CountryPreferenceServiceImpl).inSingletonScope();
+
+// ─── Push Notification Service (singleton) ─────────────────────────────────────
+container.bind<PushNotificationService>(TYPES.PushNotificationService).to(PushNotificationService).inSingletonScope();
 
 export { container };

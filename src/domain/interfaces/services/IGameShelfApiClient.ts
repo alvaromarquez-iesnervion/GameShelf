@@ -88,4 +88,18 @@ export interface IGameShelfApiClient {
 
     // ── Cache ─────────────────────────────────────────────────────────────
     clearCache(): void;
+
+    // ── Notification Preferences ──────────────────────────────────────────
+    /** Obtiene las preferencias de notificación del usuario. */
+    getNotificationPreferences(): Promise<{ dealsEnabled: boolean }>;
+    /** Actualiza las preferencias de notificación del usuario. */
+    updateNotificationPreferences(dealsEnabled: boolean): Promise<void>;
+
+    // ── Push Notifications ────────────────────────────────────────────────
+    /** Registra un token push Expo en el backend. */
+    registerPushToken(expoToken: string, platform: 'ios' | 'android' | 'web'): Promise<{ tokenId: string }>;
+    /** Elimina un token push registrado por su ID. */
+    removePushToken(tokenId: string): Promise<void>;
+    /** Elimina todos los tokens push registrados del backend. */
+    unregisterAllPushTokens(): Promise<void>;
 }

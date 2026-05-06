@@ -6,7 +6,7 @@ import { GameDetailDTO } from '../../domain/dtos/GameDetailDTO';
 import { TYPES } from '../../di/types';
 import { withLoading } from './BaseViewModel';
 import { Platform } from '../../domain/enums/Platform';
-import { UserPreferencesStore } from '../../data/utils/UserPreferencesStore';
+import { ICountryPreferenceService } from '../../domain/interfaces/usecases/settings/ICountryPreferenceService';
 
 /**
  * ViewModel para el detalle de un juego.
@@ -27,8 +27,8 @@ export class GameDetailViewModel {
     constructor(
         @inject(TYPES.IGameDetailUseCase)
         private readonly gameDetailUseCase: IGameDetailUseCase,
-        @inject(TYPES.UserPreferencesStore)
-        private readonly userPrefs: UserPreferencesStore,
+        @inject(TYPES.ICountryPreferenceService)
+        private readonly countryPrefs: ICountryPreferenceService,
     ) {
         makeAutoObservable<GameDetailViewModel, '_loadId'>(this, { _loadId: false });
     }
@@ -50,7 +50,7 @@ export class GameDetailViewModel {
         this._currentUserId = userId;
         const loadId = ++this._loadId;
         await withLoading(this, '_isLoading', '_errorMessage', async () => {
-            const country = this.userPrefs.effectiveCountry;
+            const country = this.countryPrefs.effectiveCountry;
             const detail = await this.gameDetailUseCase.getGameDetail(gameId, userId, steamAppId, platform, country);
             runInAction(() => {
                 if (loadId !== this._loadId) return;

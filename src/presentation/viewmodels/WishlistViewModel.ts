@@ -5,7 +5,7 @@ import { IWishlistUseCase } from '../../domain/interfaces/usecases/wishlist/IWis
 import { WishlistItem } from '../../domain/entities/WishlistItem';
 import { TYPES } from '../../di/types';
 import { withLoading } from './BaseViewModel';
-import { UserPreferencesStore } from '../../data/utils/UserPreferencesStore';
+import { ICountryPreferenceService } from '../../domain/interfaces/usecases/settings/ICountryPreferenceService';
 
 /**
  * ViewModel para la wishlist.
@@ -23,8 +23,8 @@ export class WishlistViewModel {
     constructor(
         @inject(TYPES.IWishlistUseCase)
         private readonly wishlistUseCase: IWishlistUseCase,
-        @inject(TYPES.UserPreferencesStore)
-        private readonly userPrefs: UserPreferencesStore,
+        @inject(TYPES.ICountryPreferenceService)
+        private readonly countryPrefs: ICountryPreferenceService,
     ) {
         makeAutoObservable(this);
     }
@@ -44,7 +44,7 @@ export class WishlistViewModel {
     async loadWishlist(userId: string): Promise<void> {
         this._currentUserId = userId;
         await withLoading(this, '_isLoading', '_errorMessage', async () => {
-            const country = this.userPrefs.effectiveCountry;
+            const country = this.countryPrefs.effectiveCountry;
             const items = await this.wishlistUseCase.getWishlist(userId, country);
             runInAction(() => {
                 this._items = items;

@@ -1,7 +1,7 @@
 import React, { useEffect, useCallback } from 'react';
 import {
     View, ScrollView, Text, TouchableOpacity,
-    Platform, StyleSheet,
+    Platform,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { observer } from 'mobx-react-lite';
@@ -13,7 +13,7 @@ import { useInjection } from '../../../di/hooks/useInjection';
 import { AuthViewModel } from '../../viewmodels/AuthViewModel';
 import { GameDetailViewModel } from '../../viewmodels/GameDetailViewModel';
 import { WishlistViewModel } from '../../viewmodels/WishlistViewModel';
-import { UserPreferencesStore } from '../../../data/utils/UserPreferencesStore';
+import { ICountryPreferenceService } from '../../../domain/interfaces/usecases/settings/ICountryPreferenceService';
 import { TYPES } from '../../../di/types';
 import { LibraryStackParamList } from '../../../core/navigation/navigationTypes';
 import { ProtonDbBadge } from '../../components/games/ProtonDbBadge';
@@ -27,9 +27,16 @@ import { WishlistItem } from '../../../domain/entities/WishlistItem';
 import { strings } from '../../../core/constants/strings';
 import { SteamGameMetadata } from '../../../domain/dtos/SteamGameMetadata';
 import { colors } from '../../theme/colors';
-import { typography } from '../../theme/typography';
-import { spacing, radius } from '../../theme/spacing';
+import { spacing } from '../../theme/spacing';
 import { styles } from './GameDetailScreen.styles';
+
+// ─── DLC Styles (migrated to GameDetailScreen.styles.ts) ──────────────────────
+const dlcStyles = {
+    list: styles.dlcList,
+    card: styles.dlcCard,
+    cover: styles.dlcCover,
+    title: styles.dlcTitle,
+};
 
 type Route = RouteProp<LibraryStackParamList, 'GameDetail'>;
 
@@ -105,14 +112,14 @@ export const GameDetailScreen: React.FC = observer(() => {
     const authVm = useInjection<AuthViewModel>(TYPES.AuthViewModel);
     const vm = useInjection<GameDetailViewModel>(TYPES.GameDetailViewModel);
     const wishlistVm = useInjection<WishlistViewModel>(TYPES.WishlistViewModel);
-    const store = useInjection<UserPreferencesStore>(TYPES.UserPreferencesStore);
+    const countryPrefs = useInjection<ICountryPreferenceService>(TYPES.ICountryPreferenceService);
     const userId = authVm.currentUser?.getId() ?? '';
     const platformHint = navPlatforms?.find(p => p !== GamePlatform.UNKNOWN) ?? null;
 
     useEffect(() => {
         if (userId) vm.loadGameDetail(gameId, userId, steamAppId, platformHint);
         return () => vm.clear();
-    }, [gameId, userId, steamAppId, platformHint, vm, store]);
+    }, [gameId, userId, steamAppId, platformHint, vm, countryPrefs]);
 
     const handleRetry = useCallback(() => {
         vm.loadGameDetail(gameId, userId, steamAppId, platformHint);
@@ -378,28 +385,4 @@ export const GameDetailScreen: React.FC = observer(() => {
             </ScrollView>
         </View>
     );
-});
-
-const dlcStyles = StyleSheet.create({
-    list: {
-        paddingHorizontal: spacing.xs,
-        gap: spacing.sm,
-    },
-    card: {
-        width: 120,
-        borderRadius: radius.md,
-        overflow: 'hidden',
-        backgroundColor: colors.surface,
-    },
-    cover: {
-        width: 120,
-        height: 68,
-        backgroundColor: colors.surfaceElevated,
-    },
-    title: {
-        ...typography.small,
-        fontWeight: '600',
-        paddingHorizontal: spacing.xs,
-        paddingVertical: spacing.xs,
-    },
 });

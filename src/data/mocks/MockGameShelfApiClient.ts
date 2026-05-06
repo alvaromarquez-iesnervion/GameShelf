@@ -69,5 +69,9 @@ export class MockGameShelfApiClient implements IGameShelfApiClient {
     getSavedCountry(): Promise<string | null> { return Promise.resolve(null); }
     setSavedCountry(_country: string): Promise<void> { return Promise.resolve(); }
 
+    registerPushToken(_expoToken: string, _platform: 'ios' | 'android' | 'web'): Promise<{ tokenId: string }> { return Promise.resolve({ tokenId: 'mock-token-id' }); }
+    removePushToken(_tokenId: string): Promise<void> { return Promise.resolve(); }
+    unregisterAllPushTokens(): Promise<void> { return Promise.resolve(); }
+
     clearCache(): void {}
 }

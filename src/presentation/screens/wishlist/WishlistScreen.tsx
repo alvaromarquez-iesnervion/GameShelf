@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useInjection } from '../../../di/hooks/useInjection';
 import { AuthViewModel } from '../../viewmodels/AuthViewModel';
 import { WishlistViewModel } from '../../viewmodels/WishlistViewModel';
-import { UserPreferencesStore } from '../../../data/utils/UserPreferencesStore';
+import { ICountryPreferenceService } from '../../../domain/interfaces/usecases/settings/ICountryPreferenceService';
 import { TYPES } from '../../../di/types';
 import { WishlistStackParamList } from '../../../core/navigation/navigationTypes';
 import { WishlistItem } from '../../../domain/entities/WishlistItem';
@@ -30,13 +30,13 @@ export const WishlistScreen: React.FC = observer(() => {
     const insets = useSafeAreaInsets();
     const authVm = useInjection<AuthViewModel>(TYPES.AuthViewModel);
     const vm = useInjection<WishlistViewModel>(TYPES.WishlistViewModel);
-    const store = useInjection<UserPreferencesStore>(TYPES.UserPreferencesStore);
+    const countryPrefs = useInjection<ICountryPreferenceService>(TYPES.ICountryPreferenceService);
     const navigation = useNavigation<Nav>();
     const userId = authVm.currentUser?.getId() ?? '';
 
     useEffect(() => {
         if (userId) vm.loadWishlist(userId);
-    }, [userId, vm, store]);
+    }, [userId, vm, countryPrefs]);
 
     const handleGamePress = useCallback((gameId: string, platform?: Platform | null, steamAppId?: number | null) => {
         navigation.navigate('GameDetail', { gameId, steamAppId: steamAppId ?? undefined, platforms: platform ? [platform] : undefined });

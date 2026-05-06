@@ -96,5 +96,26 @@ export const styles = StyleSheet.create({
         color: colors.onPrimary,
         fontWeight: '700',
     },
+
+    // ─── Section header ─────────────────────────────────────────────────────
+    sectionHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginHorizontal: spacing.lg,
+        marginBottom: spacing.md,
+        gap: spacing.sm,
+    },
+    sectionIconDot: {
+        width: 28,
+        height: 28,
+        borderRadius: 8,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    sectionTitle: {
+        ...typography.title,
+        color: colors.textPrimary,
+        fontWeight: '700',
+    },
 });
 

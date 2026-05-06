@@ -10,7 +10,7 @@ import Constants from 'expo-constants';
 import { useInjection } from '../../../di/hooks/useInjection';
 import { AuthViewModel } from '../../viewmodels/AuthViewModel';
 import { SettingsViewModel } from '../../viewmodels/SettingsViewModel';
-import { UserPreferencesStore } from '../../../data/utils/UserPreferencesStore';
+import { ICountryPreferenceService, SUPPORTED_COUNTRIES, DEFAULT_COUNTRY } from '../../../domain/interfaces/usecases/settings/ICountryPreferenceService';
 import { TYPES } from '../../../di/types';
 import { SettingsStackParamList } from '../../../core/navigation/navigationTypes';
 import { ListSkeleton } from '../../components/common/ListItemSkeleton';
@@ -18,7 +18,6 @@ import { colors } from '../../theme/colors';
 import { spacing } from '../../theme/spacing';
 import { styles } from './SettingsScreen.styles';
 import { strings } from '../../../core/constants/strings';
-import { SUPPORTED_COUNTRIES, DEFAULT_COUNTRY } from '../../../data/utils/UserPreferencesStore';
 import { ConfirmDialog } from '../../components/common/ConfirmDialog';
 import { CurrencyDropdown } from '../../components/common/CurrencyDropdown';
 
@@ -50,7 +49,7 @@ export const SettingsScreen: React.FC = observer(() => {
     const insets = useSafeAreaInsets();
     const authVm = useInjection<AuthViewModel>(TYPES.AuthViewModel);
     const vm = useInjection<SettingsViewModel>(TYPES.SettingsViewModel);
-    const store = useInjection<UserPreferencesStore>(TYPES.UserPreferencesStore);
+    const countryPrefs = useInjection<ICountryPreferenceService>(TYPES.ICountryPreferenceService);
     const navigation = useNavigation<Nav>();
     const userId = authVm.currentUser?.getId() ?? '';
 
@@ -63,10 +62,10 @@ export const SettingsScreen: React.FC = observer(() => {
     }, [userId, vm, authVm.isGuest]);
 
     useEffect(() => {
-        store.loadSavedPreference().then(() => {
-            setPreferredCountry(store.effectiveCountry);
+        countryPrefs.loadSavedPreference().then(() => {
+            setPreferredCountry(countryPrefs.effectiveCountry);
         });
-    }, [store]);
+    }, [countryPrefs]);
 
     const handleNavigateProfile = useCallback(() => {
         navigation.navigate('Profile');
@@ -89,10 +88,10 @@ export const SettingsScreen: React.FC = observer(() => {
     }, []);
 
     const handleCurrencyChange = useCallback(async (code: string) => {
-        await store.setCountryAndSync(code);
+        await countryPrefs.setCountryAndSync(code);
         setPreferredCountry(code);
         setCurrencyDropdownVisible(false);
-    }, [store]);
+    }, [countryPrefs]);
 
     const handleLogout = useCallback(() => {
         if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
@@ -165,7 +164,7 @@ export const SettingsScreen: React.FC = observer(() => {
                 <Text style={styles.sectionTitle}>{strings.sectionSupport}</Text>
                 <View style={styles.group}>
                     <SettingRow
-                        label={`${strings.preferredCurrency} · ${store.getCountryOption(preferredCountry).currency}`}
+                        label={`${strings.preferredCurrency} · ${countryPrefs.getCountryOption(preferredCountry).currency}`}
                         icon="dollar-sign"
                         onPress={handleCurrencySelect}
                         color={colors.iosGreen}
