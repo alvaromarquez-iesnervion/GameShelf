@@ -57,13 +57,7 @@ export class AuthUseCase implements IAuthUseCase {
     }
 
     async deleteAccount(): Promise<void> {
-        // Obtener uid antes de borrar la cuenta de Auth (después no habrá sesión activa).
-        const user = await this.authRepository.getCurrentUser();
-        if (!user) throw new Error('No hay sesión activa');
-        // 1. Borrar Firebase Auth — si falla aquí, no se toca Firestore.
-        await this.authRepository.deleteAuthUser();
-        // 2. Limpiar todos los datos de Firestore del usuario.
-        await this.authRepository.deleteUserFirestoreData(user.getId());
+        await this.api.deleteAccount();
     }
 
     async resetPassword(email: string): Promise<void> {

@@ -13,6 +13,8 @@ export interface IGameShelfApiClient {
     // ── Auth ──────────────────────────────────────────────────────────────
     /** Registra / actualiza el perfil del usuario en el backend tras login. */
     syncUser(): Promise<void>;
+    /** Elimina la cuenta del usuario (datos Firestore + Firebase Auth). Irreversible. */
+    deleteAccount(): Promise<void>;
 
     // ── Library ───────────────────────────────────────────────────────────
     /** Devuelve estadísticas agregadas de la biblioteca (únicos por plataforma, playtime). */

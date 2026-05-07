@@ -71,6 +71,10 @@ export const SettingsScreen: React.FC = observer(() => {
         navigation.navigate('Profile');
     }, [navigation]);
 
+    const handleNavigatePrivacy = useCallback(() => {
+        navigation.navigate('Privacy');
+    }, [navigation]);
+
     const handleNavigatePlatformLink = useCallback(() => {
         navigation.navigate('PlatformLink');
     }, [navigation]);
@@ -187,7 +191,7 @@ export const SettingsScreen: React.FC = observer(() => {
                     <SettingRow
                         label={strings.privacy}
                         icon="lock"
-                        onPress={() => handleNotImplemented(strings.privacy)}
+                        onPress={handleNavigatePrivacy}
                         color={colors.iosPurple}
                         isLast
                     />

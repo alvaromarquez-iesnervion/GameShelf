@@ -42,11 +42,4 @@ export class SettingsUseCase implements ISettingsUseCase {
     ): Promise<void> {
         return this.notificationRepository.updateNotificationPreferences(userId, preferences);
     }
-
-    async deleteAccount(): Promise<void> {
-        const user = await this.authRepository.getCurrentUser();
-        if (!user) throw new Error('No hay sesión activa');
-        await this.authRepository.deleteAuthUser();
-        await this.authRepository.deleteUserFirestoreData(user.getId());
-    }
 }
