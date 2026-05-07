@@ -7,6 +7,7 @@ import {
     signOut,
     deleteUser,
     sendPasswordResetEmail,
+    signInAnonymously as firebaseSignInAnonymously,
 } from 'firebase/auth';
 import {
     Firestore,
@@ -71,6 +72,11 @@ export class AuthRepositoryImpl implements IAuthRepository {
         await signOut(this.auth);
     }
 
+    async signInAnonymously(): Promise<User> {
+        const credential = await firebaseSignInAnonymously(this.auth);
+        return new User(credential.user.uid, '', 'Invitado', new Date(), true);
+    }
+
     async getCurrentUser(): Promise<User | null> {
         // Esperar a que Firebase restaure la sesión persistida antes de leer auth.currentUser.
         // authStateReady() resuelve una sola vez al arranque; las llamadas posteriores son inmediatas.
@@ -78,6 +84,11 @@ export class AuthRepositoryImpl implements IAuthRepository {
 
         const firebaseUser = this.auth.currentUser;
         if (!firebaseUser) return null;
+
+        // Usuarios anónimos: no tienen documento en Firestore, se devuelven directamente.
+        if (firebaseUser.isAnonymous) {
+            return new User(firebaseUser.uid, '', 'Invitado', new Date(), true);
+        }
 
         const snap = await getDoc(doc(this.firestore, 'users', firebaseUser.uid));
         if (!snap.exists()) return null;

@@ -4,6 +4,7 @@ export interface IAuthRepository {
     register(email: string, password: string): Promise<User>;
     login(email: string, password: string): Promise<User>;
     logout(): Promise<void>;
+    signInAnonymously(): Promise<User>;
     /** Restaura la sesión al arrancar la app. Devuelve null si no hay sesión activa. */
     getCurrentUser(): Promise<User | null>;
     /** Envía un correo de recuperación de contraseña al email indicado. */

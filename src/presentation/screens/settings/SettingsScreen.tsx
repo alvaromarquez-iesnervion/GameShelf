@@ -187,14 +187,17 @@ export const SettingsScreen: React.FC = observer(() => {
                         icon="help-circle"
                         onPress={() => handleNotImplemented(strings.helpCenter)}
                         color={colors.iosPurple}
+                        isLast={authVm.isGuest}
                     />
-                    <SettingRow
-                        label={strings.privacy}
-                        icon="lock"
-                        onPress={handleNavigatePrivacy}
-                        color={colors.iosPurple}
-                        isLast
-                    />
+                    {!authVm.isGuest && (
+                        <SettingRow
+                            label={strings.privacy}
+                            icon="lock"
+                            onPress={handleNavigatePrivacy}
+                            color={colors.iosPurple}
+                            isLast
+                        />
+                    )}
                 </View>
             </View>
 

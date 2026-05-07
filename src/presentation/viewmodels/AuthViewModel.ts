@@ -6,7 +6,6 @@ import { IGameShelfApiClient } from '../../domain/interfaces/services/IGameShelf
 import { User } from '../../domain/entities/User';
 import { TYPES } from '../../di/types';
 import { withLoading } from './BaseViewModel';
-import { isGuestUser } from '../../core/utils/guestUtils';
 import { mapFirebaseError } from '../../core/utils/firebaseErrors';
 import { HomeViewModel } from './HomeViewModel';
 import { LibraryViewModel } from './LibraryViewModel';
@@ -59,7 +58,7 @@ export class AuthViewModel {
     }
 
     get isGuest(): boolean {
-        return this._currentUser != null && isGuestUser(this._currentUser.getId());
+        return this._currentUser?.isGuest === true;
     }
 
     async login(email: string, password: string): Promise<boolean> {
