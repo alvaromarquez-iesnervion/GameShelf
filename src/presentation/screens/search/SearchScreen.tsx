@@ -24,9 +24,15 @@ import { ListSkeleton } from '../../components/common/ListItemSkeleton';
 import { BrandAura } from '../../components/common/BrandAura';
 import { WishlistItem } from '../../../domain/entities/WishlistItem';
 import { colors } from '../../theme/colors';
-import { typography } from '../../theme/typography';
 import { spacing } from '../../theme/spacing';
 import { styles } from './SearchScreen.styles';
+
+// ─── Section Styles (migrated to SearchScreen.styles.ts) ──────────────────────
+const sectionStyles = {
+    header: styles.sectionHeader,
+    iconDot: styles.sectionIconDot,
+    title: styles.sectionTitle,
+};
 
 type Nav = NativeStackNavigationProp<SearchStackParamList, 'Search'>;
 
@@ -54,28 +60,6 @@ const SectionHeader: React.FC<SectionHeaderProps> = ({ icon, title, accentColor 
         <Text style={sectionStyles.title}>{title}</Text>
     </View>
 );
-
-const sectionStyles = StyleSheet.create({
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginHorizontal: spacing.lg,
-        marginBottom: spacing.md,
-        gap: spacing.sm,
-    },
-    iconDot: {
-        width: 28,
-        height: 28,
-        borderRadius: 8,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    title: {
-        ...typography.title,
-        color: colors.textPrimary,
-        fontWeight: '700',
-    },
-});
 
 export const SearchScreen: React.FC = observer(() => {
     const insets = useSafeAreaInsets();

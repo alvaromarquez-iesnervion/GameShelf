@@ -11,8 +11,7 @@ import { mapFirebaseError } from '../../core/utils/firebaseErrors';
 import { HomeViewModel } from './HomeViewModel';
 import { LibraryViewModel } from './LibraryViewModel';
 import { WishlistViewModel } from './WishlistViewModel';
-import { UserPreferencesStore } from '../../data/utils/UserPreferencesStore';
-import { LocalGameRepository } from '../../data/repositories/LocalGameRepository';
+import { ICountryPreferenceService } from '../../domain/interfaces/usecases/settings/ICountryPreferenceService';
 
 /**
  * ViewModel para autenticación.
@@ -37,10 +36,8 @@ export class AuthViewModel {
         private readonly wishlistVm: WishlistViewModel,
         @inject(TYPES.IGameShelfApiClient)
         private readonly apiClient: IGameShelfApiClient,
-        @inject(TYPES.UserPreferencesStore)
-        private readonly userPreferences: UserPreferencesStore,
-        @inject(TYPES.LocalGameRepository)
-        private readonly localGameRepo: LocalGameRepository,
+        @inject(TYPES.ICountryPreferenceService)
+        private readonly countryPrefs: ICountryPreferenceService,
     ) {
         makeAutoObservable(this);
     }
@@ -107,8 +104,7 @@ export class AuthViewModel {
             this.libraryVm.reset();
             this.wishlistVm.reset();
             this.apiClient.clearCache();
-            this.userPreferences.reset();
-            this.localGameRepo.clearCache();
+            this.countryPrefs.reset();
         });
     }
 

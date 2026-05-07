@@ -3,36 +3,17 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { injectable, inject } from 'inversify';
 import { makeAutoObservable, runInAction } from 'mobx';
 import { ISettingsRepository } from '../../domain/interfaces/repositories/ISettingsRepository';
+import { ICountryPreferenceService, CountryOption, DEFAULT_COUNTRY, SUPPORTED_COUNTRIES } from '../../domain/interfaces/usecases/settings/ICountryPreferenceService';
 import { TYPES } from '../../di/types';
 
 const COUNTRY_KEY = '@gameshelf/preferred_country';
 
-export const DEFAULT_COUNTRY = 'US';
-
-export interface CountryOption {
-    code: string;
-    label: string;
-    currency: string;
-}
-
-export const SUPPORTED_COUNTRIES: CountryOption[] = [
-    { code: 'US', label: 'Estados Unidos', currency: 'USD' },
-    { code: 'ES', label: 'España',          currency: 'EUR' },
-    { code: 'DE', label: 'Alemania',        currency: 'EUR' },
-    { code: 'GB', label: 'Reino Unido',     currency: 'GBP' },
-    { code: 'JP', label: 'Japón',           currency: 'JPY' },
-    { code: 'AU', label: 'Australia',       currency: 'AUD' },
-    { code: 'CA', label: 'Canadá',          currency: 'CAD' },
-    { code: 'BR', label: 'Brasil',          currency: 'BRL' },
-    { code: 'MX', label: 'México',          currency: 'MXN' },
-];
-
 /**
- * Store observable de preferencias del usuario.
- * Sincroniza la preferencia de país con AsyncStorage y el backend.
+ * Implementación observable de preferencias de país.
+ * Sincroniza con AsyncStorage y el backend (ISettingsRepository).
  */
 @injectable()
-export class UserPreferencesStore {
+export class CountryPreferenceServiceImpl implements ICountryPreferenceService {
     private _savedCountry: string | null = null;
     private _localCountry: string = DEFAULT_COUNTRY;
 
