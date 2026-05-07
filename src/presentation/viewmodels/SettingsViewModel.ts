@@ -73,14 +73,6 @@ export class SettingsViewModel {
         return result ?? false;
     }
 
-    async deleteAccount(): Promise<boolean> {
-        const result = await withLoading(this, '_isLoading', '_errorMessage', async () => {
-            await this.settingsUseCase.deleteAccount();
-            return true;
-        });
-        return result ?? false;
-    }
-
     clearError(): void {
         this._errorMessage = null;
     }

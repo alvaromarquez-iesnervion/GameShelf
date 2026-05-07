@@ -8,6 +8,4 @@ export interface ISettingsUseCase {
      */
     getProfile(userId: string): Promise<UserProfileDTO>;
     updateNotificationPreferences(userId: string, preferences: NotificationPreferences): Promise<void>;
-    /** Elimina subcolecciones Firestore + documento + cuenta Firebase Auth. Irreversible. */
-    deleteAccount(): Promise<void>;
 }

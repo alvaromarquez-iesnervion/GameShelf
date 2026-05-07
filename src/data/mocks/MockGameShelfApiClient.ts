@@ -16,6 +16,7 @@ import { SortCriteria } from '../../domain/enums/SortCriteria';
 @injectable()
 export class MockGameShelfApiClient implements IGameShelfApiClient {
     syncUser(): Promise<void> { return Promise.resolve(); }
+    deleteAccount(): Promise<void> { return Promise.resolve(); }
 
     getLibraryGamesPage(_pageSize: number, _page?: number, _tab?: LibraryTab, _sortCriteria?: SortCriteria, _searchQuery?: string, _platforms?: Platform[]): Promise<LibraryPage> {
         return Promise.resolve({ games: [], total: 0, hasMore: false, currentPage: _page ?? 1 });

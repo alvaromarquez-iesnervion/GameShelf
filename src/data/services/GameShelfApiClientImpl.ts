@@ -329,6 +329,10 @@ export class GameShelfApiClientImpl implements IGameShelfApiClient {
         await this.request('/api/v1/auth/sync', { method: 'POST' });
     }
 
+    async deleteAccount(): Promise<void> {
+        await this.request('/api/v1/auth/account', { method: 'DELETE' });
+    }
+
     // ── Library ───────────────────────────────────────────────────────────
 
     /** @deprecated Usar getLibraryGamesPage con paginación. */

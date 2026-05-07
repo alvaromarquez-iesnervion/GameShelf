@@ -61,16 +61,6 @@ export class MockAuthRepository implements IAuthRepository {
         return this.currentUser;
     }
 
-    async deleteAuthUser(): Promise<void> {
-        await simulateDelay(600);
-        this.currentUser = null;
-    }
-
-    async deleteUserFirestoreData(_uid: string): Promise<void> {
-        await simulateDelay(300);
-        // Mock: no hay Firestore que limpiar
-    }
-
     async resetPassword(email: string): Promise<void> {
         await simulateDelay(600);
         if (!email.includes('@')) {
