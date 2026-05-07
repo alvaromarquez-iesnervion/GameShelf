@@ -3,7 +3,6 @@ import { TYPES } from './types';
 
 // ─── Interfaces (repositorios) ────────────────────────────────────────────────
 import { IAuthRepository } from '../domain/interfaces/repositories/IAuthRepository';
-import { IGuestSessionRepository } from '../domain/interfaces/repositories/IGuestSessionRepository';
 import { IGameRepository } from '../domain/interfaces/repositories/IGameRepository';
 import { IWishlistRepository } from '../domain/interfaces/repositories/IWishlistRepository';
 import { IPlatformRepository } from '../domain/interfaces/repositories/IPlatformRepository';
@@ -45,13 +44,6 @@ import { getFirebaseAuth, getFirebaseFirestore } from '../data/config/FirebaseCo
 import { Auth } from 'firebase/auth';
 import { Firestore } from 'firebase/firestore';
 
-// ─── Implementaciones para modo invitado (AsyncStorage) ───────────────────────
-import { GuestSessionRepository } from '../data/repositories/GuestSessionRepository';
-import { LocalPlatformRepository } from '../data/repositories/LocalPlatformRepository';
-import { LocalGameRepository } from '../data/repositories/LocalGameRepository';
-import { GuestAwarePlatformRepository } from '../data/repositories/GuestAwarePlatformRepository';
-import { GuestAwareGameRepository } from '../data/repositories/GuestAwareGameRepository';
-
 // ─── ViewModels ───────────────────────────────────────────────────────────────
 import { AuthViewModel } from '../presentation/viewmodels/AuthViewModel';
 import { LibraryViewModel } from '../presentation/viewmodels/LibraryViewModel';
@@ -84,8 +76,7 @@ const container = new Container({ defaultScope: 'Singleton' });
  * Modos de operación:
  *
  *  MODO PRODUCCIÓN (EXPO_PUBLIC_FIREBASE_API_KEY configurada)
- *    → Auth via Firebase. Todos los datos via GameShelf API.
- *    → Invitados usan AsyncStorage local.
+ *    → Auth via Firebase (incluye anónima para invitados). Todos los datos via GameShelf API.
  *
  *  MODO MOCK COMPLETO (sin keys)
  *    → Todos los datos son ficticios. Útil para desarrollo de UI sin servicios externos.
@@ -99,26 +90,15 @@ if (useFirebase) {
     container.bind<Firestore>(TYPES.Firestore).toDynamicValue(() => getFirebaseFirestore());
 }
 
-// ─── Sesión de invitado (siempre disponible — AsyncStorage local) ─────────────
-container.bind<IGuestSessionRepository>(TYPES.IGuestSessionRepository).to(GuestSessionRepository);
-
 // ─── Repositorios principales y cliente API ───────────────────────────────────
 if (useFirebase) {
-    // MODO PRODUCCIÓN: Auth y notificaciones via Firebase; datos via GameShelf API
+    // MODO PRODUCCIÓN: Auth via Firebase (email + anónima); datos via GameShelf API.
     container.bind<IAuthRepository>(TYPES.IAuthRepository).to(AuthRepositoryImpl);
     container.bind<INotificationRepository>(TYPES.INotificationRepository).to(NotificationRepositoryImpl);
-    // Cliente central — usa FirebaseAuth para Bearer tokens
     container.bind<IGameShelfApiClient>(TYPES.IGameShelfApiClient).to(GameShelfApiClientImpl).inSingletonScope();
-    // Wishlist directa al API (no hay modo invitado para wishlist)
     container.bind<IWishlistRepository>(TYPES.IWishlistRepository).to(GameShelfApiWishlistRepository);
-    // Guest-aware: usuarios autenticados → GameShelf API; invitados → AsyncStorage local
-    container.bind<IGameRepository>(TYPES.FirestoreGameRepository).to(GameShelfApiGameRepository);
-    container.bind<IGameRepository>(TYPES.LocalGameRepository).to(LocalGameRepository);
-    container.bind<IGameRepository>(TYPES.IGameRepository).to(GuestAwareGameRepository);
-    container.bind<IPlatformRepository>(TYPES.FirestorePlatformRepository).to(GameShelfApiPlatformRepository);
-    container.bind<IPlatformRepository>(TYPES.LocalPlatformRepository).to(LocalPlatformRepository);
-    container.bind<IPlatformRepository>(TYPES.IPlatformRepository).to(GuestAwarePlatformRepository);
-    // Settings / country preference
+    container.bind<IGameRepository>(TYPES.IGameRepository).to(GameShelfApiGameRepository);
+    container.bind<IPlatformRepository>(TYPES.IPlatformRepository).to(GameShelfApiPlatformRepository);
     container.bind<ISettingsRepository>(TYPES.ISettingsRepository).to(SettingsRepositoryImpl);
 } else {
     // MODO MOCK COMPLETO
@@ -136,7 +116,6 @@ if (useFirebase) {
 // debe conocer ningún detalle de infraestructura (di/, inversify, reflect-metadata).
 container.bind<IAuthUseCase>(TYPES.IAuthUseCase).toDynamicValue(ctx => new AuthUseCase(
     ctx.get<IAuthRepository>(TYPES.IAuthRepository),
-    ctx.get<IGuestSessionRepository>(TYPES.IGuestSessionRepository),
     ctx.get<IGameShelfApiClient>(TYPES.IGameShelfApiClient),
 )).inSingletonScope();
 container.bind<ILibraryUseCase>(TYPES.ILibraryUseCase).toDynamicValue(ctx => new LibraryUseCase(

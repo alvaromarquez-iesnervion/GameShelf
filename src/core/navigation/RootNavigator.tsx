@@ -35,14 +35,10 @@ export const RootNavigator: React.FC = observer(() => {
         }
     }, [authVm.isAuthenticated, authVm.currentUser, authVm.isGuest, libraryVm, pushService]);
 
-    // Carga de biblioteca (mantener logica existente separada)
+    // Carga de biblioteca — todos los usuarios (incluidos invitados) pasan por la API.
     useEffect(() => {
         if (authVm.isAuthenticated && authVm.currentUser && syncStartedRef.current) {
-            if (authVm.isGuest) {
-                libraryVm.loadLibrary(authVm.currentUser.getId());
-            } else {
-                libraryVm.autoSyncIfNeeded(authVm.currentUser.getId());
-            }
+            libraryVm.autoSyncIfNeeded(authVm.currentUser.getId());
         }
     }, [authVm.isAuthenticated, authVm.currentUser, authVm.isGuest, libraryVm]);
 

@@ -9,18 +9,11 @@ export const TYPES = {
 
     // Repositorios
     IAuthRepository: Symbol.for('IAuthRepository'),
-    IGuestSessionRepository: Symbol.for('IGuestSessionRepository'),
     IGameRepository: Symbol.for('IGameRepository'),
     IWishlistRepository: Symbol.for('IWishlistRepository'),
     IPlatformRepository: Symbol.for('IPlatformRepository'),
     INotificationRepository: Symbol.for('INotificationRepository'),
     ISettingsRepository: Symbol.for('ISettingsRepository'),
-
-    // Símbolos internos para los wrappers guest-aware (no usar fuera de container.ts)
-    FirestorePlatformRepository: Symbol.for('FirestorePlatformRepository'),
-    LocalPlatformRepository: Symbol.for('LocalPlatformRepository'),
-    FirestoreGameRepository: Symbol.for('FirestoreGameRepository'),
-    LocalGameRepository: Symbol.for('LocalGameRepository'),
 
     // Cliente GameShelfApi
     IGameShelfApiClient: Symbol.for('IGameShelfApiClient'),

@@ -8,7 +8,7 @@ import { IAccountManagementUseCase } from './IAccountManagementUseCase';
  * Los consumidores que solo necesitan un subconjunto pueden depender
  * de las interfaces más pequeñas directamente (ISP):
  *   - IAuthSessionUseCase      — login, register, logout, getCurrentUser, checkAuthState
- *   - IGuestUseCase            — continueAsGuest, clearGuestSession
+ *   - IGuestUseCase            — continueAsGuest
  *   - IAccountManagementUseCase — deleteAccount, resetPassword
  */
 export interface IAuthUseCase

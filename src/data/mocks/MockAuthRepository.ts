@@ -56,6 +56,13 @@ export class MockAuthRepository implements IAuthRepository {
         this.currentUser = null;
     }
 
+    async signInAnonymously(): Promise<User> {
+        await simulateDelay(300);
+        const user = new User('mock-guest-uid', '', 'Invitado', new Date(), true);
+        this.currentUser = user;
+        return user;
+    }
+
     async getCurrentUser(): Promise<User | null> {
         await simulateDelay(200);
         return this.currentUser;
