@@ -1,297 +1,209 @@
-import React, { useEffect, useCallback } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import {
-    View, ScrollView, Text, TouchableOpacity,
+    Linking,
     Platform,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
 } from 'react-native';
-import { Feather } from '@expo/vector-icons';
-import { observer } from 'mobx-react-lite';
-import { useRoute, RouteProp } from '@react-navigation/native';
 import { Image } from 'expo-image';
+import { observer } from 'mobx-react-lite';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Feather, Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+
 import { useInjection } from '../../../di/hooks/useInjection';
+import { TYPES } from '../../../di/types';
 import { AuthViewModel } from '../../viewmodels/AuthViewModel';
 import { GameDetailViewModel } from '../../viewmodels/GameDetailViewModel';
 import { WishlistViewModel } from '../../viewmodels/WishlistViewModel';
-import { ICountryPreferenceService } from '../../../domain/interfaces/usecases/settings/ICountryPreferenceService';
-import { TYPES } from '../../../di/types';
 import { LibraryStackParamList } from '../../../core/navigation/navigationTypes';
 import { ProtonDbBadge } from '../../components/games/ProtonDbBadge';
 import { HltbInfo } from '../../components/games/HltbInfo';
 import { DealCard } from '../../components/games/DealCard';
 import { PlatformBadge } from '../../components/platforms/PlatformBadge';
-import { Platform as GamePlatform } from '../../../domain/enums/Platform';
-import { ErrorMessage } from '../../components/common/ErrorMessage';
 import { DetailSkeleton } from '../../components/common/DetailSkeleton';
+import { ErrorMessage } from '../../components/common/ErrorMessage';
+import { Platform as GamePlatform } from '../../../domain/enums/Platform';
 import { WishlistItem } from '../../../domain/entities/WishlistItem';
-import { strings } from '../../../core/constants/strings';
-import { SteamGameMetadata } from '../../../domain/dtos/SteamGameMetadata';
 import { colors } from '../../theme/colors';
-import { spacing } from '../../theme/spacing';
-import { styles } from './GameDetailScreen.styles';
-
-// ─── DLC Styles (migrated to GameDetailScreen.styles.ts) ──────────────────────
-const dlcStyles = {
-    list: styles.dlcList,
-    card: styles.dlcCard,
-    cover: styles.dlcCover,
-    title: styles.dlcTitle,
-};
+import { typography } from '../../theme/typography';
+import { spacing, radius } from '../../theme/spacing';
 
 type Route = RouteProp<LibraryStackParamList, 'GameDetail'>;
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function formatPlaytime(minutes: number): string {
-    if (minutes < 60) return `${minutes}m`;
-    const hours = Math.round(minutes / 60);
-    return `${hours.toLocaleString()}h`;
-}
-
-function formatLastPlayed(date: Date): string {
-    const diffMs = Date.now() - date.getTime();
-    const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-    if (days === 0) return 'Hoy';
-    if (days === 1) return 'Ayer';
-    if (days < 30) return `Hace ${days} días`;
-    if (days < 365) return `Hace ${Math.floor(days / 30)} meses`;
-    return `Hace ${Math.floor(days / 365)} años`;
-}
-
-function formatRecommendations(count: number): string {
-    if (count >= 1_000_000) return `${(count / 1_000_000).toFixed(1)}M`;
-    if (count >= 1_000) return `${(count / 1_000).toFixed(0)}K`;
-    return count.toLocaleString();
-}
-
-function metacriticColor(score: number): string {
-    if (score >= 75) return '#66CC33';
-    if (score >= 50) return '#FFCC33';
-    return '#FF0000';
-}
-
-// ─── Sub-components ───────────────────────────────────────────────────────────
-
-interface HeroImageProps {
-    coverUrl: string;
-    portraitCoverUrl?: string;
-}
-
-const HeroImage = React.memo(({ coverUrl, portraitCoverUrl }: HeroImageProps) => {
-    const imageUri = portraitCoverUrl && portraitCoverUrl !== '' ? portraitCoverUrl : coverUrl;
-    return (
-        <View style={styles.heroContainer}>
-            <Image
-                source={{ uri: imageUri }}
-                style={styles.heroImage}
-                contentFit="cover"
-                transition={300}
-            />
-            <LinearGradient
-                colors={['transparent', 'rgba(0,0,0,0.45)', colors.background]}
-                style={styles.heroGradient}
-            />
-        </View>
-    );
-});
-HeroImage.displayName = 'HeroImage';
-
-interface InfoRowProps { label: string; value: string }
-const InfoRow = ({ label, value }: InfoRowProps) => (
-    <View style={styles.infoRow}>
-        <Text style={styles.infoLabel}>{label}</Text>
-        <Text style={styles.infoValue}>{value}</Text>
-    </View>
-);
-
-// ─── Main screen ──────────────────────────────────────────────────────────────
+type Nav = NativeStackNavigationProp<LibraryStackParamList, 'GameDetail'>;
 
 export const GameDetailScreen: React.FC = observer(() => {
     const route = useRoute<Route>();
+    const navigation = useNavigation<Nav>();
+    const insets = useSafeAreaInsets();
+
     const { gameId, steamAppId, platforms: navPlatforms } = route.params;
+
     const authVm = useInjection<AuthViewModel>(TYPES.AuthViewModel);
     const vm = useInjection<GameDetailViewModel>(TYPES.GameDetailViewModel);
     const wishlistVm = useInjection<WishlistViewModel>(TYPES.WishlistViewModel);
-    const countryPrefs = useInjection<ICountryPreferenceService>(TYPES.ICountryPreferenceService);
+
     const userId = authVm.currentUser?.getId() ?? '';
-    const platformHint = navPlatforms?.find(p => p !== GamePlatform.UNKNOWN) ?? null;
+    const platformHint = navPlatforms?.find((p) => p !== GamePlatform.UNKNOWN) ?? null;
 
     useEffect(() => {
         if (userId) vm.loadGameDetail(gameId, userId, steamAppId, platformHint);
         return () => vm.clear();
-    }, [gameId, userId, steamAppId, platformHint, vm, countryPrefs]);
+    }, [gameId, userId, steamAppId, platformHint, vm]);
 
     const handleRetry = useCallback(() => {
-        vm.loadGameDetail(gameId, userId, steamAppId, platformHint);
-    }, [vm, gameId, userId, steamAppId, platformHint]);
+        if (userId) vm.loadGameDetail(gameId, userId, steamAppId, platformHint);
+    }, [gameId, userId, steamAppId, platformHint, vm]);
 
     const toggleWishlist = useCallback(async () => {
-        if (!vm.gameDetail) return;
+        if (!vm.gameDetail || !userId) return;
         const game = vm.gameDetail.detail.getGame();
-        const isInWishlist = wishlistVm.isGameInWishlist(game.getId());
-
-        if (Platform.OS !== 'web') {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        }
-        if (isInWishlist) {
-            const item = wishlistVm.items.find(i => i.getGameId() === game.getId());
+        const inWl = wishlistVm.isGameInWishlist(game.getId());
+        if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        if (inWl) {
+            const item = wishlistVm.items.find((i) => i.getGameId() === game.getId());
             if (item) await wishlistVm.removeFromWishlist(userId, item.getId());
         } else {
-            const wishlistPlatform = steamAppId != null ? GamePlatform.STEAM : null;
-            const newItem = new WishlistItem(
-                Date.now().toString(), game.getId(), game.getTitle(),
-                game.getCoverUrl(), new Date(), null, wishlistPlatform,
+            const wlPlatform = steamAppId != null ? GamePlatform.STEAM : null;
+            await wishlistVm.addToWishlist(
+                userId,
+                new WishlistItem(
+                    Date.now().toString(),
+                    game.getId(),
+                    game.getTitle(),
+                    game.getCoverUrl(),
+                    new Date(),
+                    null,
+                    wlPlatform,
+                    steamAppId ?? null,
+                ),
             );
-            await wishlistVm.addToWishlist(userId, newItem);
         }
-    }, [vm.gameDetail, wishlistVm, userId]);
+    }, [vm.gameDetail, wishlistVm, userId, steamAppId]);
 
     if (vm.isLoading) return <DetailSkeleton />;
     if (vm.errorMessage) return <ErrorMessage message={vm.errorMessage} onRetry={handleRetry} />;
-    if (!vm.gameDetail) return null;
+    if (!vm.gameDetail) return <DetailSkeleton />;
 
     const detail = vm.gameDetail.detail;
     const game = detail.getGame();
     const isOwned = detail.getIsInLibrary();
-    const displayPlatforms = navPlatforms && navPlatforms.length > 0
-        ? navPlatforms
-        : [game.getPlatform()];
-    const isInWishlist = wishlistVm.isGameInWishlist(game.getId());
-    const steamMeta: SteamGameMetadata | null = detail.getSteamMetadata();
+    const inWishlist = wishlistVm.isGameInWishlist(game.getId());
+    const steamMeta = detail.getSteamMetadata();
+    const deals = detail.getDeals();
+    const dlcs = detail.getOwnedDlcs();
+    const displayPlatforms =
+        navPlatforms && navPlatforms.length > 0 ? navPlatforms : [game.getPlatform()];
 
-    const playtime = game.getPlaytime();
-    const lastPlayed = game.getLastPlayed();
-    const showPlayerStats = isOwned && (playtime > 0 || lastPlayed !== null);
-
-    const protonRating = detail.getProtonDbRating();
-    const protonTrending = detail.getProtonDbTrendingRating();
-    const protonReports = detail.getProtonDbReportCount();
-    const showProtonSection = protonRating !== null || protonTrending !== null;
+    const heroUri = game.getPortraitCoverUrl() && game.getPortraitCoverUrl() !== ''
+        ? game.getPortraitCoverUrl()
+        : game.getCoverUrl();
 
     return (
         <View style={styles.container}>
             <ScrollView
-                style={styles.scrollView}
                 showsVerticalScrollIndicator={false}
-                contentInsetAdjustmentBehavior="never"
+                contentContainerStyle={{ paddingBottom: insets.bottom + 80 }}
             >
-                {/* ── Hero image ── */}
-                <HeroImage
-                    coverUrl={game.getCoverUrl()}
-                    portraitCoverUrl={game.getPortraitCoverUrl()}
-                />
+                <View style={styles.heroWrap}>
+                    <Image source={{ uri: heroUri }} style={styles.hero} contentFit="cover" transition={300} />
+                    <LinearGradient
+                        colors={['rgba(7,8,12,0.55)', 'rgba(7,8,12,0)', 'rgba(7,8,12,0.85)', colors.background]}
+                        style={styles.heroGradient}
+                    />
+                    <View style={[styles.heroChrome, { paddingTop: insets.top + spacing.sm }]}>
+                        <Pressable
+                            onPress={() => navigation.goBack()}
+                            style={({ pressed }) => [styles.chromeBtn, pressed && { opacity: 0.7 }]}
+                            hitSlop={10}
+                        >
+                            <Feather name="chevron-left" size={22} color={colors.textPrimary} />
+                        </Pressable>
+                        <Pressable
+                            onPress={toggleWishlist}
+                            style={({ pressed }) => [
+                                styles.chromeBtn,
+                                inWishlist && styles.chromeBtnActive,
+                                pressed && { opacity: 0.7 },
+                            ]}
+                            hitSlop={10}
+                            accessibilityLabel={inWishlist ? 'Quitar de wishlist' : 'Añadir a wishlist'}
+                        >
+                            <Ionicons
+                                name={inWishlist ? 'heart' : 'heart-outline'}
+                                size={22}
+                                color={inWishlist ? colors.accentWarm : colors.textPrimary}
+                            />
+                        </Pressable>
+                    </View>
+                </View>
 
-                {/* ── Main content ── */}
-                <View style={styles.content}>
+                <View style={styles.body}>
                     <Text style={styles.title}>{game.getTitle()}</Text>
 
-                    {/* Platform badge + Metacritic score on same row */}
                     <View style={styles.metaRow}>
-                        {displayPlatforms.filter(p => p !== GamePlatform.UNKNOWN).map(p => (
+                        {displayPlatforms.map((p) => (
                             <PlatformBadge key={p} platform={p} />
                         ))}
-                        {steamMeta?.metacriticScore !== null && steamMeta?.metacriticScore !== undefined && (
-                            <View style={[
-                                styles.metacriticBadge,
-                                { backgroundColor: metacriticColor(steamMeta.metacriticScore) },
-                            ]}>
-                                <Text style={[styles.metacriticScore, { color: '#000' }]}>
-                                    {steamMeta.metacriticScore}
-                                </Text>
+                        {isOwned && (
+                            <View style={[styles.pill, { backgroundColor: colors.successBackground }]}>
+                                <Feather name="check" size={12} color={colors.success} />
+                                <Text style={[styles.pillText, { color: colors.success }]}>En tu biblioteca</Text>
                             </View>
                         )}
-                        {steamMeta?.recommendationCount !== null && steamMeta?.recommendationCount !== undefined && (
-                            <View style={styles.recommendRow}>
-                                <Feather name="thumbs-up" size={14} color={colors.success} />
-                                <Text style={[styles.infoValue, { color: colors.success }]}>
-                                    {formatRecommendations(steamMeta.recommendationCount)}
-                                </Text>
+                        {inWishlist && (
+                            <View style={[styles.pill, { backgroundColor: colors.primaryDim }]}>
+                                <Ionicons name="heart" size={12} color={colors.primary} />
+                                <Text style={[styles.pillText, { color: colors.primary }]}>Wishlist</Text>
                             </View>
                         )}
                     </View>
 
-                    {/* Description */}
-                    {game.getDescription() !== '' && (
-                        <Text style={styles.description} numberOfLines={5}>
-                            {game.getDescription()}
-                        </Text>
-                    )}
-
-                    {/* Wishlist button (non-owned games only) */}
-                    {!isOwned && (
-                        <View style={styles.actionRow}>
-                            <TouchableOpacity
-                                style={[styles.wishlistBtn, isInWishlist && styles.wishlistBtnActive]}
-                                onPress={toggleWishlist}
-                                activeOpacity={0.7}
-                            >
-                                <Feather
-                                    name="heart"
-                                    size={20}
-                                    color={isInWishlist ? colors.error : colors.onPrimary}
-                                />
-                                <Text style={[styles.wishlistBtnText, isInWishlist && styles.wishlistBtnTextActive]}>
-                                    {isInWishlist ? 'En Wishlist' : 'Añadir a Wishlist'}
-                                </Text>
-                            </TouchableOpacity>
+                    {steamMeta && (steamMeta.developers.length > 0 || steamMeta.releaseDate) && (
+                        <View style={styles.infoCard}>
+                            {steamMeta.developers.length > 0 && (
+                                <InfoRow label="Desarrollador" value={steamMeta.developers.join(', ')} />
+                            )}
+                            {steamMeta.publishers.length > 0 && (
+                                <InfoRow label="Editor" value={steamMeta.publishers.join(', ')} />
+                            )}
+                            {steamMeta.releaseDate && (
+                                <InfoRow label="Lanzamiento" value={steamMeta.releaseDate} />
+                            )}
+                            {steamMeta.metacriticScore != null && (
+                                <InfoRow label="Metacritic" value={`${steamMeta.metacriticScore} / 100`} />
+                            )}
                         </View>
                     )}
 
-                    {/* ── Player stats (Steam playtime / last played) ── */}
-                    {showPlayerStats && (
+                    {steamMeta && steamMeta.genres.length > 0 && (
                         <View style={styles.section}>
-                            <View style={styles.sectionHeader}>
-                                <Text style={styles.sectionTitle}>Mis estadísticas</Text>
-                                <Feather name="activity" size={18} color={colors.primary} />
-                            </View>
-                            <View style={styles.statsGrid}>
-                                {playtime > 0 && (
-                                    <View style={styles.statCard}>
-                                        <Feather name="clock" size={20} color={colors.primary} />
-                                        <Text style={styles.statValue}>{formatPlaytime(playtime)}</Text>
-                                        <Text style={styles.statLabel}>Tiempo jugado</Text>
+                            <Text style={styles.sectionTitle}>Géneros</Text>
+                            <View style={styles.tagWrap}>
+                                {steamMeta.genres.map((g) => (
+                                    <View key={g} style={styles.tag}>
+                                        <Text style={styles.tagText}>{g}</Text>
                                     </View>
-                                )}
-                                {lastPlayed !== null && (
-                                    <View style={styles.statCard}>
-                                        <Feather name="calendar" size={20} color={colors.secondary} />
-                                        <Text style={styles.statValue}>{formatLastPlayed(lastPlayed)}</Text>
-                                        <Text style={styles.statLabel}>Última sesión</Text>
-                                    </View>
-                                )}
+                                ))}
                             </View>
                         </View>
                     )}
 
-                    {/* ── ProtonDB compatibility ── */}
-                    {showProtonSection && (
+                    {detail.getProtonDbRating() && (
                         <View style={styles.section}>
-                            <View style={styles.sectionHeader}>
-                                <Text style={styles.sectionTitle}>Linux / Steam Deck</Text>
-                                <Feather name="monitor" size={18} color={colors.textSecondary} />
-                            </View>
-                            <View style={styles.protonRow}>
-                                <View style={styles.protonBadges}>
-                                    <ProtonDbBadge rating={protonRating} />
-                                    {protonTrending && protonTrending !== protonRating && (
-                                        <>
-                                            <Feather name="trending-up" size={14} color={colors.textSecondary} />
-                                            <Text style={styles.protonTrendingLabel}>tendencia:</Text>
-                                            <ProtonDbBadge rating={protonTrending} />
-                                        </>
-                                    )}
-                                </View>
-                                {protonReports !== null && (
-                                    <Text style={styles.protonReports}>
-                                        {protonReports.toLocaleString()} reports
-                                    </Text>
-                                )}
-                            </View>
+                            <Text style={styles.sectionTitle}>Compatibilidad Linux</Text>
+                            <ProtonDbBadge rating={detail.getProtonDbRating()!} />
                         </View>
                     )}
 
-                    {/* ── HLTB ── */}
                     <View style={styles.section}>
+                        <Text style={styles.sectionTitle}>Tiempo de juego</Text>
                         <HltbInfo
                             main={detail.getHowLongToBeatMain()}
                             mainExtra={detail.getHowLongToBeatMainExtra()}
@@ -299,90 +211,143 @@ export const GameDetailScreen: React.FC = observer(() => {
                         />
                     </View>
 
-                    {/* ── Game info (Steam metadata) ── */}
-                    {steamMeta && (
+                    {deals.length > 0 && (
                         <View style={styles.section}>
-                            <View style={styles.sectionHeader}>
-                                <Text style={styles.sectionTitle}>Información</Text>
-                                <Feather name="info" size={18} color={colors.textSecondary} />
+                            <Text style={styles.sectionTitle}>Mejores ofertas</Text>
+                            <View style={{ gap: spacing.sm }}>
+                                {deals.slice(0, 6).map((d) => (
+                                    <DealCard
+                                        key={d.getId()}
+                                        storeName={d.getStoreName()}
+                                        price={d.getPrice()}
+                                        originalPrice={d.getOriginalPrice()}
+                                        discountPercentage={d.getDiscountPercentage()}
+                                        url={d.getUrl()}
+                                        currency={d.getCurrency()}
+                                        onPress={() => Linking.openURL(d.getUrl())}
+                                    />
+                                ))}
                             </View>
-                            <View style={styles.infoGrid}>
-                                {steamMeta.developers.length > 0 && (
-                                    <InfoRow label="Desarrollador" value={steamMeta.developers.join(', ')} />
-                                )}
-                                {steamMeta.publishers.length > 0 && (
-                                    <InfoRow label="Publisher" value={steamMeta.publishers.join(', ')} />
-                                )}
-                                {steamMeta.releaseDate && (
-                                    <InfoRow label="Lanzamiento" value={steamMeta.releaseDate} />
-                                )}
-                            </View>
-                            {steamMeta.genres.length > 0 && (
-                                <View style={[styles.infoRow, { marginTop: spacing.sm }]}>
-                                    <Text style={styles.infoLabel}>Géneros</Text>
-                                    <View style={styles.genreRow}>
-                                        {steamMeta.genres.map(g => (
-                                            <View key={g} style={styles.genreChip}>
-                                                <Text style={styles.genreChipText}>{g}</Text>
-                                            </View>
-                                        ))}
-                                    </View>
-                                </View>
-                            )}
                         </View>
                     )}
 
-                    {/* ── Deals ── */}
-                    {detail.getDeals().length > 0 && (
-                        <View style={styles.dealsSection}>
-                            <View style={styles.sectionHeader}>
-                                <Text style={styles.sectionTitle}>{strings.bestDeals}</Text>
-                                <Feather name="trending-down" size={18} color={colors.success} />
-                            </View>
-                            {detail.getDeals().map(deal => (
-                                <DealCard
-                                    key={deal.getId()}
-                                    storeName={deal.getStoreName()}
-                                    price={deal.getPrice()}
-                                    originalPrice={deal.getOriginalPrice()}
-                                    discountPercentage={deal.getDiscountPercentage()}
-                                    url={deal.getUrl()}
-                                    currency={deal.getCurrency()}
-                                />
-                            ))}
-                        </View>
-                    )}
-
-                    {/* ── Owned DLCs ── */}
-                    {detail.getOwnedDlcs().length > 0 && (
+                    {dlcs.length > 0 && (
                         <View style={styles.section}>
-                            <View style={styles.sectionHeader}>
-                                <Text style={styles.sectionTitle}>DLCs de este juego</Text>
-                                <Feather name="package" size={18} color={colors.accent} />
-                            </View>
-                            <ScrollView
-                                horizontal
-                                showsHorizontalScrollIndicator={false}
-                                contentContainerStyle={dlcStyles.list}
-                            >
-                                {detail.getOwnedDlcs().map(dlc => (
-                                    <View key={dlc.getId()} style={dlcStyles.card}>
-                                        <Image
-                                            source={{ uri: dlc.getCoverUrl() }}
-                                            style={dlcStyles.cover}
-                                            contentFit="cover"
-                                            transition={200}
-                                        />
-                                        <Text style={dlcStyles.title} numberOfLines={2}>
-                                            {dlc.getTitle()}
-                                        </Text>
+                            <Text style={styles.sectionTitle}>DLCs en tu biblioteca</Text>
+                            <View style={{ gap: spacing.sm }}>
+                                {dlcs.map((dlc) => (
+                                    <View key={dlc.getId()} style={styles.dlcRow}>
+                                        <Image source={{ uri: dlc.getCoverUrl() }} style={styles.dlcImg} contentFit="cover" />
+                                        <Text style={styles.dlcTitle} numberOfLines={2}>{dlc.getTitle()}</Text>
                                     </View>
                                 ))}
-                            </ScrollView>
+                            </View>
                         </View>
                     )}
                 </View>
             </ScrollView>
         </View>
     );
+});
+
+const InfoRow: React.FC<{ label: string; value: string }> = ({ label, value }) => (
+    <View style={styles.infoRow}>
+        <Text style={styles.infoLabel}>{label}</Text>
+        <Text style={styles.infoValue} numberOfLines={2}>{value}</Text>
+    </View>
+);
+
+const styles = StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    heroWrap: {
+        width: '100%',
+        height: 460,
+        backgroundColor: colors.surface,
+    },
+    hero: { ...StyleSheet.absoluteFillObject },
+    heroGradient: { ...StyleSheet.absoluteFillObject },
+    heroChrome: {
+        position: 'absolute',
+        top: 0, left: 0, right: 0,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        paddingHorizontal: spacing.lg,
+    },
+    chromeBtn: {
+        width: 44, height: 44,
+        borderRadius: radius.full,
+        backgroundColor: 'rgba(7,8,12,0.55)',
+        alignItems: 'center', justifyContent: 'center',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.06)',
+    },
+    chromeBtnActive: {
+        backgroundColor: colors.primaryDim,
+        borderColor: colors.primaryBorder,
+    },
+    body: {
+        marginTop: -spacing.xxl,
+        paddingHorizontal: spacing.lg,
+        paddingBottom: spacing.xl,
+        gap: spacing.lg,
+    },
+    title: { ...typography.heading, fontSize: 30, lineHeight: 34 },
+    metaRow: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: spacing.xs,
+    },
+    pill: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        paddingHorizontal: spacing.sm,
+        paddingVertical: 4,
+        borderRadius: radius.full,
+    },
+    pillText: { ...typography.caption, fontWeight: '600' },
+    infoCard: {
+        backgroundColor: colors.surface,
+        borderRadius: radius.lg,
+        padding: spacing.lg,
+        borderWidth: 1,
+        borderColor: colors.borderSubtle,
+        gap: spacing.sm,
+    },
+    infoRow: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        justifyContent: 'space-between',
+        gap: spacing.md,
+    },
+    infoLabel: { ...typography.bodySecondary, color: colors.textTertiary, flexShrink: 0 },
+    infoValue: { ...typography.bodySecondary, color: colors.textPrimary, flex: 1, textAlign: 'right' },
+    section: { gap: spacing.sm },
+    sectionTitle: { ...typography.title, fontSize: 18 },
+    tagWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
+    tag: {
+        paddingHorizontal: spacing.md,
+        paddingVertical: 6,
+        borderRadius: radius.full,
+        backgroundColor: colors.surface,
+        borderWidth: 1,
+        borderColor: colors.borderSubtle,
+    },
+    tagText: { ...typography.caption, color: colors.textSecondary, fontWeight: '600' },
+    dlcRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.md,
+        backgroundColor: colors.surface,
+        borderRadius: radius.md,
+        padding: spacing.sm,
+        borderWidth: 1,
+        borderColor: colors.borderSubtle,
+    },
+    dlcImg: {
+        width: 60, height: 60,
+        borderRadius: radius.sm,
+        backgroundColor: colors.surfaceVariant,
+    },
+    dlcTitle: { ...typography.bodySecondary, color: colors.textPrimary, flex: 1 },
 });
