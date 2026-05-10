@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { observer } from 'mobx-react-lite';
 import { useNavigation } from '@react-navigation/native';
@@ -10,9 +10,16 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useInjection } from '../../../di/hooks/useInjection';
 import { TYPES } from '../../../di/types';
 import { AuthViewModel } from '../../viewmodels/AuthViewModel';
+import { WishlistViewModel } from '../../viewmodels/WishlistViewModel';
+import { GameDetailViewModel } from '../../viewmodels/GameDetailViewModel';
 import { SettingsStackParamList } from '../../../core/navigation/navigationTypes';
 import { ConfirmDialog } from '../../components/common/ConfirmDialog';
 import { BrandAura } from '../../components/common/BrandAura';
+import { CurrencyDropdown } from '../../components/common/CurrencyDropdown';
+import {
+    ICountryPreferenceService,
+    SUPPORTED_COUNTRIES,
+} from '../../../domain/interfaces/usecases/settings/ICountryPreferenceService';
 import { strings } from '../../../core/constants/strings';
 import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
@@ -39,11 +46,42 @@ export const SettingsScreen: React.FC = observer(() => {
     const insets = useSafeAreaInsets();
     const navigation = useNavigation<Nav>();
     const authVm = useInjection<AuthViewModel>(TYPES.AuthViewModel);
+    const wishlistVm = useInjection<WishlistViewModel>(TYPES.WishlistViewModel);
+    const gameDetailVm = useInjection<GameDetailViewModel>(TYPES.GameDetailViewModel);
+    const countryPrefs = useInjection<ICountryPreferenceService>(TYPES.ICountryPreferenceService);
+
     const [confirmLogout, setConfirmLogout] = useState(false);
+    const [currencyOpen, setCurrencyOpen] = useState(false);
 
     const user = authVm.currentUser;
     const isGuest = authVm.isGuest;
     const initial = (user?.getDisplayName() || user?.getEmail() || '?').charAt(0).toUpperCase();
+
+    useEffect(() => {
+        countryPrefs.loadSavedPreference().catch(() => {});
+    }, [countryPrefs]);
+
+    const currencyOptions = useMemo(
+        () => SUPPORTED_COUNTRIES.map((c) => ({
+            value: c.code,
+            label: `${c.label} · ${c.currency}`,
+        })),
+        [],
+    );
+    const currentCountry = countryPrefs.effectiveCountry;
+    const currentOption = countryPrefs.getCountryOption(currentCountry);
+
+    const onSelectCountry = useCallback(async (code: string) => {
+        setCurrencyOpen(false);
+        if (code === currentCountry) return;
+        try {
+            await countryPrefs.setCountryAndSync(code);
+            await wishlistVm.reloadWithCountry();
+            await gameDetailVm.reloadWithCountry();
+        } catch {
+            // Si el sync remoto falla la preferencia local ya quedó aplicada.
+        }
+    }, [countryPrefs, currentCountry, wishlistVm, gameDetailVm]);
 
     const onLogout = useCallback(async () => {
         setConfirmLogout(false);
@@ -86,6 +124,37 @@ export const SettingsScreen: React.FC = observer(() => {
                     <Feather name="chevron-right" size={18} color={colors.textTertiary} />
                 </Pressable>
 
+                <Text style={styles.groupLabel}>Preferencias</Text>
+                <View style={styles.group}>
+                    <Pressable
+                        onPress={() => setCurrencyOpen((v) => !v)}
+                        style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
+                    >
+                        <View style={[styles.iconBox, { backgroundColor: colors.primary + '22' }]}>
+                            <Feather name="dollar-sign" size={18} color={colors.primary} />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                            <Text style={styles.rowTitle}>{strings.preferredCurrency}</Text>
+                            <Text style={styles.rowHint}>
+                                {currentOption.label} · {currentOption.currency}
+                            </Text>
+                        </View>
+                        <Feather
+                            name={currencyOpen ? 'chevron-up' : 'chevron-down'}
+                            size={18}
+                            color={colors.textTertiary}
+                        />
+                    </Pressable>
+                    <CurrencyDropdown
+                        visible={currencyOpen}
+                        options={currencyOptions}
+                        selectedValue={currentCountry}
+                        onSelect={onSelectCountry}
+                        onClose={() => setCurrencyOpen(false)}
+                    />
+                </View>
+
+                <Text style={styles.groupLabel}>General</Text>
                 <View style={styles.group}>
                     {ROWS.map((row, i) => (
                         <React.Fragment key={row.route}>
@@ -161,6 +230,7 @@ const styles = StyleSheet.create({
     avatarText: { ...typography.subheading, color: colors.onPrimary },
     identityName: { ...typography.body, fontWeight: '600' },
     identityHint: { ...typography.caption, marginTop: 2 },
+    groupLabel: { ...typography.label, marginTop: spacing.xs, marginLeft: spacing.xs },
     group: {
         backgroundColor: colors.surface,
         borderRadius: radius.lg,
