@@ -162,18 +162,34 @@ function toPlatform(raw: string): Platform {
     return map[raw] ?? Platform.UNKNOWN;
 }
 
+/**
+ * Devuelve un portrait usable para el GameCard.
+ * - Si el backend ya manda uno, se usa.
+ * - En caso contrario, para juegos de Steam derivamos la imagen vertical
+ *   oficial (library_600x900.jpg) del CDN.
+ * - Para el resto se devuelve cadena vacía: GameCard cae al coverUrl horizontal.
+ */
+function derivePortraitUrl(portraitCoverUrl: string | undefined | null, steamAppId: number | null | undefined): string {
+    if (portraitCoverUrl && portraitCoverUrl.length > 0) return portraitCoverUrl;
+    if (steamAppId != null) {
+        return `https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/${steamAppId}/library_600x900.jpg`;
+    }
+    return '';
+}
+
 function toGame(r: ApiGame): Game {
+    const steamAppId = r.steamAppId ?? null;
     return new Game(
         r.gameId,
         r.title,
         r.description ?? '',
         r.coverUrl,
         toPlatform(r.platform),
-        r.steamAppId ?? null,
+        steamAppId,
         r.itadGameId ?? null,
         r.playtime ?? 0,
         r.lastPlayed ? new Date(r.lastPlayed) : null,
-        r.portraitCoverUrl ?? '',
+        derivePortraitUrl(r.portraitCoverUrl, steamAppId),
         r.gameType?.toLowerCase() === 'dlc' ? GameType.DLC : GameType.GAME,
         r.parentGameId ?? null,
         r.psnTitleId ?? null,
@@ -282,7 +298,7 @@ function toPopularGame(r: ApiPopularGame): Game {
         null,
         0,
         null,
-        '',
+        derivePortraitUrl(null, r.steamAppId),
         GameType.GAME,
         null,
         null,
