@@ -45,9 +45,9 @@ const TabNavigator: React.FC = () => {
                 name="SearchTab"
                 component={SearchStack}
                 options={{
-                    title: 'Buscar',
+                    title: 'Descubre',
                     tabBarIcon: ({ color }) => (
-                        <Feather name="search" size={22} color={color} />
+                        <Feather name="compass" size={22} color={color} />
                     ),
                 }}
             />

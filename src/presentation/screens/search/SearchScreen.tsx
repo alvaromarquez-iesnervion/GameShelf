@@ -3,6 +3,8 @@ import {
     ActivityIndicator,
     FlatList,
     Pressable,
+    RefreshControl,
+    ScrollView,
     StyleSheet,
     Text,
     TextInput,
@@ -19,12 +21,15 @@ import { TYPES } from '../../../di/types';
 import { AuthViewModel } from '../../viewmodels/AuthViewModel';
 import { SearchViewModel } from '../../viewmodels/SearchViewModel';
 import { WishlistViewModel } from '../../viewmodels/WishlistViewModel';
+import { HomeViewModel } from '../../viewmodels/HomeViewModel';
 import { SearchStackParamList } from '../../../core/navigation/navigationTypes';
 import { SearchResultCard } from '../../components/games/SearchResultCard';
+import { HomeGameCard } from '../../components/games/HomeGameCard';
 import { ErrorMessage } from '../../components/common/ErrorMessage';
 import { EmptyState } from '../../components/common/EmptyState';
 import { BrandAura } from '../../components/common/BrandAura';
 import { SearchResult } from '../../../domain/entities/SearchResult';
+import { Game } from '../../../domain/entities/Game';
 import { WishlistItem } from '../../../domain/entities/WishlistItem';
 import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
@@ -38,6 +43,7 @@ export const SearchScreen: React.FC = observer(() => {
     const authVm = useInjection<AuthViewModel>(TYPES.AuthViewModel);
     const vm = useInjection<SearchViewModel>(TYPES.SearchViewModel);
     const wishlistVm = useInjection<WishlistViewModel>(TYPES.WishlistViewModel);
+    const homeVm = useInjection<HomeViewModel>(TYPES.HomeViewModel);
 
     const userId = authVm.currentUser?.getId() ?? '';
     const [input, setInput] = useState('');
@@ -50,7 +56,10 @@ export const SearchScreen: React.FC = observer(() => {
         [wishlistVm.items],
     );
 
-    useEffect(() => () => { if (debounce.current) clearTimeout(debounce.current); }, []);
+    useEffect(() => {
+        if (userId) homeVm.loadHomeData(userId);
+        return () => { if (debounce.current) clearTimeout(debounce.current); };
+    }, [userId, homeVm]);
 
     const handleChange = useCallback((q: string) => {
         setInput(q);
@@ -61,14 +70,26 @@ export const SearchScreen: React.FC = observer(() => {
     const clear = useCallback(() => {
         setInput('');
         vm.clearSearch();
-        inputRef.current?.focus();
+        inputRef.current?.blur();
     }, [vm]);
+
+    const onRefresh = useCallback(() => {
+        if (userId) homeVm.forceReloadHomeData(userId);
+    }, [userId, homeVm]);
 
     const onResultPress = useCallback((r: SearchResult) => {
         navigation.navigate('GameDetail', {
             gameId: r.getId(),
             steamAppId: r.getSteamAppId() ?? undefined,
             platforms: r.getOwnedPlatforms() ?? undefined,
+        });
+    }, [navigation]);
+
+    const onGamePress = useCallback((g: Game) => {
+        navigation.navigate('GameDetail', {
+            gameId: g.getId(),
+            steamAppId: g.getSteamAppId() ?? undefined,
+            platforms: [g.getPlatform()],
         });
     }, [navigation]);
 
@@ -93,7 +114,7 @@ export const SearchScreen: React.FC = observer(() => {
         }
     }, [userId, wishlistVm, wishlistGameIds]);
 
-    const renderItem = useCallback(({ item }: { item: SearchResult }) => (
+    const renderResult = useCallback(({ item }: { item: SearchResult }) => (
         <SearchResultCard
             coverUrl={item.getCoverUrl()}
             title={item.getTitle()}
@@ -105,20 +126,22 @@ export const SearchScreen: React.FC = observer(() => {
         />
     ), [wishlistGameIds, onResultPress, onToggleWishlist]);
 
+    const isSearching = input.trim().length > 0;
+
     return (
         <View style={styles.container}>
             <BrandAura style={styles.aura} />
 
             <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
-                <Text style={styles.eyebrow}>Descubre</Text>
-                <Text style={styles.title}>Buscar juegos</Text>
+                <Text style={styles.eyebrow}>Explora</Text>
+                <Text style={styles.title}>Descubre</Text>
 
                 <View style={[styles.searchBox, focused && styles.searchBoxFocused]}>
                     <Feather name="search" size={18} color={focused ? colors.primary : colors.textTertiary} />
                     <TextInput
                         ref={inputRef}
                         style={styles.searchInput}
-                        placeholder="Título, saga, estudio…"
+                        placeholder="Buscar título, saga, estudio…"
                         placeholderTextColor={colors.textTertiary}
                         value={input}
                         onChangeText={handleChange}
@@ -138,43 +161,154 @@ export const SearchScreen: React.FC = observer(() => {
                 </View>
             </View>
 
-            {vm.errorMessage ? (
-                <ErrorMessage message={vm.errorMessage} onRetry={() => vm.search(input, userId)} />
-            ) : vm.isLoading ? (
-                <View style={styles.center}>
-                    <ActivityIndicator color={colors.primary} />
-                </View>
-            ) : input.trim().length === 0 ? (
-                <View style={styles.center}>
-                    <EmptyState
-                        message="Empieza a escribir para buscar entre miles de juegos."
-                        icon="search"
+            {isSearching ? (
+                vm.errorMessage ? (
+                    <ErrorMessage message={vm.errorMessage} onRetry={() => vm.search(input, userId)} />
+                ) : vm.isLoading ? (
+                    <View style={styles.center}>
+                        <ActivityIndicator color={colors.primary} />
+                    </View>
+                ) : vm.results.length === 0 ? (
+                    <View style={styles.center}>
+                        <EmptyState message={`Sin resultados para "${input}".`} icon="frown" />
+                    </View>
+                ) : (
+                    <FlatList
+                        data={vm.results}
+                        keyExtractor={(item) => item.getId()}
+                        renderItem={renderResult}
+                        contentContainerStyle={styles.resultsList}
+                        ItemSeparatorComponent={() => <View style={{ height: spacing.sm }} />}
+                        keyboardShouldPersistTaps="handled"
+                        initialNumToRender={10}
+                        maxToRenderPerBatch={6}
+                        windowSize={5}
                     />
-                </View>
-            ) : vm.results.length === 0 ? (
-                <View style={styles.center}>
-                    <EmptyState message={`Sin resultados para "${input}".`} icon="frown" />
-                </View>
+                )
             ) : (
-                <FlatList
-                    data={vm.results}
-                    keyExtractor={(item) => item.getId()}
-                    renderItem={renderItem}
-                    contentContainerStyle={styles.list}
-                    ItemSeparatorComponent={() => <View style={{ height: spacing.sm }} />}
+                <ScrollView
+                    contentContainerStyle={styles.discoverScroll}
+                    showsVerticalScrollIndicator={false}
                     keyboardShouldPersistTaps="handled"
-                    initialNumToRender={10}
-                    maxToRenderPerBatch={6}
-                    windowSize={5}
-                />
+                    refreshControl={
+                        <RefreshControl
+                            refreshing={homeVm.isLoadingHome}
+                            onRefresh={onRefresh}
+                            tintColor={colors.primary}
+                        />
+                    }
+                >
+                    {homeVm.errorMessage && (
+                        <View style={styles.errorBanner}>
+                            <Feather name="alert-circle" size={14} color={colors.error} />
+                            <Text style={styles.errorText} numberOfLines={2}>{homeVm.errorMessage}</Text>
+                        </View>
+                    )}
+
+                    <Carousel
+                        title="Populares ahora"
+                        subtitle="Lo más jugado en la comunidad"
+                        icon="trending-up"
+                        accent={colors.primary}
+                        games={homeVm.popularGames}
+                        loading={homeVm.isLoadingHome && homeVm.popularGames.length === 0}
+                        onGamePress={onGamePress}
+                        cardSize="featured"
+                        showRank
+                        emptyHint="No hay juegos populares ahora mismo."
+                    />
+
+                    <Carousel
+                        title="Jugados recientemente"
+                        subtitle={homeVm.isSteamLinked ? 'Tu actividad reciente en Steam' : 'Vincula Steam para ver tu actividad'}
+                        icon="clock"
+                        accent={colors.secondary}
+                        games={homeVm.recentlyPlayed}
+                        loading={homeVm.isLoadingHome && homeVm.recentlyPlayed.length === 0}
+                        onGamePress={onGamePress}
+                        cardSize="medium"
+                        emptyHint={homeVm.isSteamLinked ? 'Aún no has jugado nada.' : 'Sin Steam vinculado.'}
+                    />
+
+                    <Carousel
+                        title="Tus más jugados"
+                        subtitle="Top 5 por horas en biblioteca"
+                        icon="bar-chart-2"
+                        accent={colors.accentWarm}
+                        games={homeVm.mostPlayed}
+                        loading={homeVm.isLoadingHome && homeVm.mostPlayed.length === 0}
+                        onGamePress={onGamePress}
+                        cardSize="medium"
+                        emptyHint="Aún no tienes juegos con horas registradas."
+                    />
+
+                    <View style={{ height: 100 }} />
+                </ScrollView>
             )}
         </View>
     );
 });
 
+interface CarouselProps {
+    title: string;
+    subtitle: string;
+    icon: keyof typeof Feather.glyphMap;
+    accent: string;
+    games: Game[];
+    loading: boolean;
+    onGamePress: (g: Game) => void;
+    cardSize: 'featured' | 'medium' | 'small';
+    showRank?: boolean;
+    emptyHint: string;
+}
+
+const Carousel: React.FC<CarouselProps> = ({
+    title, subtitle, icon, accent, games, loading, onGamePress, cardSize, showRank, emptyHint,
+}) => (
+    <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+            <View style={[styles.sectionIcon, { backgroundColor: accent + '22' }]}>
+                <Feather name={icon} size={14} color={accent} />
+            </View>
+            <View style={{ flex: 1 }}>
+                <Text style={styles.sectionTitle}>{title}</Text>
+                <Text style={styles.sectionSubtitle}>{subtitle}</Text>
+            </View>
+        </View>
+
+        {loading ? (
+            <View style={styles.carouselLoading}>
+                <ActivityIndicator color={accent} />
+            </View>
+        ) : games.length === 0 ? (
+            <View style={styles.carouselEmpty}>
+                <Text style={styles.carouselEmptyText}>{emptyHint}</Text>
+            </View>
+        ) : (
+            <FlatList
+                data={games}
+                keyExtractor={(g) => g.getId()}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.carouselContent}
+                ItemSeparatorComponent={() => <View style={{ width: spacing.md }} />}
+                renderItem={({ item, index }) => (
+                    <HomeGameCard
+                        coverUrl={item.getCoverUrl()}
+                        title={item.getTitle()}
+                        onPress={() => onGamePress(item)}
+                        size={cardSize}
+                        rank={showRank ? index + 1 : undefined}
+                    />
+                )}
+            />
+        )}
+    </View>
+);
+
 const styles = StyleSheet.create({
     container: { flex: 1 },
-    aura: { position: 'absolute', top: 0, left: 0, right: 0, height: 200 },
+    aura: { position: 'absolute', top: 0, left: 0, right: 0, height: 240 },
     header: {
         paddingHorizontal: spacing.lg,
         paddingBottom: spacing.md,
@@ -198,5 +332,47 @@ const styles = StyleSheet.create({
     },
     searchInput: { ...typography.input, flex: 1, paddingVertical: 0 },
     center: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: spacing.xl },
-    list: { paddingHorizontal: spacing.lg, paddingBottom: 100, paddingTop: spacing.sm },
+    resultsList: { paddingHorizontal: spacing.lg, paddingBottom: 100, paddingTop: spacing.sm },
+    discoverScroll: { paddingTop: spacing.sm, paddingBottom: spacing.md },
+    errorBanner: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm,
+        marginHorizontal: spacing.lg,
+        padding: spacing.md,
+        backgroundColor: colors.errorBackground,
+        borderColor: colors.errorBorder,
+        borderWidth: 1,
+        borderRadius: radius.md,
+        marginBottom: spacing.md,
+    },
+    errorText: { ...typography.caption, color: colors.error, flex: 1 },
+    section: { marginBottom: spacing.xl },
+    sectionHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm,
+        paddingHorizontal: spacing.lg,
+        marginBottom: spacing.md,
+    },
+    sectionIcon: {
+        width: 30, height: 30,
+        borderRadius: radius.full,
+        alignItems: 'center', justifyContent: 'center',
+    },
+    sectionTitle: { ...typography.title, fontSize: 18 },
+    sectionSubtitle: { ...typography.caption, marginTop: 1 },
+    carouselContent: { paddingHorizontal: spacing.lg },
+    carouselLoading: {
+        height: 180,
+        alignItems: 'center', justifyContent: 'center',
+    },
+    carouselEmpty: {
+        marginHorizontal: spacing.lg,
+        padding: spacing.lg,
+        borderRadius: radius.lg,
+        backgroundColor: colors.surface,
+        borderWidth: 1, borderColor: colors.borderSubtle,
+    },
+    carouselEmptyText: { ...typography.bodySecondary, textAlign: 'center' },
 });
