@@ -1,342 +1,202 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { View, FlatList, TextInput, Platform, Text, ScrollView, TouchableOpacity, StyleSheet, ListRenderItemInfo } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+    ActivityIndicator,
+    FlatList,
+    Pressable,
+    StyleSheet,
+    Text,
+    TextInput,
+    View,
+} from 'react-native';
+import { observer } from 'mobx-react-lite';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { observer } from 'mobx-react-lite';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import * as Haptics from 'expo-haptics';
+
 import { useInjection } from '../../../di/hooks/useInjection';
+import { TYPES } from '../../../di/types';
 import { AuthViewModel } from '../../viewmodels/AuthViewModel';
-import { HomeViewModel } from '../../viewmodels/HomeViewModel';
 import { SearchViewModel } from '../../viewmodels/SearchViewModel';
 import { WishlistViewModel } from '../../viewmodels/WishlistViewModel';
-import { TYPES } from '../../../di/types';
 import { SearchStackParamList } from '../../../core/navigation/navigationTypes';
-import { SearchResult } from '../../../domain/entities/SearchResult';
-import { Platform as GamePlatform } from '../../../domain/enums/Platform';
 import { SearchResultCard } from '../../components/games/SearchResultCard';
-import { HomeGameCard } from '../../components/games/HomeGameCard';
 import { ErrorMessage } from '../../components/common/ErrorMessage';
 import { EmptyState } from '../../components/common/EmptyState';
-import { ListSkeleton } from '../../components/common/ListItemSkeleton';
 import { BrandAura } from '../../components/common/BrandAura';
+import { SearchResult } from '../../../domain/entities/SearchResult';
 import { WishlistItem } from '../../../domain/entities/WishlistItem';
 import { colors } from '../../theme/colors';
-import { spacing } from '../../theme/spacing';
-import { styles } from './SearchScreen.styles';
-
-// ─── Section Styles (migrated to SearchScreen.styles.ts) ──────────────────────
-const sectionStyles = {
-    header: styles.sectionHeader,
-    iconDot: styles.sectionIconDot,
-    title: styles.sectionTitle,
-};
+import { typography } from '../../theme/typography';
+import { spacing, radius } from '../../theme/spacing';
 
 type Nav = NativeStackNavigationProp<SearchStackParamList, 'Search'>;
 
-const ITEM_HEIGHT = 75 + (spacing.sm * 2) + StyleSheet.hairlineWidth * 2;
-const ITEM_MARGIN = spacing.sm;
-
-const formatPlaytime = (minutes: number): string => {
-    const hours = Math.floor(minutes / 60);
-    if (hours >= 100) return `${hours}h`;
-    if (hours >= 1) return `${hours}h jugadas`;
-    return `${minutes}min`;
-};
-
-interface SectionHeaderProps {
-    icon: keyof typeof Feather.glyphMap;
-    title: string;
-    accentColor?: string;
-}
-
-const SectionHeader: React.FC<SectionHeaderProps> = ({ icon, title, accentColor = colors.primary }) => (
-    <View style={sectionStyles.header}>
-        <View style={[sectionStyles.iconDot, { backgroundColor: accentColor }]}>
-            <Feather name={icon} size={14} color={colors.onPrimary} />
-        </View>
-        <Text style={sectionStyles.title}>{title}</Text>
-    </View>
-);
-
 export const SearchScreen: React.FC = observer(() => {
     const insets = useSafeAreaInsets();
-    const authVm = useInjection<AuthViewModel>(TYPES.AuthViewModel);
-    const vm = useInjection<HomeViewModel>(TYPES.HomeViewModel);
-    const searchVm = useInjection<SearchViewModel>(TYPES.SearchViewModel);
-    const wishlistVm = useInjection<WishlistViewModel>(TYPES.WishlistViewModel);
     const navigation = useNavigation<Nav>();
+    const authVm = useInjection<AuthViewModel>(TYPES.AuthViewModel);
+    const vm = useInjection<SearchViewModel>(TYPES.SearchViewModel);
+    const wishlistVm = useInjection<WishlistViewModel>(TYPES.WishlistViewModel);
+
     const userId = authVm.currentUser?.getId() ?? '';
-    const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const [inputText, setInputText] = useState('');
+    const [input, setInput] = useState('');
+    const [focused, setFocused] = useState(false);
+    const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const inputRef = useRef<TextInput>(null);
 
-    const handleLoadHomeData = useCallback(() => {
-        if (userId) vm.loadHomeData(userId);
-    }, [userId, vm]);
+    const wishlistGameIds = useMemo(
+        () => new Set(wishlistVm.items.map((i) => i.getGameId())),
+        [wishlistVm.items],
+    );
 
-    const handleGamePress = useCallback((gameId: string, steamAppId?: number, platforms?: GamePlatform[]) => {
-        navigation.navigate('GameDetail', { gameId, steamAppId, platforms });
-    }, [navigation]);
+    useEffect(() => () => { if (debounce.current) clearTimeout(debounce.current); }, []);
 
-    const handleNavigateSettings = useCallback(() => {
-        navigation.getParent()?.navigate('SettingsTab' as never);
-    }, [navigation]);
-
-    const handleRetry = useCallback(() => {
-        vm.loadHomeData(userId);
+    const handleChange = useCallback((q: string) => {
+        setInput(q);
+        if (debounce.current) clearTimeout(debounce.current);
+        debounce.current = setTimeout(() => vm.search(q, userId), 280);
     }, [vm, userId]);
 
-    useEffect(() => {
-        return () => {
-            if (debounceRef.current) clearTimeout(debounceRef.current);
-        };
-    }, []);
+    const clear = useCallback(() => {
+        setInput('');
+        vm.clearSearch();
+        inputRef.current?.focus();
+    }, [vm]);
 
-    useFocusEffect(handleLoadHomeData);
+    const onResultPress = useCallback((r: SearchResult) => {
+        navigation.navigate('GameDetail', {
+            gameId: r.getId(),
+            steamAppId: r.getSteamAppId() ?? undefined,
+            platforms: r.getOwnedPlatforms() ?? undefined,
+        });
+    }, [navigation]);
 
-    const handleSearch = useCallback((text: string) => {
-        setInputText(text);
-
-        if (debounceRef.current) clearTimeout(debounceRef.current);
-
-        if (!text.trim()) {
-            searchVm.clearSearch();
-            return;
-        }
-
-        debounceRef.current = setTimeout(() => {
-            searchVm.search(text, userId);
-        }, 400);
-    }, [userId, searchVm]);
-
-    const toggleWishlist = useCallback(async (result: { getId: () => string; getTitle: () => string; getCoverUrl: () => string; getIsOwned: () => boolean; getSteamAppId: () => number | null; getOwnedPlatforms: () => GamePlatform[] }) => {
-        if (result.getIsOwned()) return;
-
-        if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-
-        const inWishlist = wishlistVm.isGameInWishlist(result.getId());
-        if (inWishlist) {
-            const item = wishlistVm.items.find(i => i.getGameId() === result.getId());
+    const onToggleWishlist = useCallback(async (r: SearchResult) => {
+        if (!userId) return;
+        const inWl = wishlistGameIds.has(r.getId());
+        if (inWl) {
+            const item = wishlistVm.items.find((i) => i.getGameId() === r.getId());
             if (item) await wishlistVm.removeFromWishlist(userId, item.getId());
         } else {
-            const ownedPlatforms = result.getOwnedPlatforms();
-            const wishlistPlatform = ownedPlatforms.find(p => p !== GamePlatform.UNKNOWN) ?? null;
-            const steamAppId = result.getSteamAppId();
-            const newItem = new WishlistItem(
-                Date.now().toString(), result.getId(), result.getTitle(),
-                result.getCoverUrl(), new Date(), null, wishlistPlatform,
-                steamAppId,
+            const wlItem = new WishlistItem(
+                '',
+                r.getId(),
+                r.getTitle(),
+                r.getCoverUrl(),
+                new Date(),
+                null,
+                null,
+                r.getSteamAppId() ?? null,
             );
-            await wishlistVm.addToWishlist(userId, newItem);
+            await wishlistVm.addToWishlist(userId, wlItem);
         }
-    }, [wishlistVm, userId]);
+    }, [userId, wishlistVm, wishlistGameIds]);
 
-    const renderSearchResult = useCallback(({ item }: ListRenderItemInfo<SearchResult>) => (
+    const renderItem = useCallback(({ item }: { item: SearchResult }) => (
         <SearchResultCard
             coverUrl={item.getCoverUrl()}
             title={item.getTitle()}
-            isInWishlist={wishlistVm.isGameInWishlist(item.getId())}
-            isOwned={item.getIsOwned()}
-            ownedPlatforms={item.getOwnedPlatforms()}
-            onPress={() => handleGamePress(item.getId(), item.getSteamAppId() ?? undefined, item.getOwnedPlatforms())}
-            onToggleWishlist={() => toggleWishlist(item)}
+            isInWishlist={wishlistGameIds.has(item.getId())}
+            isOwned={item.getIsOwned() ?? false}
+            ownedPlatforms={item.getOwnedPlatforms() ?? []}
+            onPress={() => onResultPress(item)}
+            onToggleWishlist={() => onToggleWishlist(item)}
         />
-    ), [handleGamePress, toggleWishlist, wishlistVm]);
-
-    const renderHomeContent = () => (
-        <ScrollView
-            style={styles.scrollView}
-            contentContainerStyle={styles.scrollContent}
-            showsVerticalScrollIndicator={false}
-        >
-            {/* Popular Games — Featured Section */}
-            {vm.popularGames.length > 0 && (
-                <View style={styles.section}>
-                    <SectionHeader icon="trending-up" title="Populares ahora" accentColor={colors.accentWarm} />
-                    <ScrollView
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        contentContainerStyle={styles.horizontalList}
-                        decelerationRate="fast"
-                        snapToInterval={170}
-                    >
-                        {vm.popularGames.map((game, index) => (
-                            <HomeGameCard
-                                key={game.getId()}
-                                coverUrl={game.getCoverUrl()}
-                                title={game.getTitle()}
-                                size="featured"
-                                rank={index + 1}
-                                onPress={() => handleGamePress(game.getId())}
-                            />
-                        ))}
-                    </ScrollView>
-                </View>
-            )}
-
-            {/* Recently Played */}
-            {vm.recentlyPlayed.length > 0 ? (
-                <View style={styles.section}>
-                    <SectionHeader icon="play" title="Continua jugando" accentColor={colors.success} />
-                    <ScrollView
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        contentContainerStyle={styles.horizontalList}
-                    >
-                        {vm.recentlyPlayed.map((game) => (
-                            <HomeGameCard
-                                key={game.getId()}
-                                coverUrl={game.getCoverUrl()}
-                                title={game.getTitle()}
-                                subtitle={formatPlaytime(game.getPlaytime())}
-                                onPress={() => handleGamePress(game.getId())}
-                            />
-                        ))}
-                    </ScrollView>
-                </View>
-            ) : (
-                <View style={styles.section}>
-                    <SectionHeader icon="play" title="Continua jugando" accentColor={colors.success} />
-                    <View style={styles.emptySection}>
-                        <LinearGradient
-                            colors={['rgba(50, 215, 75, 0.08)', 'transparent']}
-                            style={StyleSheet.absoluteFill}
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 1 }}
-                        />
-                        <Feather name={vm.isSteamLinked ? "clock" : "link"} size={20} color={colors.success} />
-                        <Text style={styles.emptySectionText}>
-                            {vm.isSteamLinked
-                                ? 'No has jugado nada recientemente en Steam'
-                                : 'Vincula Steam para ver tus juegos recientes'}
-                        </Text>
-                    </View>
-                </View>
-            )}
-
-            {/* Most Played */}
-            {vm.mostPlayed.length > 0 ? (
-                <View style={styles.section}>
-                    <SectionHeader icon="award" title="Tus mas jugados" accentColor={colors.accent} />
-                    <ScrollView
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        contentContainerStyle={styles.horizontalList}
-                    >
-                        {vm.mostPlayed.map((game) => (
-                            <HomeGameCard
-                                key={game.getId()}
-                                coverUrl={game.getCoverUrl()}
-                                title={game.getTitle()}
-                                subtitle={formatPlaytime(game.getPlaytime())}
-                                size="small"
-                                onPress={() => handleGamePress(game.getId())}
-                            />
-                        ))}
-                    </ScrollView>
-                </View>
-            ) : (
-                <View style={styles.section}>
-                    <SectionHeader icon="award" title="Tus mas jugados" accentColor={colors.accent} />
-                    <View style={styles.emptySection}>
-                        <LinearGradient
-                            colors={['rgba(255, 159, 10, 0.08)', 'transparent']}
-                            style={StyleSheet.absoluteFill}
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 1 }}
-                        />
-                        <Feather name={vm.isSteamLinked ? "bar-chart-2" : "clock"} size={20} color={colors.accent} />
-                        <Text style={styles.emptySectionText}>
-                            {vm.isSteamLinked
-                                ? 'Aun no tienes juegos con tiempo registrado'
-                                : 'Vincula Steam para ver tus estadisticas'}
-                        </Text>
-                    </View>
-                </View>
-            )}
-
-            {/* CTA when no data */}
-            {vm.recentlyPlayed.length === 0 && vm.mostPlayed.length === 0 && !vm.isSteamLinked && (
-                <View style={styles.emptyHome}>
-                    <TouchableOpacity
-                        style={styles.linkButton}
-                        onPress={handleNavigateSettings}
-                        activeOpacity={0.85}
-                    >
-                        <LinearGradient
-                            colors={[colors.primary, colors.secondary]}
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 0 }}
-                            style={styles.linkButtonGradient}
-                        >
-                            <Feather name="link" size={18} color={colors.onPrimary} />
-                            <Text style={styles.linkButtonText}>Vincular Steam</Text>
-                        </LinearGradient>
-                    </TouchableOpacity>
-                </View>
-            )}
-        </ScrollView>
-    );
-
-    const renderSearchResults = () => (
-        <FlatList
-            data={searchVm.results}
-            keyExtractor={(item) => item.getId()}
-            contentContainerStyle={styles.list}
-            showsVerticalScrollIndicator={false}
-            initialNumToRender={10}
-            maxToRenderPerBatch={5}
-            windowSize={5}
-            removeClippedSubviews={true}
-            getItemLayout={(_data, index) => ({
-                length: ITEM_HEIGHT + ITEM_MARGIN,
-                offset: index * (ITEM_HEIGHT + ITEM_MARGIN),
-                index,
-            })}
-            renderItem={renderSearchResult}
-            ListEmptyComponent={
-                <View style={styles.emptyContainer}>
-                    <EmptyState message="No encontramos resultados para tu busqueda." icon="frown" />
-                </View>
-            }
-        />
-    );
+    ), [wishlistGameIds, onResultPress, onToggleWishlist]);
 
     return (
         <View style={styles.container}>
-            {/* Header aura (signature) */}
-            <BrandAura style={styles.headerGlow} />
-            <View style={[styles.searchHeader, { paddingTop: insets.top + spacing.md }]}>
-                <Text style={styles.heroTitle}>Descubre</Text>
-                <View style={styles.searchBar}>
-                    <Feather name="search" size={18} color={colors.textTertiary} />
+            <BrandAura style={styles.aura} />
+
+            <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
+                <Text style={styles.eyebrow}>Descubre</Text>
+                <Text style={styles.title}>Buscar juegos</Text>
+
+                <View style={[styles.searchBox, focused && styles.searchBoxFocused]}>
+                    <Feather name="search" size={18} color={focused ? colors.primary : colors.textTertiary} />
                     <TextInput
+                        ref={inputRef}
                         style={styles.searchInput}
-                        placeholder="Buscar en el catalogo global"
+                        placeholder="Título, saga, estudio…"
                         placeholderTextColor={colors.textTertiary}
-                        onChangeText={handleSearch}
-                        value={inputText}
+                        value={input}
+                        onChangeText={handleChange}
+                        onFocus={() => setFocused(true)}
+                        onBlur={() => setFocused(false)}
+                        autoCapitalize="none"
                         autoCorrect={false}
                         selectionColor={colors.primary}
                         keyboardAppearance="dark"
-                        clearButtonMode="while-editing"
+                        returnKeyType="search"
                     />
+                    {input.length > 0 && (
+                        <Pressable hitSlop={8} onPress={clear}>
+                            <Feather name="x-circle" size={18} color={colors.textSecondary} />
+                        </Pressable>
+                    )}
                 </View>
             </View>
 
-            {searchVm.isLoading ? (
-                <ListSkeleton />
-            ) : inputText.trim().length > 0 && searchVm.errorMessage ? (
-                <ErrorMessage message={searchVm.errorMessage} onRetry={() => searchVm.search(inputText, userId)} />
-            ) : vm.errorMessage && inputText.trim().length === 0 ? (
-                <ErrorMessage message={vm.errorMessage} onRetry={handleRetry} />
-            ) : inputText.trim().length > 0 ? (
-                renderSearchResults()
+            {vm.errorMessage ? (
+                <ErrorMessage message={vm.errorMessage} onRetry={() => vm.search(input, userId)} />
+            ) : vm.isLoading ? (
+                <View style={styles.center}>
+                    <ActivityIndicator color={colors.primary} />
+                </View>
+            ) : input.trim().length === 0 ? (
+                <View style={styles.center}>
+                    <EmptyState
+                        message="Empieza a escribir para buscar entre miles de juegos."
+                        icon="search"
+                    />
+                </View>
+            ) : vm.results.length === 0 ? (
+                <View style={styles.center}>
+                    <EmptyState message={`Sin resultados para "${input}".`} icon="frown" />
+                </View>
             ) : (
-                renderHomeContent()
+                <FlatList
+                    data={vm.results}
+                    keyExtractor={(item) => item.getId()}
+                    renderItem={renderItem}
+                    contentContainerStyle={styles.list}
+                    ItemSeparatorComponent={() => <View style={{ height: spacing.sm }} />}
+                    keyboardShouldPersistTaps="handled"
+                    initialNumToRender={10}
+                    maxToRenderPerBatch={6}
+                    windowSize={5}
+                />
             )}
         </View>
     );
+});
+
+const styles = StyleSheet.create({
+    container: { flex: 1 },
+    aura: { position: 'absolute', top: 0, left: 0, right: 0, height: 200 },
+    header: {
+        paddingHorizontal: spacing.lg,
+        paddingBottom: spacing.md,
+    },
+    eyebrow: { ...typography.label, color: colors.secondary },
+    title: { ...typography.largeTitle, marginTop: 2, marginBottom: spacing.lg },
+    searchBox: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm,
+        backgroundColor: colors.inputBackground,
+        borderColor: colors.inputBorder,
+        borderWidth: 1,
+        borderRadius: radius.lg,
+        paddingHorizontal: spacing.md,
+        height: 48,
+    },
+    searchBoxFocused: {
+        borderColor: colors.inputFocusBorder,
+        backgroundColor: colors.surfaceElevated,
+    },
+    searchInput: { ...typography.input, flex: 1, paddingVertical: 0 },
+    center: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: spacing.xl },
+    list: { paddingHorizontal: spacing.lg, paddingBottom: 100, paddingTop: spacing.sm },
 });
