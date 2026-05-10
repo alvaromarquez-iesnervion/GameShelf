@@ -1,127 +1,122 @@
-import React, { useState, useCallback } from 'react';
-import { View, Text, TouchableOpacity, Alert } from 'react-native';
-import { Feather } from '@expo/vector-icons';
+import React, { useCallback, useState } from 'react';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { observer } from 'mobx-react-lite';
+import { Feather } from '@expo/vector-icons';
+
 import { useInjection } from '../../../di/hooks/useInjection';
-import { AuthViewModel } from '../../viewmodels/AuthViewModel';
 import { TYPES } from '../../../di/types';
+import { AuthViewModel } from '../../viewmodels/AuthViewModel';
 import { ConfirmDialog } from '../../components/common/ConfirmDialog';
 import { Screen } from '../../components/common/Screen';
 import { colors } from '../../theme/colors';
-import { strings } from '../../../core/constants/strings';
-import { StyleSheet } from 'react-native';
 import { typography } from '../../theme/typography';
 import { spacing, radius } from '../../theme/spacing';
 
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: 'transparent',
-        paddingHorizontal: spacing.lg,
-    },
-    sectionLabel: {
-        ...typography.caption,
-        color: colors.textTertiary,
-        textTransform: 'uppercase',
-        letterSpacing: 0.6,
-        marginBottom: spacing.sm,
-        marginLeft: spacing.sm,
-    },
-    group: {
-        backgroundColor: colors.surface,
-        borderRadius: radius.xl,
-        borderWidth: StyleSheet.hairlineWidth,
-        borderColor: colors.border,
-        overflow: 'hidden',
-    },
-    row: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: spacing.md,
-        paddingVertical: spacing.md,
-        gap: spacing.md,
-    },
-    iconBox: {
-        width: 34,
-        height: 34,
-        borderRadius: 8,
-        backgroundColor: colors.iosRed,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    info: {
-        flex: 1,
-    },
-    rowTitle: {
-        ...typography.body,
-        fontWeight: '500',
-        color: colors.iosRed,
-    },
-    rowDescription: {
-        ...typography.small,
-        color: colors.textSecondary,
-        lineHeight: 17,
-        marginTop: 2,
-    },
-    footnote: {
-        ...typography.small,
-        color: colors.textTertiary,
-        marginTop: spacing.md,
-        marginHorizontal: spacing.sm,
-        lineHeight: 18,
-    },
-});
-
 export const PrivacyScreen: React.FC = observer(() => {
     const authVm = useInjection<AuthViewModel>(TYPES.AuthViewModel);
-    const [deleteConfirmVisible, setDeleteConfirmVisible] = useState(false);
+    const [confirmOpen, setConfirmOpen] = useState(false);
 
-    const handleDeletePress = useCallback(() => {
-        setDeleteConfirmVisible(true);
-    }, []);
-
-    const handleDeleteConfirm = useCallback(async () => {
-        setDeleteConfirmVisible(false);
+    const onConfirmDelete = useCallback(async () => {
+        setConfirmOpen(false);
         try {
             await authVm.deleteAccount();
         } catch {
-            Alert.alert(strings.deleteAccountTitle, strings.deleteAccountError);
+            Alert.alert('Error', authVm.errorMessage ?? 'No se pudo eliminar la cuenta.');
         }
     }, [authVm]);
 
-    const handleDeleteCancel = useCallback(() => {
-        setDeleteConfirmVisible(false);
-    }, []);
-
     return (
-        <Screen style={styles.container} topInset="header">
-            <Text style={styles.sectionLabel}>DATOS DE CUENTA</Text>
-
-            <View style={styles.group}>
-                <TouchableOpacity style={styles.row} onPress={handleDeletePress} activeOpacity={0.7}>
+        <Screen topInset="header">
+            <ScrollView contentContainerStyle={styles.scroll}>
+                <View style={styles.iconWrap}>
                     <View style={styles.iconBox}>
-                        <Feather name="trash-2" size={18} color={colors.onPrimary} />
+                        <Feather name="shield" size={24} color={colors.success} />
                     </View>
-                    <View style={styles.info}>
-                        <Text style={styles.rowTitle}>{strings.deleteAccountTitle}</Text>
-                        <Text style={styles.rowDescription}>Elimina tu cuenta y todos los datos asociados</Text>
-                    </View>
-                    <Feather name="chevron-right" size={18} color={colors.textTertiary} />
-                </TouchableOpacity>
-            </View>
+                </View>
 
-            <Text style={styles.footnote}>{strings.deleteAccountMessage}</Text>
+                <Text style={styles.title}>Tu privacidad</Text>
+                <Text style={styles.body}>
+                    GameShelf solo guarda los datos imprescindibles para sincronizar tu biblioteca,
+                    tu wishlist y tus preferencias. Nada se comparte con terceros.
+                </Text>
+
+                <View style={styles.card}>
+                    <Bullet text="Tus credenciales nunca se almacenan: la autenticación se delega a Firebase." />
+                    <Bullet text="Las claves OAuth de Steam, Epic, GOG y PSN se cifran y se borran al desvincular." />
+                    <Bullet text="Puedes eliminar tu cuenta y todos sus datos en cualquier momento." />
+                </View>
+
+                <Text style={styles.sectionLabel}>Zona peligrosa</Text>
+
+                <Pressable
+                    style={({ pressed }) => [styles.danger, pressed && { opacity: 0.85 }]}
+                    onPress={() => setConfirmOpen(true)}
+                >
+                    <Feather name="trash-2" size={18} color={colors.error} />
+                    <View style={{ flex: 1 }}>
+                        <Text style={styles.dangerTitle}>Eliminar cuenta</Text>
+                        <Text style={styles.dangerHint}>Borra tu perfil, biblioteca, wishlist y vínculos. Esta acción es irreversible.</Text>
+                    </View>
+                    <Feather name="chevron-right" size={18} color={colors.error} />
+                </Pressable>
+            </ScrollView>
 
             <ConfirmDialog
-                visible={deleteConfirmVisible}
-                title={strings.deleteAccountTitle}
-                message={strings.deleteAccountMessage}
-                confirmText={strings.deleteAccountConfirm}
+                visible={confirmOpen}
+                title="Eliminar cuenta"
+                message="Vas a borrar permanentemente tu cuenta y todos sus datos. ¿Seguro que quieres continuar?"
+                confirmText="Eliminar"
+                onConfirm={onConfirmDelete}
+                onCancel={() => setConfirmOpen(false)}
                 destructive
-                onConfirm={handleDeleteConfirm}
-                onCancel={handleDeleteCancel}
             />
         </Screen>
     );
 });
-PrivacyScreen.displayName = 'PrivacyScreen';
+
+const Bullet: React.FC<{ text: string }> = ({ text }) => (
+    <View style={styles.bulletRow}>
+        <View style={styles.bulletDot} />
+        <Text style={styles.bulletText}>{text}</Text>
+    </View>
+);
+
+const styles = StyleSheet.create({
+    scroll: { padding: spacing.lg, paddingBottom: spacing.xxxl, gap: spacing.lg },
+    iconWrap: { alignItems: 'center', marginTop: spacing.md },
+    iconBox: {
+        width: 64, height: 64,
+        borderRadius: radius.full,
+        backgroundColor: colors.successBackground,
+        alignItems: 'center', justifyContent: 'center',
+        borderWidth: 1, borderColor: 'rgba(52, 211, 153, 0.4)',
+    },
+    title: { ...typography.heading, fontSize: 28, textAlign: 'center' },
+    body: { ...typography.bodySecondary, textAlign: 'center', paddingHorizontal: spacing.md },
+    card: {
+        backgroundColor: colors.surface,
+        borderRadius: radius.lg,
+        padding: spacing.lg,
+        borderWidth: 1, borderColor: colors.borderSubtle,
+        gap: spacing.md,
+    },
+    bulletRow: { flexDirection: 'row', gap: spacing.sm, alignItems: 'flex-start' },
+    bulletDot: {
+        width: 6, height: 6, borderRadius: 3,
+        backgroundColor: colors.primary,
+        marginTop: 8,
+    },
+    bulletText: { ...typography.bodySecondary, color: colors.textPrimary, flex: 1 },
+    sectionLabel: { ...typography.label, color: colors.error, marginTop: spacing.md },
+    danger: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.md,
+        padding: spacing.lg,
+        borderRadius: radius.lg,
+        backgroundColor: colors.errorBackground,
+        borderWidth: 1, borderColor: colors.errorBorder,
+    },
+    dangerTitle: { ...typography.body, color: colors.error, fontWeight: '600' },
+    dangerHint: { ...typography.caption, color: colors.error, marginTop: 2 },
+});

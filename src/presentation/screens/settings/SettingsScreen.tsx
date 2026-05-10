@@ -1,224 +1,198 @@
-import React, { useEffect, useCallback, useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Alert, Platform } from 'react-native';
-import { Feather } from '@expo/vector-icons';
+import React, { useCallback, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { observer } from 'mobx-react-lite';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import * as Haptics from 'expo-haptics';
-import Constants from 'expo-constants';
+import { Feather } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+
 import { useInjection } from '../../../di/hooks/useInjection';
-import { AuthViewModel } from '../../viewmodels/AuthViewModel';
-import { SettingsViewModel } from '../../viewmodels/SettingsViewModel';
-import { ICountryPreferenceService, SUPPORTED_COUNTRIES, DEFAULT_COUNTRY } from '../../../domain/interfaces/usecases/settings/ICountryPreferenceService';
 import { TYPES } from '../../../di/types';
+import { AuthViewModel } from '../../viewmodels/AuthViewModel';
 import { SettingsStackParamList } from '../../../core/navigation/navigationTypes';
-import { ListSkeleton } from '../../components/common/ListItemSkeleton';
-import { colors } from '../../theme/colors';
-import { spacing } from '../../theme/spacing';
-import { styles } from './SettingsScreen.styles';
-import { strings } from '../../../core/constants/strings';
 import { ConfirmDialog } from '../../components/common/ConfirmDialog';
-import { CurrencyDropdown } from '../../components/common/CurrencyDropdown';
+import { BrandAura } from '../../components/common/BrandAura';
+import { strings } from '../../../core/constants/strings';
+import { colors } from '../../theme/colors';
+import { typography } from '../../theme/typography';
+import { spacing, radius } from '../../theme/spacing';
 
 type Nav = NativeStackNavigationProp<SettingsStackParamList, 'Settings'>;
 
-const SettingRow: React.FC<{
-    label: string;
+interface RowConfig {
     icon: keyof typeof Feather.glyphMap;
-    onPress: () => void;
-    color?: string;
-    isLast?: boolean;
-}> = ({ label, icon, onPress, color, isLast }) => (
-    <TouchableOpacity
-        style={[styles.row, isLast && styles.rowLast]}
-        onPress={onPress}
-        activeOpacity={0.7}
-    >
-        <View style={styles.rowLeft}>
-            <View style={[styles.iconBox, { backgroundColor: color ?? colors.surfaceElevated }]}>
-                <Feather name={icon} size={18} color={colors.textPrimary} />
-            </View>
-            <Text style={styles.rowLabel}>{label}</Text>
-        </View>
-        <Feather name="chevron-right" size={18} color={colors.textTertiary} />
-    </TouchableOpacity>
-);
+    tint: string;
+    title: string;
+    hint: string;
+    route: keyof SettingsStackParamList;
+}
+
+const ROWS: RowConfig[] = [
+    { icon: 'user', tint: colors.primary, title: 'Perfil', hint: 'Cuenta y estadísticas', route: 'Profile' },
+    { icon: 'link', tint: colors.secondary, title: 'Plataformas', hint: 'Steam, Epic, GOG, PlayStation', route: 'PlatformLink' },
+    { icon: 'bell', tint: colors.accentWarm, title: 'Notificaciones', hint: 'Avisos de ofertas en tu wishlist', route: 'NotificationSettings' },
+    { icon: 'shield', tint: colors.success, title: 'Privacidad', hint: 'Datos y eliminación de cuenta', route: 'Privacy' },
+];
 
 export const SettingsScreen: React.FC = observer(() => {
     const insets = useSafeAreaInsets();
-    const authVm = useInjection<AuthViewModel>(TYPES.AuthViewModel);
-    const vm = useInjection<SettingsViewModel>(TYPES.SettingsViewModel);
-    const countryPrefs = useInjection<ICountryPreferenceService>(TYPES.ICountryPreferenceService);
     const navigation = useNavigation<Nav>();
-    const userId = authVm.currentUser?.getId() ?? '';
+    const authVm = useInjection<AuthViewModel>(TYPES.AuthViewModel);
+    const [confirmLogout, setConfirmLogout] = useState(false);
 
-    const [preferredCountry, setPreferredCountry] = useState(DEFAULT_COUNTRY);
-    const [currencyDropdownVisible, setCurrencyDropdownVisible] = useState(false);
-    const [logoutConfirmVisible, setLogoutConfirmVisible] = useState(false);
+    const user = authVm.currentUser;
+    const isGuest = authVm.isGuest;
+    const initial = (user?.getDisplayName() || user?.getEmail() || '?').charAt(0).toUpperCase();
 
-    useEffect(() => {
-        if (userId && !authVm.isGuest) vm.loadProfile(userId);
-    }, [userId, vm, authVm.isGuest]);
-
-    useEffect(() => {
-        countryPrefs.loadSavedPreference().then(() => {
-            setPreferredCountry(countryPrefs.effectiveCountry);
-        });
-    }, [countryPrefs]);
-
-    const handleNavigateProfile = useCallback(() => {
-        navigation.navigate('Profile');
-    }, [navigation]);
-
-    const handleNavigatePrivacy = useCallback(() => {
-        navigation.navigate('Privacy');
-    }, [navigation]);
-
-    const handleNavigatePlatformLink = useCallback(() => {
-        navigation.navigate('PlatformLink');
-    }, [navigation]);
-
-    const handleNavigateNotifications = useCallback(() => {
-        navigation.navigate('NotificationSettings');
-    }, [navigation]);
-
-    const handleNotImplemented = useCallback((label: string) => {
-        Alert.alert(label, strings.comingSoon);
-    }, []);
-
-    const handleCurrencySelect = useCallback(() => {
-        setCurrencyDropdownVisible(true);
-    }, []);
-
-    const handleCurrencyChange = useCallback(async (code: string) => {
-        await countryPrefs.setCountryAndSync(code);
-        setPreferredCountry(code);
-        setCurrencyDropdownVisible(false);
-    }, [countryPrefs]);
-
-    const handleLogout = useCallback(() => {
-        if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-        setLogoutConfirmVisible(true);
-    }, []);
-
-    const handleLogoutConfirm = useCallback(() => {
-        authVm.logout();
-        setLogoutConfirmVisible(false);
+    const onLogout = useCallback(async () => {
+        setConfirmLogout(false);
+        await authVm.logout();
     }, [authVm]);
 
-    if (vm.isLoading && !vm.profile && !authVm.isGuest) return <ListSkeleton count={4} />;
-
     return (
-        <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-            <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
-                <Text style={styles.largeTitle}>{strings.settingsTitle}</Text>
-            </View>
+        <View style={styles.container}>
+            <BrandAura style={styles.aura} />
+            <ScrollView
+                contentContainerStyle={[
+                    styles.scroll,
+                    { paddingTop: insets.top + spacing.md, paddingBottom: 100 },
+                ]}
+                showsVerticalScrollIndicator={false}
+            >
+                <Text style={styles.eyebrow}>Ajustes</Text>
+                <Text style={styles.heading}>{strings.settingsTitle}</Text>
 
-            {/* Profile Section */}
-            {authVm.isGuest ? (
-                <View style={styles.profileCard}>
-                    <View style={[styles.avatar, { backgroundColor: colors.surfaceElevated }]}>
-                        <Feather name="user" size={24} color={colors.textTertiary} />
-                    </View>
-                    <View style={styles.profileInfo}>
-                        <Text style={styles.profileName}>{strings.guest}</Text>
-                        <Text style={styles.profileEmail}>{strings.noAccount}</Text>
-                    </View>
-                </View>
-            ) : vm.profile ? (
-                <TouchableOpacity
-                    style={styles.profileCard}
-                    onPress={handleNavigateProfile}
+                <Pressable
+                    onPress={() => navigation.navigate('Profile')}
+                    style={({ pressed }) => [styles.identity, pressed && { opacity: 0.85 }]}
                 >
-                    <View style={styles.avatar}>
-                        <Text style={styles.avatarText}>{vm.profile.user.getDisplayName().charAt(0)}</Text>
+                    <LinearGradient
+                        colors={[colors.primary, colors.secondary]}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={styles.avatar}
+                    >
+                        <Text style={styles.avatarText}>{initial}</Text>
+                    </LinearGradient>
+                    <View style={{ flex: 1 }}>
+                        <Text style={styles.identityName} numberOfLines={1}>
+                            {isGuest ? 'Modo invitado' : (user?.getDisplayName() || user?.getEmail() || 'Sin nombre')}
+                        </Text>
+                        <Text style={styles.identityHint} numberOfLines={1}>
+                            {isGuest ? 'Crea una cuenta para sincronizar tus datos' : (user?.getEmail() ?? 'Ver perfil completo')}
+                        </Text>
                     </View>
-                    <View style={styles.profileInfo}>
-                        <Text style={styles.profileName}>{vm.profile.user.getDisplayName()}</Text>
-                        <Text style={styles.profileEmail}>{vm.profile.user.getEmail()}</Text>
-                    </View>
-                    <Feather name="chevron-right" size={20} color={colors.textTertiary} />
-                </TouchableOpacity>
-            ) : null}
+                    <Feather name="chevron-right" size={18} color={colors.textTertiary} />
+                </Pressable>
 
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>{strings.sectionAccountPlatforms}</Text>
                 <View style={styles.group}>
-                    <SettingRow
-                        label={strings.linkedPlatforms}
-                        icon="monitor"
-                        onPress={handleNavigatePlatformLink}
-                        color={colors.primary}
-                        isLast={authVm.isGuest}
-                    />
-                    {!authVm.isGuest && (
-                        <SettingRow
-                            label={strings.notifications}
-                            icon="bell"
-                            onPress={handleNavigateNotifications}
-                            color={colors.iosRed}
-                            isLast
-                        />
-                    )}
+                    {ROWS.map((row, i) => (
+                        <React.Fragment key={row.route}>
+                            <Row
+                                config={row}
+                                onPress={() => navigation.navigate(row.route as any)}
+                            />
+                            {i < ROWS.length - 1 && <View style={styles.sep} />}
+                        </React.Fragment>
+                    ))}
                 </View>
-            </View>
 
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>{strings.sectionSupport}</Text>
-                <View style={styles.group}>
-                    <SettingRow
-                        label={`${strings.preferredCurrency} · ${countryPrefs.getCountryOption(preferredCountry).currency}`}
-                        icon="dollar-sign"
-                        onPress={handleCurrencySelect}
-                        color={colors.iosGreen}
-                    />
-                    {currencyDropdownVisible && (
-                        <CurrencyDropdown
-                            visible
-                            options={SUPPORTED_COUNTRIES.map(c => ({ label: `${c.label} (${c.currency})`, value: c.code }))}
-                            selectedValue={preferredCountry}
-                            onSelect={handleCurrencyChange}
-                            onClose={() => setCurrencyDropdownVisible(false)}
-                        />
-                    )}
-                    <SettingRow
-                        label={strings.helpCenter}
-                        icon="help-circle"
-                        onPress={() => handleNotImplemented(strings.helpCenter)}
-                        color={colors.iosPurple}
-                        isLast={authVm.isGuest}
-                    />
-                    {!authVm.isGuest && (
-                        <SettingRow
-                            label={strings.privacy}
-                            icon="lock"
-                            onPress={handleNavigatePrivacy}
-                            color={colors.iosPurple}
-                            isLast
-                        />
-                    )}
-                </View>
-            </View>
-
-            <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
-                <Text style={styles.logoutText}>
-                    {authVm.isGuest ? strings.logoutGuest : strings.logoutRegistered}
-                </Text>
-            </TouchableOpacity>
+                <Pressable
+                    onPress={() => setConfirmLogout(true)}
+                    style={({ pressed }) => [styles.logout, pressed && { opacity: 0.85 }]}
+                >
+                    <Feather name="log-out" size={18} color={colors.error} />
+                    <Text style={styles.logoutText}>
+                        {isGuest ? strings.logoutGuest : strings.logoutRegistered}
+                    </Text>
+                </Pressable>
+            </ScrollView>
 
             <ConfirmDialog
-                visible={logoutConfirmVisible}
-                title={authVm.isGuest ? strings.deleteGuestDataTitle : strings.logoutConfirmTitle}
-                message={authVm.isGuest ? strings.deleteGuestDataMessage : strings.logoutConfirmMessage}
-                confirmText={authVm.isGuest ? strings.deleteAll : strings.exit}
+                visible={confirmLogout}
+                title={isGuest ? strings.deleteGuestDataTitle : strings.logoutConfirmTitle}
+                message={isGuest ? strings.deleteGuestDataMessage : strings.logoutConfirmMessage}
+                confirmText={isGuest ? strings.deleteAll : strings.logoutRegistered}
+                onConfirm={onLogout}
+                onCancel={() => setConfirmLogout(false)}
                 destructive
-                onConfirm={handleLogoutConfirm}
-                onCancel={() => setLogoutConfirmVisible(false)}
             />
-
-            <Text style={styles.version}>{`GameShelf v${Constants.expoConfig?.version ?? '1.0.0'} (OLED Edition)`}</Text>
-        </ScrollView>
+        </View>
     );
 });
-SettingsScreen.displayName = 'SettingsScreen';
+
+const Row: React.FC<{ config: RowConfig; onPress: () => void }> = ({ config, onPress }) => (
+    <Pressable
+        onPress={onPress}
+        style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
+    >
+        <View style={[styles.iconBox, { backgroundColor: config.tint + '22' }]}>
+            <Feather name={config.icon} size={18} color={config.tint} />
+        </View>
+        <View style={{ flex: 1 }}>
+            <Text style={styles.rowTitle}>{config.title}</Text>
+            <Text style={styles.rowHint}>{config.hint}</Text>
+        </View>
+        <Feather name="chevron-right" size={18} color={colors.textTertiary} />
+    </Pressable>
+);
+
+const styles = StyleSheet.create({
+    container: { flex: 1 },
+    aura: { position: 'absolute', top: 0, left: 0, right: 0, height: 240 },
+    scroll: { paddingHorizontal: spacing.lg, gap: spacing.md },
+    eyebrow: { ...typography.label, color: colors.secondary },
+    heading: { ...typography.largeTitle, marginBottom: spacing.lg, marginTop: 2 },
+    identity: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.md,
+        backgroundColor: colors.surface,
+        borderRadius: radius.lg,
+        padding: spacing.md,
+        borderWidth: 1, borderColor: colors.borderSubtle,
+    },
+    avatar: {
+        width: 52, height: 52,
+        borderRadius: radius.full,
+        alignItems: 'center', justifyContent: 'center',
+    },
+    avatarText: { ...typography.subheading, color: colors.onPrimary },
+    identityName: { ...typography.body, fontWeight: '600' },
+    identityHint: { ...typography.caption, marginTop: 2 },
+    group: {
+        backgroundColor: colors.surface,
+        borderRadius: radius.lg,
+        borderWidth: 1, borderColor: colors.borderSubtle,
+        overflow: 'hidden',
+    },
+    row: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.md,
+        padding: spacing.md,
+    },
+    rowPressed: { backgroundColor: colors.surfacePressed },
+    sep: { height: StyleSheet.hairlineWidth, backgroundColor: colors.divider, marginLeft: spacing.xl + spacing.md },
+    iconBox: {
+        width: 36, height: 36,
+        borderRadius: radius.md,
+        alignItems: 'center', justifyContent: 'center',
+    },
+    rowTitle: { ...typography.body, fontWeight: '600' },
+    rowHint: { ...typography.caption, marginTop: 2 },
+    logout: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: spacing.sm,
+        backgroundColor: colors.errorBackground,
+        borderColor: colors.errorBorder,
+        borderWidth: 1,
+        borderRadius: radius.lg,
+        padding: spacing.lg,
+        marginTop: spacing.md,
+    },
+    logoutText: { ...typography.button, color: colors.error },
+});
