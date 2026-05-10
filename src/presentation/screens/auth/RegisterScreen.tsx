@@ -27,7 +27,7 @@ type Props = NativeStackScreenProps<AuthStackParamList, 'Register'>;
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-type Field = 'email' | 'pwd' | 'confirm';
+type FocusField = 'email' | 'pwd' | 'confirm';
 
 export const RegisterScreen: React.FC<Props> = observer(({ navigation }) => {
     const vm = useInjection<AuthViewModel>(TYPES.AuthViewModel);
@@ -37,7 +37,7 @@ export const RegisterScreen: React.FC<Props> = observer(({ navigation }) => {
     const [password, setPassword] = useState('');
     const [confirm, setConfirm] = useState('');
     const [showPwd, setShowPwd] = useState(false);
-    const [focused, setFocused] = useState<Field | null>(null);
+    const [focused, setFocused] = useState<FocusField | null>(null);
     const [submitted, setSubmitted] = useState(false);
 
     useEffect(() => {
@@ -105,7 +105,7 @@ export const RegisterScreen: React.FC<Props> = observer(({ navigation }) => {
                         </View>
                     )}
 
-                    <Field
+                    <FormField
                         label="Email"
                         icon="mail-outline"
                         focused={focused === 'email'}
@@ -121,7 +121,7 @@ export const RegisterScreen: React.FC<Props> = observer(({ navigation }) => {
                         editable={!vm.isLoading}
                     />
 
-                    <Field
+                    <FormField
                         label="Contraseña"
                         icon="lock-closed-outline"
                         focused={focused === 'pwd'}
@@ -163,7 +163,7 @@ export const RegisterScreen: React.FC<Props> = observer(({ navigation }) => {
                         </View>
                     )}
 
-                    <Field
+                    <FormField
                         label="Confirmar contraseña"
                         icon="shield-checkmark-outline"
                         focused={focused === 'confirm'}
@@ -221,7 +221,7 @@ function strengthColor(s: number): string {
     return colors.success;
 }
 
-interface FieldProps {
+interface FormFieldProps {
     label: string;
     icon: keyof typeof Ionicons.glyphMap;
     focused: boolean;
@@ -239,7 +239,7 @@ interface FieldProps {
     editable?: boolean;
 }
 
-const Field: React.FC<FieldProps> = ({
+const FormField: React.FC<FormFieldProps> = ({
     label,
     icon,
     focused,

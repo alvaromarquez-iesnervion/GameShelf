@@ -189,7 +189,7 @@ export const PlatformLinkScreen: React.FC = observer(() => {
                 </View>
 
                 <Text style={styles.footnote}>
-                    Steam requiere perfil público y la sección "Estado del juego" visible.{'\n'}
+                    Steam requiere perfil público y la sección &quot;Estado del juego&quot; visible.{'\n'}
                     PlayStation solo muestra juegos que hayas iniciado al menos una vez.
                 </Text>
             </ScrollView>
