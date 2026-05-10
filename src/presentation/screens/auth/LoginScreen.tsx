@@ -1,213 +1,345 @@
-import React, { useState, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
-    View,
-    Text,
-    TextInput,
-    TouchableOpacity,
     KeyboardAvoidingView,
     Platform,
-    StatusBar,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    View,
 } from 'react-native';
-import { Feather } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import * as Haptics from 'expo-haptics';
 import { observer } from 'mobx-react-lite';
-import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
+
 import { useInjection } from '../../../di/hooks/useInjection';
-import { AuthViewModel } from '../../viewmodels/AuthViewModel';
 import { TYPES } from '../../../di/types';
+import { AuthViewModel } from '../../viewmodels/AuthViewModel';
 import { AuthStackParamList } from '../../../core/navigation/navigationTypes';
 import { colors } from '../../theme/colors';
-import { formStyles, authBgGradientPrimary, primaryGradientColors } from '../../styles/forms';
-import { styles } from './LoginScreen.styles';
+import { typography } from '../../theme/typography';
+import { spacing, radius } from '../../theme/spacing';
 
-type Nav = NativeStackNavigationProp<AuthStackParamList, 'Login'>;
+type Props = NativeStackScreenProps<AuthStackParamList, 'Login'>;
 
-export const LoginScreen: React.FC = observer(() => {
-    const authVm = useInjection<AuthViewModel>(TYPES.AuthViewModel);
-    const navigation = useNavigation<Nav>();
+export const LoginScreen: React.FC<Props> = observer(({ navigation }) => {
+    const vm = useInjection<AuthViewModel>(TYPES.AuthViewModel);
+    const insets = useSafeAreaInsets();
+
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [showPassword, setShowPassword] = useState(false);
-    const [focusedField, setFocusedField] = useState<string | null>(null);
+    const [showPwd, setShowPwd] = useState(false);
+    const [focused, setFocused] = useState<'email' | 'pwd' | null>(null);
 
-    const handleLogin = useCallback(async () => {
-        if (!email.trim() || !password.trim()) return;
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        await authVm.login(email.trim(), password);
-    }, [email, password, authVm]);
+    useEffect(() => {
+        return () => vm.clearError();
+    }, [vm]);
 
-    const handleNavigateRegister = useCallback(() => {
-        Haptics.selectionAsync();
-        authVm.clearError();
-        navigation.navigate('Register');
-    }, [authVm, navigation]);
+    const canSubmit = email.trim().length > 0 && password.length > 0 && !vm.isLoading;
 
-    const handleNavigateForgotPassword = useCallback(() => {
-        Haptics.selectionAsync();
-        authVm.clearError();
-        navigation.navigate('ForgotPassword');
-    }, [authVm, navigation]);
-
-    const handleContinueAsGuest = useCallback(async () => {
-        Haptics.selectionAsync();
-        await authVm.continueAsGuest();
-    }, [authVm]);
-
-    const handleTogglePassword = useCallback(() => {
-        setShowPassword(prev => !prev);
-    }, []);
-
-    const handleFocusField = useCallback((field: string) => {
-        setFocusedField(field);
-    }, []);
-
-    const handleBlurField = useCallback(() => {
-        setFocusedField(null);
-    }, []);
+    const onSubmit = async () => {
+        if (!canSubmit) return;
+        await vm.login(email.trim(), password);
+    };
 
     return (
         <KeyboardAvoidingView
-            style={styles.container}
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            style={styles.flex}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
-            <StatusBar barStyle="light-content" />
-
-            {/* Background gradient top accent */}
-            <LinearGradient
-                colors={authBgGradientPrimary}
-                style={formStyles.topGradient}
-                pointerEvents="none"
-            />
-
-            <View style={styles.content}>
-                {/* Logo */}
-                <View style={styles.logoSection}>
-                    <View style={formStyles.logoIcon}>
-                        <Feather name="layers" size={36} color={colors.primary} />
-                    </View>
-                    <Text style={formStyles.appName}>GameShelf</Text>
-                    <Text style={styles.tagline}>Tu biblioteca de juegos unificada</Text>
+            <ScrollView
+                contentContainerStyle={[
+                    styles.scroll,
+                    { paddingTop: insets.top + spacing.xxxl, paddingBottom: insets.bottom + spacing.xl },
+                ]}
+                keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={false}
+            >
+                <View style={styles.brandWrap}>
+                    <LinearGradient
+                        colors={[colors.primary, colors.secondary]}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={styles.logo}
+                    >
+                        <Ionicons name="game-controller" size={32} color={colors.onPrimary} />
+                    </LinearGradient>
+                    <Text style={styles.appName}>GameShelf</Text>
+                    <Text style={styles.tagline}>Tu biblioteca, en un solo sitio</Text>
                 </View>
 
-                {/* Error */}
-                {authVm.errorMessage ? (
-                    <View style={formStyles.errorBanner}>
-                        <Feather name="alert-circle" size={15} color={colors.error} />
-                        <Text style={formStyles.errorText}>{authVm.errorMessage}</Text>
-                    </View>
-                ) : null}
+                <View style={styles.card}>
+                    <Text style={styles.title}>Bienvenido de nuevo</Text>
+                    <Text style={styles.subtitle}>Inicia sesión para continuar</Text>
 
-                {/* Form */}
-                <View style={styles.form}>
-                    <View style={[formStyles.inputWrap, focusedField === 'email' && formStyles.inputFocused]}>
-                        <Feather
-                            name="mail"
-                            size={18}
-                            color={focusedField === 'email' ? colors.primary : colors.textTertiary}
-                            style={formStyles.inputIcon}
-                        />
-                        <TextInput
-                            style={formStyles.input}
-                            placeholder="Correo electrónico"
-                            placeholderTextColor={colors.textDisabled}
-                            value={email}
-                            onChangeText={setEmail}
-                            keyboardType="email-address"
-                            autoCapitalize="none"
-                            autoCorrect={false}
-                            keyboardAppearance="dark"
-                            onFocus={() => handleFocusField('email')}
-                            onBlur={handleBlurField}
-                        />
-                    </View>
+                    {vm.errorMessage && (
+                        <View style={styles.errorBox}>
+                            <Ionicons name="alert-circle" size={16} color={colors.error} />
+                            <Text style={styles.errorText}>{vm.errorMessage}</Text>
+                        </View>
+                    )}
 
-                    <View style={[formStyles.inputWrap, focusedField === 'password' && formStyles.inputFocused]}>
-                        <Feather
-                            name="lock"
-                            size={18}
-                            color={focusedField === 'password' ? colors.primary : colors.textTertiary}
-                            style={formStyles.inputIcon}
-                        />
-                        <TextInput
-                            style={formStyles.input}
-                            placeholder="Contraseña"
-                            placeholderTextColor={colors.textDisabled}
-                            value={password}
-                            onChangeText={setPassword}
-                            secureTextEntry={!showPassword}
-                            keyboardAppearance="dark"
-                            onFocus={() => handleFocusField('password')}
-                            onBlur={handleBlurField}
-                        />
-                        <TouchableOpacity
-                            style={formStyles.eyeBtn}
-                            onPress={handleTogglePassword}
-                            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    <View style={styles.fieldGroup}>
+                        <Text style={styles.label}>Email</Text>
+                        <View
+                            style={[
+                                styles.inputWrap,
+                                focused === 'email' && styles.inputWrapFocused,
+                            ]}
                         >
-                            <Feather
-                                name={showPassword ? 'eye-off' : 'eye'}
+                            <Ionicons
+                                name="mail-outline"
                                 size={18}
-                                color={colors.textTertiary}
+                                color={focused === 'email' ? colors.primary : colors.textTertiary}
                             />
-                        </TouchableOpacity>
+                            <TextInput
+                                style={styles.input}
+                                placeholder="tu@email.com"
+                                placeholderTextColor={colors.textTertiary}
+                                autoCapitalize="none"
+                                keyboardType="email-address"
+                                autoComplete="email"
+                                value={email}
+                                onChangeText={setEmail}
+                                onFocus={() => setFocused('email')}
+                                onBlur={() => setFocused(null)}
+                                editable={!vm.isLoading}
+                            />
+                        </View>
                     </View>
 
-                    {/* Forgot password */}
-                    <TouchableOpacity
-                        style={styles.forgotBtn}
-                        onPress={handleNavigateForgotPassword}
-                        activeOpacity={0.7}
-                    >
-                        <Text style={styles.forgotText}>¿Olvidaste tu contraseña?</Text>
-                    </TouchableOpacity>
+                    <View style={styles.fieldGroup}>
+                        <Text style={styles.label}>Contraseña</Text>
+                        <View
+                            style={[
+                                styles.inputWrap,
+                                focused === 'pwd' && styles.inputWrapFocused,
+                            ]}
+                        >
+                            <Ionicons
+                                name="lock-closed-outline"
+                                size={18}
+                                color={focused === 'pwd' ? colors.primary : colors.textTertiary}
+                            />
+                            <TextInput
+                                style={styles.input}
+                                placeholder="••••••••"
+                                placeholderTextColor={colors.textTertiary}
+                                secureTextEntry={!showPwd}
+                                value={password}
+                                onChangeText={setPassword}
+                                onFocus={() => setFocused('pwd')}
+                                onBlur={() => setFocused(null)}
+                                editable={!vm.isLoading}
+                            />
+                            <Pressable hitSlop={8} onPress={() => setShowPwd((s) => !s)}>
+                                <Ionicons
+                                    name={showPwd ? 'eye-off-outline' : 'eye-outline'}
+                                    size={18}
+                                    color={colors.textSecondary}
+                                />
+                            </Pressable>
+                        </View>
+                    </View>
 
-                    <TouchableOpacity
-                        style={[formStyles.primaryBtn, authVm.isLoading && formStyles.primaryBtnDisabled]}
-                        onPress={handleLogin}
-                        disabled={authVm.isLoading}
-                        activeOpacity={0.85}
+                    <Pressable
+                        onPress={() => navigation.navigate('ForgotPassword')}
+                        hitSlop={8}
+                        style={styles.forgotWrap}
+                    >
+                        <Text style={styles.linkSubtle}>¿Has olvidado la contraseña?</Text>
+                    </Pressable>
+
+                    <Pressable
+                        onPress={onSubmit}
+                        disabled={!canSubmit}
+                        style={({ pressed }) => [
+                            styles.cta,
+                            !canSubmit && styles.ctaDisabled,
+                            pressed && canSubmit && styles.ctaPressed,
+                        ]}
                     >
                         <LinearGradient
-                            colors={primaryGradientColors}
-                            style={formStyles.primaryBtnGradient}
+                            colors={
+                                canSubmit
+                                    ? [colors.primary, colors.primaryLight]
+                                    : [colors.surfaceVariant, colors.surfaceVariant]
+                            }
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 0 }}
+                            style={styles.ctaGradient}
                         >
-                            {authVm.isLoading ? (
-                                <Text style={formStyles.primaryBtnText}>Entrando...</Text>
-                            ) : (
-                                <>
-                                    <Text style={formStyles.primaryBtnText}>Iniciar sesión</Text>
-                                    <Feather name="arrow-right" size={17} color={colors.onPrimary} />
-                                </>
-                            )}
+                            <Text style={styles.ctaText}>
+                                {vm.isLoading ? 'Entrando…' : 'Entrar'}
+                            </Text>
                         </LinearGradient>
-                    </TouchableOpacity>
+                    </Pressable>
+
+                    <View style={styles.divider}>
+                        <View style={styles.dividerLine} />
+                        <Text style={styles.dividerText}>o</Text>
+                        <View style={styles.dividerLine} />
+                    </View>
+
+                    <Pressable
+                        onPress={() => vm.continueAsGuest()}
+                        disabled={vm.isLoading}
+                        style={({ pressed }) => [
+                            styles.secondary,
+                            pressed && styles.secondaryPressed,
+                        ]}
+                    >
+                        <Ionicons name="person-outline" size={18} color={colors.secondary} />
+                        <Text style={styles.secondaryText}>Continuar como invitado</Text>
+                    </Pressable>
                 </View>
 
-                {/* Divisor */}
-                <View style={styles.dividerRow}>
-                    <View style={styles.dividerLine} />
-                    <Text style={styles.dividerText}>o</Text>
-                    <View style={styles.dividerLine} />
+                <View style={styles.footer}>
+                    <Text style={styles.footerHint}>¿Aún no tienes cuenta? </Text>
+                    <Pressable onPress={() => navigation.navigate('Register')} hitSlop={8}>
+                        <Text style={styles.footerLink}>Crear cuenta</Text>
+                    </Pressable>
                 </View>
-
-                {/* Continuar sin cuenta */}
-                <TouchableOpacity
-                    style={[formStyles.secondaryBtn, authVm.isLoading && formStyles.primaryBtnDisabled]}
-                    onPress={handleContinueAsGuest}
-                    disabled={authVm.isLoading}
-                    activeOpacity={0.8}
-                >
-                    <Text style={formStyles.secondaryBtnText}>Continuar sin cuenta</Text>
-                </TouchableOpacity>
-
-                {/* Footer */}
-                <TouchableOpacity style={formStyles.footerLink} onPress={handleNavigateRegister} activeOpacity={0.7}>
-                    <Text style={formStyles.footerText}>¿No tienes cuenta? </Text>
-                    <Text style={formStyles.footerTextBold}>Regístrate</Text>
-                </TouchableOpacity>
-            </View>
+            </ScrollView>
         </KeyboardAvoidingView>
     );
+});
+
+const styles = StyleSheet.create({
+    flex: { flex: 1 },
+    scroll: {
+        flexGrow: 1,
+        paddingHorizontal: spacing.xl,
+        justifyContent: 'center',
+    },
+    brandWrap: {
+        alignItems: 'center',
+        marginBottom: spacing.xxl,
+    },
+    logo: {
+        width: 64,
+        height: 64,
+        borderRadius: radius.xl,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: spacing.md,
+        shadowColor: colors.primary,
+        shadowOpacity: 0.45,
+        shadowRadius: 20,
+        shadowOffset: { width: 0, height: 8 },
+        elevation: 10,
+    },
+    appName: {
+        ...typography.heading,
+        fontSize: 30,
+        letterSpacing: -0.5,
+    },
+    tagline: {
+        ...typography.bodySecondary,
+        marginTop: spacing.xs,
+    },
+    card: {
+        backgroundColor: colors.surface,
+        borderRadius: radius.xl,
+        padding: spacing.xl,
+        borderWidth: 1,
+        borderColor: colors.borderSubtle,
+    },
+    title: { ...typography.subheading },
+    subtitle: {
+        ...typography.bodySecondary,
+        marginTop: spacing.xs,
+        marginBottom: spacing.lg,
+    },
+    errorBox: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm,
+        backgroundColor: colors.errorBackground,
+        borderColor: colors.errorBorder,
+        borderWidth: 1,
+        borderRadius: radius.md,
+        paddingHorizontal: spacing.md,
+        paddingVertical: spacing.sm,
+        marginBottom: spacing.md,
+    },
+    errorText: { ...typography.bodySecondary, color: colors.error, flex: 1 },
+    fieldGroup: { marginBottom: spacing.md },
+    label: {
+        ...typography.label,
+        marginBottom: spacing.xs,
+    },
+    inputWrap: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm,
+        backgroundColor: colors.inputBackground,
+        borderColor: colors.inputBorder,
+        borderWidth: 1,
+        borderRadius: radius.lg,
+        paddingHorizontal: spacing.md,
+        height: 48,
+    },
+    inputWrapFocused: {
+        borderColor: colors.inputFocusBorder,
+        backgroundColor: colors.surfaceElevated,
+    },
+    input: {
+        ...typography.input,
+        flex: 1,
+        paddingVertical: 0,
+    },
+    forgotWrap: { alignSelf: 'flex-end', marginTop: spacing.xs, marginBottom: spacing.lg },
+    linkSubtle: {
+        ...typography.bodySecondary,
+        color: colors.secondary,
+    },
+    cta: {
+        borderRadius: radius.lg,
+        overflow: 'hidden',
+        shadowColor: colors.primary,
+        shadowOpacity: 0.4,
+        shadowRadius: 16,
+        shadowOffset: { width: 0, height: 6 },
+        elevation: 6,
+    },
+    ctaDisabled: { shadowOpacity: 0 },
+    ctaPressed: { opacity: 0.85 },
+    ctaGradient: {
+        height: 52,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    ctaText: { ...typography.button, color: colors.onPrimary },
+    divider: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.md,
+        marginVertical: spacing.lg,
+    },
+    dividerLine: { flex: 1, height: 1, backgroundColor: colors.divider },
+    dividerText: { ...typography.caption },
+    secondary: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: spacing.sm,
+        height: 48,
+        borderRadius: radius.lg,
+        borderWidth: 1,
+        borderColor: colors.secondaryDim,
+        backgroundColor: 'transparent',
+    },
+    secondaryPressed: { backgroundColor: colors.secondaryDim },
+    secondaryText: { ...typography.button, color: colors.secondary, fontSize: 15 },
+    footer: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        marginTop: spacing.xl,
+    },
+    footerHint: { ...typography.bodySecondary },
+    footerLink: { ...typography.bodySecondary, color: colors.secondary, fontWeight: '600' },
 });
