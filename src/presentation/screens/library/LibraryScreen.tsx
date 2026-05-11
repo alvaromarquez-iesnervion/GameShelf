@@ -13,7 +13,6 @@ import {
 import { observer } from 'mobx-react-lite';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
@@ -27,6 +26,7 @@ import { ErrorMessage } from '../../components/common/ErrorMessage';
 import { EmptyState } from '../../components/common/EmptyState';
 import { LibrarySkeleton } from '../../components/common/LibrarySkeleton';
 import { BrandAura } from '../../components/common/BrandAura';
+import { ScreenHeader } from '../../components/common/ScreenHeader';
 import { LibraryTabBar } from '../../components/library/LibraryTabBar';
 import { PlatformFilterChips } from '../../components/library/PlatformFilterChips';
 import { SortCriteria } from '../../../domain/enums/SortCriteria';
@@ -46,7 +46,6 @@ const SORTS: { label: string; criteria: SortCriteria; icon: keyof typeof Feather
 ];
 
 export const LibraryScreen: React.FC = observer(() => {
-    const insets = useSafeAreaInsets();
     const { width } = useWindowDimensions();
     const authVm = useInjection<AuthViewModel>(TYPES.AuthViewModel);
     const vm = useInjection<LibraryViewModel>(TYPES.LibraryViewModel);
@@ -107,30 +106,30 @@ export const LibraryScreen: React.FC = observer(() => {
         <View style={styles.container}>
             <BrandAura style={styles.aura} />
 
-            <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
-                <View style={styles.titleRow}>
-                    <View>
-                        <Text style={styles.eyebrow}>Tu colección</Text>
-                        <Text style={styles.title}>Biblioteca</Text>
-                    </View>
-                    <View style={styles.actions}>
-                        <Pressable
-                            style={({ pressed }) => [styles.iconBtn, pressed && styles.iconBtnPressed]}
-                            onPress={handleRefresh}
-                            accessibilityLabel="Resincronizar"
-                        >
-                            <Feather name="rotate-cw" size={18} color={colors.primary} />
-                        </Pressable>
-                        <Pressable
-                            style={({ pressed }) => [styles.iconBtn, pressed && styles.iconBtnPressed]}
-                            onPress={() => (navigation as any).navigate('WishlistStack')}
-                            accessibilityLabel="Wishlist"
-                        >
-                            <Feather name="heart" size={18} color={colors.accentWarm} />
-                        </Pressable>
-                    </View>
-                </View>
+            <ScreenHeader
+                eyebrow="Tu colección"
+                title="Biblioteca"
+                rightSlot={
+                        <>
+                            <Pressable
+                                style={({ pressed }) => [styles.iconBtn, pressed && styles.iconBtnPressed]}
+                                onPress={handleRefresh}
+                                accessibilityLabel="Resincronizar"
+                            >
+                                <Feather name="rotate-cw" size={18} color={colors.primary} />
+                            </Pressable>
+                            <Pressable
+                                style={({ pressed }) => [styles.iconBtn, pressed && styles.iconBtnPressed]}
+                                onPress={() => (navigation as any).navigate('WishlistStack')}
+                                accessibilityLabel="Wishlist"
+                            >
+                                <Feather name="heart" size={18} color={colors.accentWarm} />
+                            </Pressable>
+                        </>
+                    }
+                />
 
+            <View style={styles.controls}>
                 <View style={styles.searchBox}>
                     <Feather name="search" size={16} color={colors.textTertiary} />
                     <TextInput
@@ -264,19 +263,10 @@ const PageBtn: React.FC<{ icon: keyof typeof Feather.glyphMap; disabled: boolean
 const styles = StyleSheet.create({
     container: { flex: 1 },
     aura: { position: 'absolute', top: 0, left: 0, right: 0, height: 220 },
-    header: {
+    controls: {
         paddingHorizontal: spacing.lg,
         paddingBottom: spacing.sm,
     },
-    titleRow: {
-        flexDirection: 'row',
-        alignItems: 'flex-end',
-        justifyContent: 'space-between',
-        marginBottom: spacing.lg,
-    },
-    eyebrow: { ...typography.label, color: colors.secondary },
-    title: { ...typography.largeTitle, marginTop: 2 },
-    actions: { flexDirection: 'row', gap: spacing.sm },
     iconBtn: {
         width: 40, height: 40,
         borderRadius: radius.full,

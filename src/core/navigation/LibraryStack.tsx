@@ -21,14 +21,12 @@ export const LibraryStack: React.FC = () => {
                     headerShown: false,
                 }} 
             />
-            <Stack.Screen 
-                name="GameDetail" 
-                component={GameDetailScreen} 
-                options={{ 
-                    title: '',
-                    headerTransparent: true,
-                    headerBackground: undefined, // Inmersivo
-                }} 
+            <Stack.Screen
+                name="GameDetail"
+                component={GameDetailScreen}
+                options={{
+                    headerShown: false,
+                }}
             />
         </Stack.Navigator>
     );

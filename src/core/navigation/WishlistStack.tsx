@@ -31,9 +31,7 @@ export const WishlistStack: React.FC = () => {
                 name="GameDetail"
                 component={GameDetailScreen}
                 options={{
-                    title: '',
-                    headerTransparent: true,
-                    headerBackground: undefined,
+                    headerShown: false,
                     animation: 'slide_from_right',
                 }}
             />

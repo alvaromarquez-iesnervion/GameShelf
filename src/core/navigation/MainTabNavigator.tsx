@@ -39,6 +39,7 @@ const TabNavigator: React.FC = () => {
                     fontSize: 10,
                     fontWeight: '600',
                 },
+                sceneContainerStyle: { backgroundColor: 'transparent' },
             }}
         >
             <Tab.Screen

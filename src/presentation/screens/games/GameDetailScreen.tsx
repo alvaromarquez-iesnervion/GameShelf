@@ -94,6 +94,7 @@ export const GameDetailScreen: React.FC = observer(() => {
     const detail = vm.gameDetail.detail;
     const game = detail.getGame();
     const isOwned = detail.getIsInLibrary();
+    const playtimeMinutes = game.getPlaytime();
     const inWishlist = wishlistVm.isGameInWishlist(game.getId());
     const steamMeta = detail.getSteamMetadata();
     const deals = detail.getDeals();
@@ -117,31 +118,6 @@ export const GameDetailScreen: React.FC = observer(() => {
                         colors={['rgba(7,8,12,0.55)', 'rgba(7,8,12,0)', 'rgba(7,8,12,0.85)', colors.background]}
                         style={styles.heroGradient}
                     />
-                    <View style={[styles.heroChrome, { paddingTop: insets.top + spacing.sm }]}>
-                        <Pressable
-                            onPress={() => navigation.goBack()}
-                            style={({ pressed }) => [styles.chromeBtn, pressed && { opacity: 0.7 }]}
-                            hitSlop={10}
-                        >
-                            <Feather name="chevron-left" size={22} color={colors.textPrimary} />
-                        </Pressable>
-                        <Pressable
-                            onPress={toggleWishlist}
-                            style={({ pressed }) => [
-                                styles.chromeBtn,
-                                inWishlist && styles.chromeBtnActive,
-                                pressed && { opacity: 0.7 },
-                            ]}
-                            hitSlop={10}
-                            accessibilityLabel={inWishlist ? 'Quitar de wishlist' : 'Añadir a wishlist'}
-                        >
-                            <Ionicons
-                                name={inWishlist ? 'heart' : 'heart-outline'}
-                                size={22}
-                                color={inWishlist ? colors.accentWarm : colors.textPrimary}
-                            />
-                        </Pressable>
-                    </View>
                 </View>
 
                 <View style={styles.body}>
@@ -202,6 +178,12 @@ export const GameDetailScreen: React.FC = observer(() => {
                         </View>
                     )}
 
+                    {isOwned && playtimeMinutes > 0 && (
+                        <View style={styles.infoCard}>
+                            <InfoRow label="Tu tiempo jugado" value={formatPlaytime(playtimeMinutes)} />
+                        </View>
+                    )}
+
                     <View style={styles.section}>
                         <Text style={styles.sectionTitle}>Tiempo de juego</Text>
                         <HltbInfo
@@ -246,9 +228,44 @@ export const GameDetailScreen: React.FC = observer(() => {
                     )}
                 </View>
             </ScrollView>
+
+            <View style={[styles.floatingChrome, { paddingTop: insets.top + spacing.sm }]}>
+                <Pressable
+                    onPress={() => navigation.goBack()}
+                    style={({ pressed }) => [styles.chromeBtn, pressed && { opacity: 0.7 }]}
+                    hitSlop={10}
+                    accessibilityLabel="Volver"
+                >
+                    <Feather name="chevron-left" size={22} color={colors.textPrimary} />
+                </Pressable>
+                <Pressable
+                    onPress={toggleWishlist}
+                    style={({ pressed }) => [
+                        styles.chromeBtn,
+                        inWishlist && styles.chromeBtnActive,
+                        pressed && { opacity: 0.7 },
+                    ]}
+                    hitSlop={10}
+                    accessibilityLabel={inWishlist ? 'Quitar de wishlist' : 'Añadir a wishlist'}
+                >
+                    <Ionicons
+                        name={inWishlist ? 'heart' : 'heart-outline'}
+                        size={22}
+                        color={inWishlist ? colors.accentWarm : colors.textPrimary}
+                    />
+                </Pressable>
+            </View>
         </View>
     );
 });
+
+function formatPlaytime(minutes: number): string {
+    const h = Math.floor(minutes / 60);
+    const min = minutes % 60;
+    if (h === 0) return `${min} min`;
+    if (min === 0) return `${h} h`;
+    return `${h} h ${min} min`;
+}
 
 const InfoRow: React.FC<{ label: string; value: string }> = ({ label, value }) => (
     <View style={styles.infoRow}>
@@ -266,7 +283,7 @@ const styles = StyleSheet.create({
     },
     hero: { ...StyleSheet.absoluteFillObject },
     heroGradient: { ...StyleSheet.absoluteFillObject },
-    heroChrome: {
+    floatingChrome: {
         position: 'absolute',
         top: 0, left: 0, right: 0,
         flexDirection: 'row',

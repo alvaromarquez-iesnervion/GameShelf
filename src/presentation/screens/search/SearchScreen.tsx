@@ -13,7 +13,6 @@ import {
 import { observer } from 'mobx-react-lite';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 
 import { useInjection } from '../../../di/hooks/useInjection';
@@ -28,6 +27,7 @@ import { HomeGameCard } from '../../components/games/HomeGameCard';
 import { ErrorMessage } from '../../components/common/ErrorMessage';
 import { EmptyState } from '../../components/common/EmptyState';
 import { BrandAura } from '../../components/common/BrandAura';
+import { ScreenHeader } from '../../components/common/ScreenHeader';
 import { SearchResult } from '../../../domain/entities/SearchResult';
 import { Game } from '../../../domain/entities/Game';
 import { WishlistItem } from '../../../domain/entities/WishlistItem';
@@ -38,7 +38,6 @@ import { spacing, radius } from '../../theme/spacing';
 type Nav = NativeStackNavigationProp<SearchStackParamList, 'Search'>;
 
 export const SearchScreen: React.FC = observer(() => {
-    const insets = useSafeAreaInsets();
     const navigation = useNavigation<Nav>();
     const authVm = useInjection<AuthViewModel>(TYPES.AuthViewModel);
     const vm = useInjection<SearchViewModel>(TYPES.SearchViewModel);
@@ -132,10 +131,8 @@ export const SearchScreen: React.FC = observer(() => {
         <View style={styles.container}>
             <BrandAura style={styles.aura} />
 
-            <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
-                <Text style={styles.eyebrow}>Explora</Text>
-                <Text style={styles.title}>Descubre</Text>
-
+            <ScreenHeader eyebrow="Explora" title="Descubre" />
+            <View style={styles.searchContainer}>
                 <View style={[styles.searchBox, focused && styles.searchBoxFocused]}>
                     <Feather name="search" size={18} color={focused ? colors.primary : colors.textTertiary} />
                     <TextInput
@@ -309,12 +306,10 @@ const Carousel: React.FC<CarouselProps> = ({
 const styles = StyleSheet.create({
     container: { flex: 1 },
     aura: { position: 'absolute', top: 0, left: 0, right: 0, height: 240 },
-    header: {
+    searchContainer: {
         paddingHorizontal: spacing.lg,
         paddingBottom: spacing.md,
     },
-    eyebrow: { ...typography.label, color: colors.secondary },
-    title: { ...typography.largeTitle, marginTop: 2, marginBottom: spacing.lg },
     searchBox: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -361,7 +356,7 @@ const styles = StyleSheet.create({
         alignItems: 'center', justifyContent: 'center',
     },
     sectionTitle: { ...typography.title, fontSize: 18 },
-    sectionSubtitle: { ...typography.caption, marginTop: 1 },
+    sectionSubtitle: { ...typography.caption, marginTop: 1, color: colors.textSecondary },
     carouselContent: { paddingHorizontal: spacing.lg },
     carouselLoading: {
         height: 180,

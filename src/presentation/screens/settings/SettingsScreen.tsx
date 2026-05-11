@@ -3,7 +3,6 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { observer } from 'mobx-react-lite';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -15,6 +14,7 @@ import { GameDetailViewModel } from '../../viewmodels/GameDetailViewModel';
 import { SettingsStackParamList } from '../../../core/navigation/navigationTypes';
 import { ConfirmDialog } from '../../components/common/ConfirmDialog';
 import { BrandAura } from '../../components/common/BrandAura';
+import { ScreenHeader } from '../../components/common/ScreenHeader';
 import { CurrencyDropdown } from '../../components/common/CurrencyDropdown';
 import {
     ICountryPreferenceService,
@@ -43,7 +43,6 @@ const ROWS: RowConfig[] = [
 ];
 
 export const SettingsScreen: React.FC = observer(() => {
-    const insets = useSafeAreaInsets();
     const navigation = useNavigation<Nav>();
     const authVm = useInjection<AuthViewModel>(TYPES.AuthViewModel);
     const wishlistVm = useInjection<WishlistViewModel>(TYPES.WishlistViewModel);
@@ -91,39 +90,33 @@ export const SettingsScreen: React.FC = observer(() => {
     return (
         <View style={styles.container}>
             <BrandAura style={styles.aura} />
+            <ScreenHeader eyebrow="Ajustes" title={strings.settingsTitle} />
+            <Pressable
+                onPress={() => navigation.navigate('Profile')}
+                style={({ pressed }) => [styles.identity, styles.identityFixed, pressed && { opacity: 0.85 }]}
+            >
+                <LinearGradient
+                    colors={[colors.primary, colors.secondary]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.avatar}
+                >
+                    <Text style={styles.avatarText}>{initial}</Text>
+                </LinearGradient>
+                <View style={{ flex: 1 }}>
+                    <Text style={styles.identityName} numberOfLines={1}>
+                        {isGuest ? 'Modo invitado' : (user?.getDisplayName() || user?.getEmail() || 'Sin nombre')}
+                    </Text>
+                    <Text style={styles.identityHint} numberOfLines={1}>
+                        {isGuest ? 'Crea una cuenta para sincronizar tus datos' : (user?.getEmail() ?? 'Ver perfil completo')}
+                    </Text>
+                </View>
+                <Feather name="chevron-right" size={18} color={colors.textTertiary} />
+            </Pressable>
             <ScrollView
-                contentContainerStyle={[
-                    styles.scroll,
-                    { paddingTop: insets.top + spacing.md, paddingBottom: 100 },
-                ]}
+                contentContainerStyle={[styles.scroll, { paddingBottom: 100 }]}
                 showsVerticalScrollIndicator={false}
             >
-                <Text style={styles.eyebrow}>Ajustes</Text>
-                <Text style={styles.heading}>{strings.settingsTitle}</Text>
-
-                <Pressable
-                    onPress={() => navigation.navigate('Profile')}
-                    style={({ pressed }) => [styles.identity, pressed && { opacity: 0.85 }]}
-                >
-                    <LinearGradient
-                        colors={[colors.primary, colors.secondary]}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 1 }}
-                        style={styles.avatar}
-                    >
-                        <Text style={styles.avatarText}>{initial}</Text>
-                    </LinearGradient>
-                    <View style={{ flex: 1 }}>
-                        <Text style={styles.identityName} numberOfLines={1}>
-                            {isGuest ? 'Modo invitado' : (user?.getDisplayName() || user?.getEmail() || 'Sin nombre')}
-                        </Text>
-                        <Text style={styles.identityHint} numberOfLines={1}>
-                            {isGuest ? 'Crea una cuenta para sincronizar tus datos' : (user?.getEmail() ?? 'Ver perfil completo')}
-                        </Text>
-                    </View>
-                    <Feather name="chevron-right" size={18} color={colors.textTertiary} />
-                </Pressable>
-
                 <Text style={styles.groupLabel}>Preferencias</Text>
                 <View style={styles.group}>
                     <Pressable
@@ -211,8 +204,6 @@ const styles = StyleSheet.create({
     container: { flex: 1 },
     aura: { position: 'absolute', top: 0, left: 0, right: 0, height: 240 },
     scroll: { paddingHorizontal: spacing.lg, gap: spacing.md },
-    eyebrow: { ...typography.label, color: colors.secondary },
-    heading: { ...typography.largeTitle, marginBottom: spacing.lg, marginTop: 2 },
     identity: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -221,6 +212,10 @@ const styles = StyleSheet.create({
         borderRadius: radius.lg,
         padding: spacing.md,
         borderWidth: 1, borderColor: colors.borderSubtle,
+    },
+    identityFixed: {
+        marginHorizontal: spacing.lg,
+        marginBottom: spacing.md,
     },
     avatar: {
         width: 52, height: 52,
