@@ -22,7 +22,7 @@ const darkTheme = {
         primary: colors.primary,
         // Transparent so our global AppBackground can show through.
         background: 'transparent',
-        card: colors.surface,
+        card: 'transparent',
         text: colors.textPrimary,
         border: colors.border,
         notification: colors.primary,

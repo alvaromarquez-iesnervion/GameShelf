@@ -1,107 +1,98 @@
-import React, { useEffect, useCallback } from 'react';
-import { View, Text, Switch, TouchableOpacity, Linking } from 'react-native';
-import { Feather } from '@expo/vector-icons';
+import React, { useCallback, useEffect } from 'react';
+import { ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { observer } from 'mobx-react-lite';
+import { Feather } from '@expo/vector-icons';
+
 import { useInjection } from '../../../di/hooks/useInjection';
+import { TYPES } from '../../../di/types';
 import { AuthViewModel } from '../../viewmodels/AuthViewModel';
 import { SettingsViewModel } from '../../viewmodels/SettingsViewModel';
-import { PushNotificationService } from '../../../data/services/PushNotificationService';
-import { TYPES } from '../../../di/types';
+import { Screen } from '../../components/common/Screen';
+import { ErrorMessage } from '../../components/common/ErrorMessage';
 import { ListSkeleton } from '../../components/common/ListItemSkeleton';
 import { colors } from '../../theme/colors';
-import { styles } from './NotificationSettingsScreen.styles';
-import { Screen } from '../../components/common/Screen';
+import { typography } from '../../theme/typography';
+import { spacing, radius } from '../../theme/spacing';
 
 export const NotificationSettingsScreen: React.FC = observer(() => {
     const authVm = useInjection<AuthViewModel>(TYPES.AuthViewModel);
     const vm = useInjection<SettingsViewModel>(TYPES.SettingsViewModel);
-    const pushService = useInjection<PushNotificationService>(TYPES.PushNotificationService);
     const userId = authVm.currentUser?.getId() ?? '';
 
     useEffect(() => {
-        if (userId && !vm.profile) vm.loadProfile(userId);
+        if (userId) vm.loadProfile(userId);
     }, [userId, vm]);
 
-    const handleToggleNotifications = useCallback(async (value: boolean) => {
-        if (value && pushService.permissionState !== 'denied') {
-            void pushService.initialize(userId);
-        }
-        void vm.updateNotificationPreferences(userId, value);
-    }, [vm, userId, pushService]);
+    const onToggle = useCallback(async (value: boolean) => {
+        if (!userId) return;
+        await vm.updateNotificationPreferences(userId, value);
+    }, [userId, vm]);
 
-    const openSystemSettings = useCallback(async () => {
-        try {
-            const canOpen = await Linking.canOpenURL('app-settings:');
-            if (canOpen) {
-                await Linking.openURL('app-settings:');
-            } else {
-                await Linking.openSettings();
-            }
-        } catch {
-            // Fallback: no action
-        }
-    }, []);
+    if (vm.isLoading && !vm.profile) return <ListSkeleton count={3} />;
+    if (vm.errorMessage) return <ErrorMessage message={vm.errorMessage} onRetry={() => vm.loadProfile(userId)} />;
 
-    const renderPermissionStatus = () => {
-        if (pushService.permissionState === 'denied') {
-            return (
-                <View style={styles.permissionBanner}>
-                    <Feather name="alert-triangle" size={16} color="#f59e0b" />
-                    <Text style={styles.permissionText}>
-                        Permisos de notificacion desactivados. Habilitalos en Ajustes del sistema para recibir alertas de ofertas.
-                    </Text>
-                    <TouchableOpacity onPress={openSystemSettings} style={styles.settingsButton}>
-                        <Text style={styles.settingsButtonText}>Abrir Ajustes</Text>
-                    </TouchableOpacity>
-                </View>
-            );
-        }
-
-        if (pushService.permissionState === 'granted' && pushService.hasToken && vm.isDealsEnabled) {
-            return (
-                <View style={styles.permissionBannerSuccess}>
-                    <Feather name="check-circle" size={16} color="#10b981" />
-                    <Text style={styles.permissionTextSuccess}>Notificaciones activas</Text>
-                </View>
-            );
-        }
-
-        return null;
-    };
-
-    if (vm.isLoading && !vm.profile) return <ListSkeleton count={1} />;
+    const dealsEnabled = vm.profile?.notificationPreferences?.getDealsEnabled() ?? false;
 
     return (
-        <Screen style={styles.container} topInset="header">
-            <Text style={styles.sectionLabel}>ALERTAS</Text>
+        <Screen topInset="header">
+            <ScrollView contentContainerStyle={styles.scroll}>
+                <Text style={styles.intro}>
+                    Te avisaremos cuando los juegos de tu wishlist bajen de precio. Puedes pausar las
+                    notificaciones cuando quieras.
+                </Text>
 
-            {renderPermissionStatus()}
-
-            <View style={styles.group}>
-                <View style={styles.row}>
-                    <View style={styles.iconBox}>
-                        <Feather name="tag" size={18} color={colors.onPrimary} />
+                <View style={styles.group}>
+                    <View style={styles.row}>
+                        <View style={styles.iconBox}>
+                            <Feather name="tag" size={18} color={colors.primary} />
+                        </View>
+                        <View style={styles.rowText}>
+                            <Text style={styles.rowTitle}>Ofertas de wishlist</Text>
+                            <Text style={styles.rowHint}>Aviso cuando un juego guardado entra en oferta.</Text>
+                        </View>
+                        <Switch
+                            value={dealsEnabled}
+                            onValueChange={onToggle}
+                            disabled={vm.isLoading}
+                            trackColor={{ false: colors.surfaceVariant, true: colors.primaryDim }}
+                            thumbColor={dealsEnabled ? colors.primary : colors.textSecondary}
+                            ios_backgroundColor={colors.surfaceVariant}
+                        />
                     </View>
-                    <View style={styles.info}>
-                        <Text style={styles.rowTitle}>Ofertas de juegos</Text>
-                        <Text style={styles.rowDescription}>
-                            Recibe avisos cuando un juego de tu lista de deseos baje de precio
-                        </Text>
-                    </View>
-                    <Switch
-                        value={vm.isDealsEnabled}
-                        onValueChange={handleToggleNotifications}
-                        trackColor={{ false: colors.surfaceVariant, true: colors.primary }}
-                        thumbColor={colors.onPrimary}
-                        ios_backgroundColor={colors.surfaceVariant}
-                    />
                 </View>
-            </View>
 
-            <Text style={styles.footnote}>
-                Las notificaciones se enviaran cuando un precio caiga al menos un 20% respecto al precio habitual.
-            </Text>
+                <Text style={styles.footnote}>
+                    Las notificaciones funcionan mejor con la app en segundo plano. Si no las recibes, revisa
+                    los permisos del sistema.
+                </Text>
+            </ScrollView>
         </Screen>
     );
 });
-NotificationSettingsScreen.displayName = 'NotificationSettingsScreen';
+
+const styles = StyleSheet.create({
+    scroll: { padding: spacing.lg, gap: spacing.lg },
+    intro: { ...typography.bodySecondary, color: colors.textPrimary },
+    group: {
+        backgroundColor: colors.surface,
+        borderRadius: radius.lg,
+        borderWidth: 1, borderColor: colors.borderSubtle,
+        overflow: 'hidden',
+    },
+    row: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.md,
+        padding: spacing.lg,
+    },
+    iconBox: {
+        width: 36, height: 36,
+        borderRadius: radius.md,
+        backgroundColor: colors.primaryDim,
+        alignItems: 'center', justifyContent: 'center',
+    },
+    rowText: { flex: 1 },
+    rowTitle: { ...typography.body, fontWeight: '600' },
+    rowHint: { ...typography.caption, marginTop: 2 },
+    footnote: { ...typography.caption, color: colors.textTertiary, textAlign: 'center' },
+});

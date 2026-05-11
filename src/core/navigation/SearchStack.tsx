@@ -22,9 +22,7 @@ export const SearchStack: React.FC = () => {
                 name="GameDetail"
                 component={GameDetailScreen}
                 options={{
-                    title: '',
-                    headerTransparent: true,
-                    headerBackground: undefined,
+                    headerShown: false,
                 }}
             />
         </Stack.Navigator>

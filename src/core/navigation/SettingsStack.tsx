@@ -14,7 +14,7 @@ const Stack = createNativeStackNavigator<SettingsStackParamList>();
 export const SettingsStack: React.FC = () => {
     return (
         <Stack.Navigator
-            screenOptions={makeBlurHeader(colors)}
+            screenOptions={{ ...makeBlurHeader(colors), animation: 'fade' }}
         >
             <Stack.Screen
                 name="Settings"

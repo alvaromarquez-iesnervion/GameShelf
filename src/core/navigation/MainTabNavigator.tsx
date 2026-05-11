@@ -39,15 +39,16 @@ const TabNavigator: React.FC = () => {
                     fontSize: 10,
                     fontWeight: '600',
                 },
+                sceneContainerStyle: { backgroundColor: 'transparent' },
             }}
         >
             <Tab.Screen
                 name="SearchTab"
                 component={SearchStack}
                 options={{
-                    title: 'Buscar',
+                    title: 'Descubre',
                     tabBarIcon: ({ color }) => (
-                        <Feather name="search" size={22} color={color} />
+                        <Feather name="compass" size={22} color={color} />
                     ),
                 }}
             />

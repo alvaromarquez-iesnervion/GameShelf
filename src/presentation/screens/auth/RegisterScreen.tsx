@@ -1,216 +1,393 @@
-import React, { useState, useCallback } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
-    View,
-    Text,
-    TextInput,
-    TouchableOpacity,
     KeyboardAvoidingView,
     Platform,
-    StatusBar,
+    Pressable,
     ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    View,
 } from 'react-native';
-import { Feather } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import * as Haptics from 'expo-haptics';
 import { observer } from 'mobx-react-lite';
-import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
+
 import { useInjection } from '../../../di/hooks/useInjection';
-import { AuthViewModel } from '../../viewmodels/AuthViewModel';
 import { TYPES } from '../../../di/types';
+import { AuthViewModel } from '../../viewmodels/AuthViewModel';
 import { AuthStackParamList } from '../../../core/navigation/navigationTypes';
 import { colors } from '../../theme/colors';
-import { formStyles, authBgGradientSecondary, secondaryGradientColors } from '../../styles/forms';
-import { styles } from './RegisterScreen.styles';
+import { typography } from '../../theme/typography';
+import { spacing, radius } from '../../theme/spacing';
 
-type Nav = NativeStackNavigationProp<AuthStackParamList, 'Register'>;
+type Props = NativeStackScreenProps<AuthStackParamList, 'Register'>;
 
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-export const RegisterScreen: React.FC = observer(() => {
-    const authVm = useInjection<AuthViewModel>(TYPES.AuthViewModel);
-    const navigation = useNavigation<Nav>();
+type FocusField = 'email' | 'pwd' | 'confirm';
+
+export const RegisterScreen: React.FC<Props> = observer(({ navigation }) => {
+    const vm = useInjection<AuthViewModel>(TYPES.AuthViewModel);
+    const insets = useSafeAreaInsets();
+
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
-    const [showPassword, setShowPassword] = useState(false);
-    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-    const [localError, setLocalError] = useState<string | null>(null);
-    const [focusedField, setFocusedField] = useState<string | null>(null);
+    const [confirm, setConfirm] = useState('');
+    const [showPwd, setShowPwd] = useState(false);
+    const [focused, setFocused] = useState<FocusField | null>(null);
+    const [submitted, setSubmitted] = useState(false);
 
-    const handleRegister = useCallback(async () => {
-        setLocalError(null);
-        if (!email.trim() || !password.trim()) {
-            setLocalError('Rellena todos los campos');
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-            return;
-        }
-        if (!EMAIL_REGEX.test(email.trim())) {
-            setLocalError('El formato del correo no es válido');
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-            return;
-        }
-        if (password !== confirmPassword) {
-            setLocalError('Las contraseñas no coinciden');
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-            return;
-        }
-        if (password.length < 6) {
-            setLocalError('La contraseña debe tener al menos 6 caracteres');
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-            return;
-        }
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        await authVm.register(email.trim(), password);
-    }, [email, password, confirmPassword, authVm]);
+    useEffect(() => {
+        return () => vm.clearError();
+    }, [vm]);
 
-    const handleGoBack = useCallback(() => {
-        Haptics.selectionAsync();
-        authVm.clearError();
-        navigation.goBack();
-    }, [authVm, navigation]);
+    const strength = useMemo(() => {
+        if (password.length === 0) return 0;
+        let s = 0;
+        if (password.length >= 8) s++;
+        if (/[A-Z]/.test(password) && /[a-z]/.test(password)) s++;
+        if (/\d/.test(password)) s++;
+        if (/[^A-Za-z0-9]/.test(password)) s++;
+        return s;
+    }, [password]);
 
-    const displayError = localError ?? authVm.errorMessage;
+    const emailValid = EMAIL_RE.test(email.trim());
+    const pwdValid = password.length >= 8;
+    const matchValid = password.length > 0 && password === confirm;
+    const canSubmit = emailValid && pwdValid && matchValid && !vm.isLoading;
+
+    const onSubmit = async () => {
+        setSubmitted(true);
+        if (!canSubmit) return;
+        await vm.register(email.trim(), password);
+    };
+
+    const showEmailErr = submitted && !emailValid;
+    const showPwdErr = submitted && !pwdValid;
+    const showMatchErr = submitted && password.length > 0 && !matchValid;
 
     return (
         <KeyboardAvoidingView
-            style={styles.container}
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            style={styles.flex}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
-            <StatusBar barStyle="light-content" />
-
-            <LinearGradient
-                colors={authBgGradientSecondary}
-                style={formStyles.topGradient}
-                pointerEvents="none"
-            />
-
-            {/* Back button — top-left, outside scroll so it's always visible */}
-            <TouchableOpacity style={styles.backBtn} onPress={handleGoBack} activeOpacity={0.7}>
-                <Feather name="arrow-left" size={22} color={colors.textPrimary} />
-            </TouchableOpacity>
-
             <ScrollView
-                contentContainerStyle={styles.scrollContent}
+                contentContainerStyle={[
+                    styles.scroll,
+                    { paddingTop: insets.top + spacing.xl, paddingBottom: insets.bottom + spacing.xl },
+                ]}
                 keyboardShouldPersistTaps="handled"
                 showsVerticalScrollIndicator={false}
             >
-                <View style={styles.headingSection}>
+                <Pressable
+                    onPress={() => navigation.goBack()}
+                    style={styles.back}
+                    hitSlop={12}
+                >
+                    <Ionicons name="chevron-back" size={22} color={colors.textPrimary} />
+                </Pressable>
+
+                <View style={styles.header}>
                     <Text style={styles.title}>Crear cuenta</Text>
-                    <Text style={styles.subtitle}>Únete a GameShelf</Text>
+                    <Text style={styles.subtitle}>
+                        Empieza a organizar tu colección de juegos
+                    </Text>
                 </View>
 
-                {displayError ? (
-                    <View style={formStyles.errorBanner}>
-                        <Feather name="alert-circle" size={15} color={colors.error} />
-                        <Text style={formStyles.errorText}>{displayError}</Text>
-                    </View>
-                ) : null}
+                <View style={styles.card}>
+                    {vm.errorMessage && (
+                        <View style={styles.errorBox}>
+                            <Ionicons name="alert-circle" size={16} color={colors.error} />
+                            <Text style={styles.errorText}>{vm.errorMessage}</Text>
+                        </View>
+                    )}
 
-                <View style={styles.form}>
-                    <View style={[formStyles.inputWrap, focusedField === 'email' && formStyles.inputFocused]}>
-                        <Feather
-                            name="mail"
-                            size={18}
-                            color={focusedField === 'email' ? colors.primary : colors.textTertiary}
-                            style={formStyles.inputIcon}
-                        />
-                        <TextInput
-                            style={formStyles.input}
-                            placeholder="Correo electrónico"
-                            placeholderTextColor={colors.textDisabled}
-                            value={email}
-                            onChangeText={setEmail}
-                            keyboardType="email-address"
-                            autoCapitalize="none"
-                            autoCorrect={false}
-                            keyboardAppearance="dark"
-                            onFocus={() => setFocusedField('email')}
-                            onBlur={() => setFocusedField(null)}
-                        />
-                    </View>
+                    <FormField
+                        label="Email"
+                        icon="mail-outline"
+                        focused={focused === 'email'}
+                        onFocus={() => setFocused('email')}
+                        onBlur={() => setFocused(null)}
+                        value={email}
+                        onChangeText={setEmail}
+                        placeholder="tu@email.com"
+                        autoCapitalize="none"
+                        keyboardType="email-address"
+                        autoComplete="email"
+                        error={showEmailErr ? 'Introduce un email válido' : null}
+                        editable={!vm.isLoading}
+                    />
 
-                    <View style={[formStyles.inputWrap, focusedField === 'password' && formStyles.inputFocused]}>
-                        <Feather
-                            name="lock"
-                            size={18}
-                            color={focusedField === 'password' ? colors.primary : colors.textTertiary}
-                            style={formStyles.inputIcon}
-                        />
-                        <TextInput
-                            style={formStyles.input}
-                            placeholder="Contraseña"
-                            placeholderTextColor={colors.textDisabled}
-                            value={password}
-                            onChangeText={setPassword}
-                            secureTextEntry={!showPassword}
-                            keyboardAppearance="dark"
-                            onFocus={() => setFocusedField('password')}
-                            onBlur={() => setFocusedField(null)}
-                        />
-                        <TouchableOpacity
-                            style={formStyles.eyeBtn}
-                            onPress={() => setShowPassword(!showPassword)}
-                            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                        >
-                            <Feather name={showPassword ? 'eye-off' : 'eye'} size={18} color={colors.textTertiary} />
-                        </TouchableOpacity>
-                    </View>
+                    <FormField
+                        label="Contraseña"
+                        icon="lock-closed-outline"
+                        focused={focused === 'pwd'}
+                        onFocus={() => setFocused('pwd')}
+                        onBlur={() => setFocused(null)}
+                        value={password}
+                        onChangeText={setPassword}
+                        placeholder="Mínimo 8 caracteres"
+                        secureTextEntry={!showPwd}
+                        right={
+                            <Pressable hitSlop={8} onPress={() => setShowPwd((s) => !s)}>
+                                <Ionicons
+                                    name={showPwd ? 'eye-off-outline' : 'eye-outline'}
+                                    size={18}
+                                    color={colors.textSecondary}
+                                />
+                            </Pressable>
+                        }
+                        error={showPwdErr ? 'Al menos 8 caracteres' : null}
+                        editable={!vm.isLoading}
+                    />
 
-                    <View style={[formStyles.inputWrap, focusedField === 'confirm' && formStyles.inputFocused]}>
-                        <Feather
-                            name="lock"
-                            size={18}
-                            color={focusedField === 'confirm' ? colors.primary : colors.textTertiary}
-                            style={formStyles.inputIcon}
-                        />
-                        <TextInput
-                            style={formStyles.input}
-                            placeholder="Confirmar contraseña"
-                            placeholderTextColor={colors.textDisabled}
-                            value={confirmPassword}
-                            onChangeText={setConfirmPassword}
-                            secureTextEntry={!showConfirmPassword}
-                            keyboardAppearance="dark"
-                            onFocus={() => setFocusedField('confirm')}
-                            onBlur={() => setFocusedField(null)}
-                        />
-                        <TouchableOpacity
-                            style={formStyles.eyeBtn}
-                            onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-                            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                        >
-                            <Feather name={showConfirmPassword ? 'eye-off' : 'eye'} size={18} color={colors.textTertiary} />
-                        </TouchableOpacity>
-                    </View>
+                    {password.length > 0 && (
+                        <View style={styles.strength}>
+                            {[0, 1, 2, 3].map((i) => (
+                                <View
+                                    key={i}
+                                    style={[
+                                        styles.strengthSeg,
+                                        {
+                                            backgroundColor:
+                                                i < strength
+                                                    ? strengthColor(strength)
+                                                    : colors.surfaceVariant,
+                                        },
+                                    ]}
+                                />
+                            ))}
+                        </View>
+                    )}
 
-                    <TouchableOpacity
-                        style={[formStyles.primaryBtn, authVm.isLoading && formStyles.primaryBtnDisabled]}
-                        onPress={handleRegister}
-                        disabled={authVm.isLoading}
-                        activeOpacity={0.85}
+                    <FormField
+                        label="Confirmar contraseña"
+                        icon="shield-checkmark-outline"
+                        focused={focused === 'confirm'}
+                        onFocus={() => setFocused('confirm')}
+                        onBlur={() => setFocused(null)}
+                        value={confirm}
+                        onChangeText={setConfirm}
+                        placeholder="Repite la contraseña"
+                        secureTextEntry={!showPwd}
+                        error={showMatchErr ? 'Las contraseñas no coinciden' : null}
+                        editable={!vm.isLoading}
+                    />
+
+                    <Pressable
+                        onPress={onSubmit}
+                        disabled={vm.isLoading}
+                        style={({ pressed }) => [
+                            styles.cta,
+                            !canSubmit && styles.ctaWeak,
+                            pressed && canSubmit && styles.ctaPressed,
+                        ]}
                     >
                         <LinearGradient
-                            colors={secondaryGradientColors}
-                            style={formStyles.primaryBtnGradient}
+                            colors={
+                                canSubmit
+                                    ? [colors.primary, colors.primaryLight]
+                                    : [colors.surfaceVariant, colors.surfaceVariant]
+                            }
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 0 }}
+                            style={styles.ctaGradient}
                         >
-                            {authVm.isLoading ? (
-                                <Text style={formStyles.primaryBtnText}>Registrando...</Text>
-                            ) : (
-                                <>
-                                    <Text style={formStyles.primaryBtnText}>Crear cuenta</Text>
-                                    <Feather name="user-plus" size={17} color={colors.onPrimary} />
-                                </>
-                            )}
+                            <Text style={styles.ctaText}>
+                                {vm.isLoading ? 'Creando…' : 'Crear cuenta'}
+                            </Text>
                         </LinearGradient>
-                    </TouchableOpacity>
+                    </Pressable>
                 </View>
 
-                <TouchableOpacity style={formStyles.footerLink} onPress={handleGoBack} activeOpacity={0.7}>
-                    <Text style={formStyles.footerText}>¿Ya tienes cuenta? </Text>
-                    <Text style={formStyles.footerTextBold}>Inicia sesión</Text>
-                </TouchableOpacity>
+                <View style={styles.footer}>
+                    <Text style={styles.footerHint}>¿Ya tienes cuenta? </Text>
+                    <Pressable onPress={() => navigation.navigate('Login')} hitSlop={8}>
+                        <Text style={styles.footerLink}>Iniciar sesión</Text>
+                    </Pressable>
+                </View>
             </ScrollView>
         </KeyboardAvoidingView>
     );
+});
+
+function strengthColor(s: number): string {
+    if (s <= 1) return colors.error;
+    if (s === 2) return colors.warning;
+    if (s === 3) return colors.secondary;
+    return colors.success;
+}
+
+interface FormFieldProps {
+    label: string;
+    icon: keyof typeof Ionicons.glyphMap;
+    focused: boolean;
+    onFocus: () => void;
+    onBlur: () => void;
+    value: string;
+    onChangeText: (v: string) => void;
+    placeholder: string;
+    error?: string | null;
+    right?: React.ReactNode;
+    secureTextEntry?: boolean;
+    autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
+    keyboardType?: 'default' | 'email-address';
+    autoComplete?: 'email' | 'password';
+    editable?: boolean;
+}
+
+const FormField: React.FC<FormFieldProps> = ({
+    label,
+    icon,
+    focused,
+    onFocus,
+    onBlur,
+    value,
+    onChangeText,
+    placeholder,
+    error,
+    right,
+    secureTextEntry,
+    autoCapitalize,
+    keyboardType,
+    autoComplete,
+    editable,
+}) => (
+    <View style={styles.fieldGroup}>
+        <Text style={styles.label}>{label}</Text>
+        <View
+            style={[
+                styles.inputWrap,
+                focused && styles.inputWrapFocused,
+                error && styles.inputWrapError,
+            ]}
+        >
+            <Ionicons
+                name={icon}
+                size={18}
+                color={focused ? colors.primary : colors.textTertiary}
+            />
+            <TextInput
+                style={styles.input}
+                placeholder={placeholder}
+                placeholderTextColor={colors.textTertiary}
+                value={value}
+                onChangeText={onChangeText}
+                onFocus={onFocus}
+                onBlur={onBlur}
+                secureTextEntry={secureTextEntry}
+                autoCapitalize={autoCapitalize}
+                keyboardType={keyboardType}
+                autoComplete={autoComplete}
+                editable={editable}
+            />
+            {right}
+        </View>
+        {error && <Text style={styles.fieldError}>{error}</Text>}
+    </View>
+);
+
+const styles = StyleSheet.create({
+    flex: { flex: 1 },
+    scroll: {
+        flexGrow: 1,
+        paddingHorizontal: spacing.xl,
+    },
+    back: {
+        width: 40,
+        height: 40,
+        borderRadius: radius.full,
+        backgroundColor: colors.surface,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 1,
+        borderColor: colors.borderSubtle,
+        marginBottom: spacing.lg,
+    },
+    header: { marginBottom: spacing.xl },
+    title: { ...typography.heading, fontSize: 32 },
+    subtitle: { ...typography.bodySecondary, marginTop: spacing.xs },
+    card: {
+        backgroundColor: colors.surface,
+        borderRadius: radius.xl,
+        padding: spacing.xl,
+        borderWidth: 1,
+        borderColor: colors.borderSubtle,
+    },
+    errorBox: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm,
+        backgroundColor: colors.errorBackground,
+        borderColor: colors.errorBorder,
+        borderWidth: 1,
+        borderRadius: radius.md,
+        paddingHorizontal: spacing.md,
+        paddingVertical: spacing.sm,
+        marginBottom: spacing.md,
+    },
+    errorText: { ...typography.bodySecondary, color: colors.error, flex: 1 },
+    fieldGroup: { marginBottom: spacing.md },
+    label: { ...typography.label, marginBottom: spacing.xs },
+    inputWrap: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm,
+        backgroundColor: colors.inputBackground,
+        borderColor: colors.inputBorder,
+        borderWidth: 1,
+        borderRadius: radius.lg,
+        paddingHorizontal: spacing.md,
+        height: 48,
+    },
+    inputWrapFocused: {
+        borderColor: colors.inputFocusBorder,
+        backgroundColor: colors.surfaceElevated,
+    },
+    inputWrapError: { borderColor: colors.error },
+    input: { ...typography.input, flex: 1, paddingVertical: 0 },
+    fieldError: {
+        ...typography.caption,
+        color: colors.error,
+        marginTop: spacing.xs,
+    },
+    strength: {
+        flexDirection: 'row',
+        gap: 4,
+        marginTop: -spacing.sm,
+        marginBottom: spacing.md,
+    },
+    strengthSeg: {
+        flex: 1,
+        height: 3,
+        borderRadius: radius.xs,
+    },
+    cta: {
+        marginTop: spacing.sm,
+        borderRadius: radius.lg,
+        overflow: 'hidden',
+        shadowColor: colors.primary,
+        shadowOpacity: 0.4,
+        shadowRadius: 16,
+        shadowOffset: { width: 0, height: 6 },
+        elevation: 6,
+    },
+    ctaWeak: { shadowOpacity: 0 },
+    ctaPressed: { opacity: 0.85 },
+    ctaGradient: {
+        height: 52,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    ctaText: { ...typography.button, color: colors.onPrimary },
+    footer: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        marginTop: spacing.xl,
+    },
+    footerHint: { ...typography.bodySecondary },
+    footerLink: { ...typography.bodySecondary, color: colors.secondary, fontWeight: '600' },
 });
