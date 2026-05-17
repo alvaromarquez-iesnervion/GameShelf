@@ -93,6 +93,7 @@ interface ApiWishlistItem {
     platform?: string | null;
     steamAppId?: number | null;
     coverUrl?: string | null;
+    portraitCoverUrl?: string | null;
     addedAt: string;
     bestDealPercentage?: number | null;
 }
@@ -254,6 +255,7 @@ function toWishlistItem(r: ApiWishlistItem): WishlistItem {
         r.gameId,
         r.title,
         r.coverUrl ?? '',
+        r.portraitCoverUrl ?? '',
         new Date(r.addedAt),
         r.bestDealPercentage ?? null,
         r.platform ? toPlatform(r.platform) : null,
