@@ -50,10 +50,11 @@ export const ForgotPasswordScreen: React.FC<Props> = observer(({ navigation }) =
 
     return (
         <KeyboardAvoidingView
-            style={styles.flex}
+            style={[styles.flex, { backgroundColor: colors.background }]}
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
             <ScrollView
+                style={{ backgroundColor: colors.background }}
                 contentContainerStyle={[
                     styles.scroll,
                     { paddingTop: insets.top + spacing.xl, paddingBottom: insets.bottom + spacing.xl },
