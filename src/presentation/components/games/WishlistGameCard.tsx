@@ -9,6 +9,7 @@ import { spacing, radius } from '../../theme/spacing';
 
 interface WishlistGameCardProps {
     coverUrl: string;
+    portraitCoverUrl?: string;
     title: string;
     discountPercentage?: number | null;
     gameId?: string;
@@ -18,8 +19,9 @@ interface WishlistGameCardProps {
     onRemove: () => void;
 }
 
-export const WishlistGameCard = React.memo(({ coverUrl, title, discountPercentage, gameId, platform, steamAppId, onPress, onRemove }: WishlistGameCardProps) => {
+export const WishlistGameCard = React.memo(({ coverUrl, portraitCoverUrl, title, discountPercentage, gameId, platform, steamAppId, onPress, onRemove }: WishlistGameCardProps) => {
     const hasDiscount = discountPercentage && discountPercentage > 0;
+    const imageSource = portraitCoverUrl || coverUrl;
 
     const handleRemove = () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -34,7 +36,7 @@ export const WishlistGameCard = React.memo(({ coverUrl, title, discountPercentag
     return (
         <TouchableOpacity style={styles.card} onPress={handlePress} activeOpacity={0.75}>
             <View style={styles.coverWrap}>
-                <Image source={{ uri: coverUrl }} style={styles.cover} contentFit="cover" transition={200} />
+                <Image source={{ uri: imageSource }} style={styles.cover} contentFit="cover" transition={200} />
                 {hasDiscount && (
                     <View style={styles.discountOverlay}>
                         <Text style={styles.discountOverlayText}>-{discountPercentage}%</Text>
