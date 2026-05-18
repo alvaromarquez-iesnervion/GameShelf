@@ -104,6 +104,7 @@ export const SearchScreen: React.FC = observer(() => {
                 r.getId(),
                 r.getTitle(),
                 r.getCoverUrl(),
+                '',
                 new Date(),
                 null,
                 null,
@@ -292,6 +293,7 @@ const Carousel: React.FC<CarouselProps> = ({
                 renderItem={({ item, index }) => (
                     <HomeGameCard
                         coverUrl={item.getCoverUrl()}
+                        portraitCoverUrl={item.getPortraitCoverUrl()}
                         title={item.getTitle()}
                         onPress={() => onGamePress(item)}
                         size={cardSize}

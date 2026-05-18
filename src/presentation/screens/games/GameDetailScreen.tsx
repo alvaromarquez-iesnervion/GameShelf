@@ -78,6 +78,7 @@ export const GameDetailScreen: React.FC = observer(() => {
                     game.getId(),
                     game.getTitle(),
                     game.getCoverUrl(),
+                    '',
                     new Date(),
                     null,
                     wlPlatform,

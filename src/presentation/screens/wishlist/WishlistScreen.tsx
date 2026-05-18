@@ -64,6 +64,7 @@ export const WishlistScreen: React.FC = observer(() => {
         <WishlistGameCard
             gameId={item.getGameId()}
             coverUrl={item.getCoverUrl()}
+            portraitCoverUrl={item.getPortraitCoverUrl()}
             title={item.getTitle()}
             discountPercentage={item.getBestDealPercentage()}
             platform={item.getPlatform()}
