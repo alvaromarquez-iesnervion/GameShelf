@@ -7,6 +7,7 @@ const API_ERROR_CODE_MAP: Record<string, string> = {
     'NOT_FOUND': 'Recurso no encontrado',
     'CONFLICT': 'Conflicto con el estado actual',
     'RATE_LIMITED': 'Demasiados intentos. Intenta de nuevo más tarde',
+    'RATE_LIMITER_UNAVAILABLE': 'Servicio de límites temporalmente no disponible',
     'EXTERNAL_SERVICE_ERROR': 'Error del servicio externo',
     'ACCOUNT_DELETION_ERROR': 'Error al eliminar la cuenta',
     'SETTINGS_ERROR': 'Error en la configuración',
