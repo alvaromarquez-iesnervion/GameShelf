@@ -17,6 +17,8 @@ import { LibraryPage, MergedLibraryGame } from '../../domain/interfaces/reposito
 import { LibraryTab } from '../../domain/enums/LibraryTab';
 import { SortCriteria } from '../../domain/enums/SortCriteria';
 import { TYPES } from '../../di/types';
+import { ApiException } from '../../domain/errors/ApiException';
+import { mapApiError } from '../../core/utils/apiErrors';
 
 const BASE_URL = process.env.EXPO_PUBLIC_GAMESHELF_API_URL ?? 'http://localhost:8000';
 
@@ -334,8 +336,20 @@ export class GameShelfApiClientImpl implements IGameShelfApiClient {
             headers: { ...headers, ...(options.headers as Record<string, string> ?? {}) },
         });
         if (!response.ok) {
-            const body = await response.text().catch(() => '');
-            throw new Error(`GameShelfApi ${response.status}: ${body}`);
+            let parsedBody: { code?: string; message?: string; detail?: unknown } | null = null;
+            try {
+                const text = await response.text().catch(() => '');
+                parsedBody = text ? JSON.parse(text) : null;
+            } catch { /* not JSON, ignore */ }
+            if (parsedBody?.code && parsedBody.message) {
+                throw new ApiException(
+                    response.status,
+                    parsedBody.code,
+                    mapApiError(parsedBody.code, parsedBody.message),
+                    parsedBody.detail,
+                );
+            }
+            throw new Error(`GameShelfApi ${response.status}: ${parsedBody?.message ?? 'Unknown error'}`);
         }
         if (response.status === 204) return undefined as unknown as T;
         return response.json() as Promise<T>;
