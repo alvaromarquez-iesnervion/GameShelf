@@ -1,6 +1,6 @@
 export interface ISettingsRepository {
-    /** Obtiene el código de país guardado en el backend, o null si no hay preferencia. */
+    /** Returns the country code stored in the backend, or null if no preference is set. */
     getCountry(): Promise<string | null>;
-    /** Guarda la preferencia de país en el backend (ej: "ES", "MX"). */
+    /** Saves the country preference in the backend (e.g. "ES", "MX"). */
     setCountry(code: string): Promise<void>;
 }

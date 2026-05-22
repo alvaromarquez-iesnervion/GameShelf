@@ -223,7 +223,7 @@ export const primaryGradientColors: [string, string] = [
     colors.primary,
 ];
 
-/** Array de colores del gradiente del botón secundario (color secondary/indigo). */
+/** Gradient colour stops for the secondary button (secondary/indigo colour). */
 export const secondaryGradientColors: [string, string] = [
     '#6B69F0',
     colors.secondary,

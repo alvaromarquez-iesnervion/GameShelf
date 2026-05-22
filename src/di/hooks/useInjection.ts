@@ -2,17 +2,17 @@ import { useRef } from 'react';
 import { container } from '../container';
 
 /**
- * Hook puente entre React y el contenedor Inversify.
+ * Bridge hook between React and the Inversify container.
  *
- * Es el ÚNICO punto donde las vistas se conectan con el contenedor.
- * Los ViewModels no usan este hook: son clases TypeScript puras sin React.
+ * This is the ONLY point where views connect to the container.
+ * ViewModels do not use this hook — they are plain TypeScript classes without React.
  *
- * Uso en un componente:
+ * Usage in a component:
  *   const authVm = useInjection<AuthViewModel>(TYPES.AuthViewModel);
  *
- * - Singleton → siempre devuelve la misma instancia del contenedor.
- * - Transient → crea una nueva instancia en el primer render y la mantiene
- *   estable con useRef para no recrearla en re-renders del mismo componente.
+ * - Singleton → always returns the same instance from the container.
+ * - Transient → creates a new instance on the first render and keeps it
+ *   stable via useRef to avoid re-creation on subsequent renders.
  */
 export function useInjection<T>(identifier: symbol): T {
     const ref = useRef<T | null>(null);

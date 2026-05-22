@@ -1,8 +1,8 @@
 import { GameDetail } from '../entities/GameDetail';
 
 /**
- * Agrega datos de 4 fuentes (Game, ProtonDB, HLTB, ITAD) + estado de wishlist.
- * Producido por GameDetailUseCase mediante Promise.allSettled.
+ * Aggregates data from 4 sources (Game, ProtonDB, HLTB, ITAD) + wishlist state.
+ * Produced by GameDetailUseCase via Promise.allSettled.
  */
 export class GameDetailDTO {
     readonly detail: GameDetail;

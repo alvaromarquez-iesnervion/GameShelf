@@ -10,9 +10,9 @@ import { TYPES } from '../../di/types';
 import { withLoading } from './BaseViewModel';
 
 /**
- * ViewModel para vinculación de plataformas.
+ * ViewModel for platform linking.
  *
- * Transient: solo activo durante la pantalla de vinculación.
+ * Transient: only active during the platform linking screen.
  */
 @injectable()
 export class PlatformLinkViewModel {
@@ -89,8 +89,8 @@ export class PlatformLinkViewModel {
     }
 
     /**
-     * Devuelve la URL que el usuario debe abrir en el navegador para autenticarse con Epic
-     * y obtener el authorization code.
+     * Returns the URL the user must open in the browser to authenticate with Epic
+     * and obtain the authorization code.
      */
     getEpicAuthUrl(): string {
         return this.platformLinkUseCase.getEpicAuthUrl();
@@ -101,8 +101,8 @@ export class PlatformLinkViewModel {
     }
 
     /**
-     * Vincula Epic Games usando el authorization code obtenido del navegador.
-     * Flujo preferido — requiere que el usuario haya copiado el código de ~32 chars.
+     * Links Epic Games using the authorization code obtained from the browser.
+     * Preferred flow — requires the user to have copied the ~32-char code.
      */
     async linkEpicByAuthCode(userId: string, authCode: string): Promise<boolean> {
         const result = await withLoading(this, '_isLinking', '_errorMessage', async () => {
@@ -122,13 +122,13 @@ export class PlatformLinkViewModel {
         return result ?? false;
     }
 
-    /** Devuelve la URL OAuth2 de GOG. */
+    /** Returns the GOG OAuth2 URL. */
     getGogAuthUrl(): string {
         return this.platformLinkUseCase.getGogAuthUrl();
     }
 
     /**
-     * Vincula GOG usando el authorization code capturado desde el WebView.
+     * Links GOG using the authorization code captured from the WebView.
      */
     async linkGogByCode(userId: string, code: string): Promise<boolean> {
         const result = await withLoading(this, '_isLinking', '_errorMessage', async () => {
@@ -140,18 +140,18 @@ export class PlatformLinkViewModel {
     }
 
     /**
-     * Vincula PlayStation Network: abre el navegador para login y luego
-     * intercambia el access code por tokens.
+     * Links PlayStation Network: opens the browser for login and then
+     * exchanges the access code for tokens.
      */
     async linkPsn(userId: string): Promise<boolean> {
         const result = await withLoading(this, '_isLinking', '_errorMessage', async () => {
             const loginUrl = this.platformLinkUseCase.getPsnLoginUrl();
             const redirect = await WebBrowser.openAuthSessionAsync(loginUrl, PSN_REDIRECT_URI);
             if (redirect.type !== 'success' || !redirect.url) {
-                throw new Error('Autenticación de PSN cancelada o fallida.');
+                throw new Error('PSN authentication cancelled or failed.');
             }
             const code = new URL(redirect.url).searchParams.get('code');
-            if (!code) throw new Error('No se recibió el código de acceso de PSN.');
+            if (!code) throw new Error('No access code received from PSN.');
             await this.platformLinkUseCase.linkPsn(userId, code);
             await this.loadLinkedPlatforms(userId);
             return true;

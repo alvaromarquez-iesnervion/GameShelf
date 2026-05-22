@@ -367,7 +367,7 @@ export class GameShelfApiClientImpl implements IGameShelfApiClient {
 
     // ── Library ───────────────────────────────────────────────────────────
 
-    /** @deprecated Usar getLibraryGamesPage con paginación. */
+    /** @deprecated Use getLibraryGamesPage with pagination instead. */
     async getLibraryGames(): Promise<Game[]> {
         const data = await this.request<ApiLibraryPage>('/api/v1/library?page_size=500');
         return data.games.map(r => toGame(r.game));

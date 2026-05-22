@@ -1,8 +1,8 @@
 import { NotificationPreferences } from '../../entities/NotificationPreferences';
 
 export interface INotificationRepository {
-    /** Lee users/{userId}/settings/notifications de Firestore. */
+    /** Reads users/{userId}/settings/notifications from Firestore. */
     getNotificationPreferences(userId: string): Promise<NotificationPreferences>;
-    /** Actualiza users/{userId}/settings/notifications en Firestore. */
+    /** Updates users/{userId}/settings/notifications in Firestore. */
     updateNotificationPreferences(userId: string, preferences: NotificationPreferences): Promise<void>;
 }

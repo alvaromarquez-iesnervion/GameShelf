@@ -5,6 +5,12 @@ import { IGameShelfApiClient } from '../../domain/interfaces/services/IGameShelf
 import { WishlistItem } from '../../domain/entities/WishlistItem';
 import { TYPES } from '../../di/types';
 
+/**
+ * IWishlistRepository implementation that delegates to the GameShelfApi backend.
+ *
+ * _userId is accepted on every method to satisfy the interface contract but is
+ * not forwarded — the API derives the user from the session token.
+ */
 @injectable()
 export class GameShelfApiWishlistRepository implements IWishlistRepository {
 
@@ -29,6 +35,7 @@ export class GameShelfApiWishlistRepository implements IWishlistRepository {
     }
 
     async getWishlistGameIds(_userId: string, country?: string): Promise<Set<string>> {
+        // No dedicated endpoint — derive the id set from a full wishlist fetch.
         const items = await this.api.getWishlist(country);
         return new Set(items.map(i => i.getGameId()));
     }

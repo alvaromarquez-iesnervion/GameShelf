@@ -13,10 +13,10 @@ import { WishlistViewModel } from './WishlistViewModel';
 import { ICountryPreferenceService } from '../../domain/interfaces/usecases/settings/ICountryPreferenceService';
 
 /**
- * ViewModel para autenticación.
+ * ViewModel for authentication.
  *
- * Singleton: estado de auth global compartido en toda la app.
- * Delega toda la lógica de negocio a IAuthUseCase.
+ * Singleton: global auth state shared across the entire app.
+ * Delegates all business logic to IAuthUseCase.
  */
 @injectable()
 export class AuthViewModel {

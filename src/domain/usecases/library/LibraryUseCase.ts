@@ -9,14 +9,14 @@ import { LibraryTab } from '../../enums/LibraryTab';
 import { SortCriteria } from '../../enums/SortCriteria';
 
 /**
- * Orquesta el acceso a la biblioteca del usuario.
+ * Orchestrates access to the user's game library.
  *
- * - getLibrary: lee desde caché Firestore (rápido, sin red adicional).
- * - syncLibrary: llama a la API de la plataforma y actualiza Firestore (lento).
- * - getLinkedPlatforms: devuelve las plataformas vinculadas del usuario.
+ * - getLibrary: reads from Firestore cache (fast, no extra network call).
+ * - syncLibrary: calls the platform API and updates Firestore (slow).
+ * - getLinkedPlatforms: returns the user's linked platforms.
  *
- * Nota: el filtrado/búsqueda por título, tab y plataformas se realiza server-side
- * para evitar transferencias innecesarias y aprovechar la paginación del backend.
+ * Note: filtering/searching by title, tab, and platforms is done server-side
+ * to avoid unnecessary data transfer and leverage backend pagination.
  */
 export class LibraryUseCase implements ILibraryUseCase {
 
@@ -48,19 +48,19 @@ export class LibraryUseCase implements ILibraryUseCase {
     }
 
     async autoSyncLibrary(userId: string): Promise<Game[]> {
-        // 1. Obtener plataformas vinculadas
+        // 1. Fetch linked platforms
         const platforms = await this.platformRepository.getLinkedPlatforms(userId);
         
         if (platforms.length === 0) {
             return this.gameRepository.getLibraryGames(userId);
         }
 
-        // 2. Sincronizar todas las plataformas en paralelo con Promise.allSettled
+        // 2. Sync all platforms in parallel using Promise.allSettled
         const results = await Promise.allSettled(
             platforms.map(p => this.gameRepository.syncLibrary(userId, p.getPlatform())),
         );
 
-        // 3. Combinar todos los juegos de plataformas exitosas, deduplicando por ID
+        // 3. Merge games from successful platforms, deduplicating by ID
         const seen = new Map<string, Game>();
         for (const result of results) {
             if (result.status === 'fulfilled') {

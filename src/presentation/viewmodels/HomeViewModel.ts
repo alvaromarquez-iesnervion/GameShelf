@@ -6,8 +6,8 @@ import { Game } from '../../domain/entities/Game';
 import { TYPES } from '../../di/types';
 import { withLoading } from './BaseViewModel';
 
-// Tiempo mínimo entre recargas del home (5 minutos).
-// Cambiar de pestaña y volver dentro de este tiempo usa los datos en memoria.
+// Minimum time between home reloads (5 minutes).
+// Switching tabs and returning within this window uses the in-memory data.
 const HOME_CACHE_TTL_MS = 5 * 60 * 1000;
 
 @injectable()
@@ -35,15 +35,15 @@ export class HomeViewModel {
     get errorMessage(): string | null { return this._errorMessage; }
 
     async loadHomeData(userId: string): Promise<void> {
-        // Si los datos son recientes, no relanzar los fetches
+        // If data is recent, skip re-fetching
         if (Date.now() - this._lastHomeLoadTime < HOME_CACHE_TTL_MS) return;
 
-        // Lanzar popular games en paralelo sin bloquear el resto.
-        // Así el usuario ve sus datos personales (recientes/más jugados) rápido
-        // mientras los juegos populares cargan en background.
+        // Fetch popular games in parallel without blocking the rest.
+        // This lets the user see their personal data (recent/most played) quickly
+        // while popular games load in the background.
         const popularPromise = this.homeUseCase.getPopularGames(10)
             .then(popular => { runInAction(() => { this._popularGames = popular; }); })
-            .catch(() => { /* silent — popular games son opcionales */ });
+            .catch(() => { /* silent — popular games are optional */ });
 
         await withLoading(this, '_isLoadingHome', '_errorMessage', async () => {
             const [recent, mostPlayed, steamLinked] = await Promise.all([
@@ -59,11 +59,11 @@ export class HomeViewModel {
             });
         });
 
-        // Esperar a que popular termine para no dejar promesas sueltas
+        // Await popular so no dangling promises are left hanging
         await popularPromise;
     }
 
-    /** Fuerza una recarga completa ignorando el TTL. Útil tras sincronizar la biblioteca. */
+    /** Forces a full reload ignoring the TTL. Useful after syncing the library. */
     async forceReloadHomeData(userId: string): Promise<void> {
         runInAction(() => { this._lastHomeLoadTime = 0; });
         await this.loadHomeData(userId);
@@ -80,7 +80,7 @@ export class HomeViewModel {
         }
     }
 
-    /** Limpia todo el estado al cerrar sesión para que el siguiente usuario empiece limpio. */
+    /** Clears all state on logout so the next user starts with a clean slate. */
     reset(): void {
         this._popularGames = [];
         this._recentlyPlayed = [];

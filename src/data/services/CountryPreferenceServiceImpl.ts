@@ -32,7 +32,7 @@ export class CountryPreferenceServiceImpl implements ICountryPreferenceService {
         return this._localCountry;
     }
 
-    /** Devuelve el país efectivo: backend si existe, sino localStorage. */
+    /** Returns the effective country: backend value if set, otherwise local. */
     get effectiveCountry(): string {
         return this._savedCountry ?? this._localCountry;
     }
@@ -48,7 +48,7 @@ export class CountryPreferenceServiceImpl implements ICountryPreferenceService {
         }
     }
 
-    /** Carga la preferencia guardada en el backend y sincroniza. */
+    /** Loads the saved preference from the backend and syncs it locally. */
     async loadSavedPreference(): Promise<void> {
         try {
             const saved = await this.settingsRepo.getCountry();
@@ -60,7 +60,7 @@ export class CountryPreferenceServiceImpl implements ICountryPreferenceService {
                 }
             });
         } catch {
-            // Si falla la carga del backend, mantener local
+            // If the backend load fails, keep the local value
         }
     }
 
@@ -68,7 +68,7 @@ export class CountryPreferenceServiceImpl implements ICountryPreferenceService {
         return this.effectiveCountry;
     }
 
-    /** Guarda en localStorage sin sincronizar con backend (legacy). */
+    /** Saves to AsyncStorage without syncing to the backend (legacy). */
     async setCountry(code: string): Promise<void> {
         runInAction(() => {
             this._localCountry = code;
@@ -76,7 +76,7 @@ export class CountryPreferenceServiceImpl implements ICountryPreferenceService {
         await AsyncStorage.setItem(COUNTRY_KEY, code);
     }
 
-    /** Guarda en localStorage Y sincroniza con el backend. */
+    /** Saves to AsyncStorage AND syncs with the backend. */
     async setCountryAndSync(code: string): Promise<void> {
         try {
             await this.settingsRepo.setCountry(code);
@@ -86,7 +86,7 @@ export class CountryPreferenceServiceImpl implements ICountryPreferenceService {
             });
             await AsyncStorage.setItem(COUNTRY_KEY, code);
         } catch {
-            // Fallback: guardar localmente aunque falle el backend
+            // Fallback: save locally even if the backend call fails
             runInAction(() => {
                 this._localCountry = code;
             });

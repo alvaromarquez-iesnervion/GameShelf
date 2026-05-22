@@ -2,14 +2,14 @@ import { Game } from '../../../entities/Game';
 import { SearchResult } from '../../../entities/SearchResult';
 
 export interface IHomeUseCase {
-    /** Juegos más populares globalmente (no requiere usuario vinculado). */
+    /** Globally popular games (does not require a linked account). */
     getPopularGames(limit?: number): Promise<Game[]>;
-    /** Juegos jugados por el usuario en las últimas 2 semanas (requiere Steam vinculado). */
+    /** Games played by the user in the last 2 weeks (requires Steam linked). */
     getRecentlyPlayed(userId: string): Promise<Game[]>;
-    /** Juegos más jugados por el usuario (requiere Steam vinculado). */
+    /** Most-played games by the user (requires Steam linked). */
     getMostPlayed(userId: string, limit?: number): Promise<Game[]>;
-    /** Comprueba si el usuario tiene Steam vinculado. */
+    /** Returns whether the user has Steam linked. */
     isSteamLinked(userId: string): Promise<boolean>;
-    /** Búsqueda en catálogo ITAD. */
+    /** Search across the ITAD catalogue. */
     searchGames(query: string, userId: string): Promise<SearchResult[]>;
 }

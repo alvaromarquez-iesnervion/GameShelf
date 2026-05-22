@@ -5,16 +5,16 @@ import { WishlistItem } from '../../domain/entities/WishlistItem';
 import { MOCK_INITIAL_WISHLIST, simulateDelay } from './MockDataProvider';
 
 /**
- * Mock de IWishlistRepository con estado en memoria.
+ * In-memory mock implementation of IWishlistRepository.
  *
- * Parte de MOCK_INITIAL_WISHLIST (Cyberpunk 2077 + BG3).
- * Soporta CRUD completo: los cambios persisten durante la sesión de la app
- * pero se resetean al reiniciar (no hay persistencia real).
+ * Seeded from MOCK_INITIAL_WISHLIST (Cyberpunk 2077 + BG3).
+ * Supports full CRUD: changes persist for the app session
+ * but reset on restart (no real persistence).
  */
 @injectable()
 export class MockWishlistRepository implements IWishlistRepository {
 
-    // Copia profunda para no mutar el array original de MockDataProvider
+    // Deep copy to avoid mutating MockDataProvider's original array
     private items: WishlistItem[] = MOCK_INITIAL_WISHLIST.map(i =>
         new WishlistItem(
             i.getId(),

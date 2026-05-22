@@ -11,16 +11,25 @@ import { IGameShelfApiClient } from '../../domain/interfaces/services/IGameShelf
 const PUSH_PERMS_KEY = '@gameshelf/push_permissions';
 const PUSH_TOKEN_KEY = '@gameshelf/expo_push_token';
 
-/** Estado de permisos de notificacion almacenado localmente. */
 type PushPermissionState = 'granted' | 'denied' | 'undetermined';
 
-/** Plataforma detectada para el token push. */
 function getPlatform(): 'ios' | 'android' | 'web' {
     if (Platform.OS === 'ios') return 'ios';
     if (Platform.OS === 'android') return 'android';
     return 'web';
 }
 
+/**
+ * Manages Expo push notification token registration and permission state.
+ *
+ * Lifecycle: call initialize() once after login to request permissions and
+ * register the token with the backend. Call unregisterAll() on logout so the
+ * backend stops delivering notifications to this device.
+ *
+ * Permission state and token are persisted in AsyncStorage so the service
+ * can reflect the last-known state synchronously on the next app launch,
+ * before the OS prompt resolves.
+ */
 @injectable()
 export class PushNotificationService {
     private _isInitialized: boolean = false;
@@ -47,7 +56,7 @@ export class PushNotificationService {
         return this._expoToken !== null && this._expoToken.length > 0;
     }
 
-    /** Solicita permisos de notificacion y registra el token con el backend. */
+    /** Requests notification permissions and registers the Expo token with the backend. */
     async initialize(userId: string): Promise<void> {
         if (this._isInitialized) return;
 
@@ -66,6 +75,7 @@ export class PushNotificationService {
                     try {
                         await this.apiClient.registerPushToken(token, getPlatform());
                     } catch (err) {
+                        // Non-fatal: the user can still use the app; token will be retried on next login.
                         console.warn('[PushNotifications] Token registration failed:', err);
                     }
                 }
@@ -79,7 +89,7 @@ export class PushNotificationService {
         }
     }
 
-    /** Remueve todos los tokens push del backend y limpia estado local. */
+    /** Removes all push tokens from the backend and clears local state. */
     async unregisterAll(): Promise<void> {
         try {
             await this.apiClient.unregisterAllPushTokens();
@@ -92,7 +102,7 @@ export class PushNotificationService {
         await AsyncStorage.multiRemove([PUSH_PERMS_KEY, PUSH_TOKEN_KEY]);
     }
 
-    /** Re-registra el token actual con el backend (util despues de un refresh). */
+    /** Re-registers the current token with the backend (e.g. after a session refresh). */
     async reRegisterToken(userId: string): Promise<void> {
         if (!this._expoToken) return;
         try {
@@ -102,7 +112,6 @@ export class PushNotificationService {
         }
     }
 
-    /** Carga el estado local almacenado en AsyncStorage. */
     private async _loadLocalState(): Promise<void> {
         try {
             const perms = await AsyncStorage.getItem(PUSH_PERMS_KEY);
@@ -116,7 +125,6 @@ export class PushNotificationService {
         }
     }
 
-    /** Solicita permisos de notificacion al sistema. */
     private async _requestPermissions(): Promise<PushPermissionState> {
         try {
             const settings = await Notifications.getPermissionsAsync();
@@ -142,9 +150,9 @@ export class PushNotificationService {
         }
     }
 
-    /** Obtiene el token Expo Push (solicita permisos si es necesario). */
     private async _getExpoToken(): Promise<string | null> {
         try {
+            // projectId is required by Expo SDK 50+; fall back to easConfig for older SDK builds.
             const projectId =
                 Constants.expoConfig?.extra?.eas?.projectId ??
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -170,7 +178,7 @@ export class PushNotificationService {
         }
     }
 
-    /** Restablece el estado a valores por defecto (para testing). */
+    /** Resets internal state to defaults. Intended for testing only. */
     reset(): void {
         runInAction(() => {
             this._isInitialized = false;

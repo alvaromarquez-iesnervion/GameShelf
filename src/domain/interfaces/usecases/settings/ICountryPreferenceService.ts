@@ -19,15 +19,15 @@ export const SUPPORTED_COUNTRIES: readonly CountryOption[] = [
 ] as const;
 
 export interface ICountryPreferenceService {
-    /** País guardado en backend (null si no hay preferencia). */
+    /** Country saved in the backend (null if no preference is set). */
     get savedCountry(): string | null;
-    /** País guardado localmente. */
+    /** Country saved locally. */
     get localCountry(): string;
-    /** País efectivo: backend > local. */
+    /** Effective country: backend > local. */
     get effectiveCountry(): string;
     loadSavedPreference(): Promise<void>;
     getCountry(): Promise<string>;
-    setCountry(code: string): Promise<void>;          // solo local + AsyncStorage
+    setCountry(code: string): Promise<void>;          // local + AsyncStorage only
     setCountryAndSync(code: string): Promise<void>;   // backend + local + AsyncStorage
     getCountryOption(code: string): CountryOption;
     reset(): void;

@@ -1,12 +1,12 @@
 /**
- * Criterios de ordenación disponibles para la biblioteca de juegos.
- * Reside en domain porque es un concepto de negocio agnóstico de UI.
+ * Available sort criteria for the game library.
+ * Lives in domain because it is a UI-agnostic business concept.
  */
 export enum SortCriteria {
-    /** A → Z por título */
+    /** A → Z by title */
     ALPHABETICAL = 'ALPHABETICAL',
-    /** Más reciente primero según lastPlayed */
+    /** Most recently played first, by lastPlayed */
     LAST_PLAYED = 'LAST_PLAYED',
-    /** Mayor tiempo jugado primero */
+    /** Highest playtime first */
     PLAYTIME = 'PLAYTIME',
 }

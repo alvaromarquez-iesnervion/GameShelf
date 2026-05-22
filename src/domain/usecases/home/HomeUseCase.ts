@@ -4,6 +4,13 @@ import { Game } from '../../entities/Game';
 import { SearchResult } from '../../entities/SearchResult';
 import { Platform } from '../../enums/Platform';
 
+/**
+ * Provides data for the home screen via the GameShelfApi backend.
+ *
+ * All methods that hit the network are wrapped in try/catch and return empty arrays
+ * on failure so the home screen always renders, even with no connectivity or
+ * unlinked accounts. isSteamLinked falls back to false on any API error.
+ */
 export class HomeUseCase implements IHomeUseCase {
 
     constructor(
@@ -14,7 +21,7 @@ export class HomeUseCase implements IHomeUseCase {
         try {
             return await this.api.getPopularGames();
         } catch (err) {
-            console.warn('[HomeUseCase] getPopularGames falló:', err);
+            console.warn('[HomeUseCase] getPopularGames failed:', err);
             return [];
         }
     }
@@ -23,7 +30,7 @@ export class HomeUseCase implements IHomeUseCase {
         try {
             return await this.api.getRecentlyPlayed();
         } catch (err) {
-            console.warn('[HomeUseCase] getRecentlyPlayed falló:', err);
+            console.warn('[HomeUseCase] getRecentlyPlayed failed:', err);
             return [];
         }
     }
@@ -32,7 +39,7 @@ export class HomeUseCase implements IHomeUseCase {
         try {
             return await this.api.getMostPlayed();
         } catch (err) {
-            console.warn('[HomeUseCase] getMostPlayed falló:', err);
+            console.warn('[HomeUseCase] getMostPlayed failed:', err);
             return [];
         }
     }

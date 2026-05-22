@@ -1,6 +1,6 @@
 import { User } from '../../../entities/User';
 
-/** Autenticación básica de usuario registrado. */
+/** Basic authentication for registered users. */
 export interface IAuthSessionUseCase {
     login(email: string, password: string): Promise<User>;
     register(email: string, password: string): Promise<User>;

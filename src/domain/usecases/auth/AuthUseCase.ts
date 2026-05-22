@@ -3,6 +3,15 @@ import { IAuthRepository } from '../../interfaces/repositories/IAuthRepository';
 import { IGameShelfApiClient } from '../../interfaces/services/IGameShelfApiClient';
 import { User } from '../../entities/User';
 
+/**
+ * Handles all authentication flows: email/password, anonymous guest, and account deletion.
+ *
+ * After every successful login or registration, syncUser() is fired in the background
+ * to ensure the backend has an up-to-date record of the user.
+ *
+ * Guest logout deletes the anonymous account from the backend before signing out locally,
+ * so orphaned guest data is cleaned up even when the device goes offline mid-flow.
+ */
 export class AuthUseCase implements IAuthUseCase {
     constructor(
         private readonly authRepository: IAuthRepository,
@@ -26,7 +35,7 @@ export class AuthUseCase implements IAuthUseCase {
             try {
                 await this.api.deleteAccount();
             } catch {
-                // Sin conexión u otro error — continuar con el signOut local igualmente.
+                // No connection or other error — continue with local signOut anyway.
             }
         }
         await this.authRepository.logout();
@@ -37,7 +46,7 @@ export class AuthUseCase implements IAuthUseCase {
     }
 
     async checkAuthState(): Promise<User | null> {
-        // Firebase persiste sesiones anónimas automáticamente; no hay AsyncStorage propio.
+        // Firebase persists anonymous sessions automatically; no custom AsyncStorage needed.
         return this.authRepository.getCurrentUser();
     }
 

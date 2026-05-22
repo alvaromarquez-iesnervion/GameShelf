@@ -15,12 +15,12 @@ import {
 } from './MockDataProvider';
 
 /**
- * Mock de IGameRepository.
+ * Mock implementation of IGameRepository.
  *
- * - getLibraryGames: devuelve todos los juegos mock (Steam + Epic)
- * - syncLibrary: simula una sincronización con un delay mayor (operación "lenta")
- * - getGameById: busca en la lista mock por ID
- * - searchGames: filtra MOCK_SEARCH_RESULTS por título
+ * - getLibraryGames: returns all mock games (Steam + Epic)
+ * - syncLibrary: simulates a sync with a longer delay (slow operation)
+ * - getGameById: searches the mock list by ID
+ * - searchGames: filters MOCK_SEARCH_RESULTS by title
  */
 @injectable()
 export class MockGameRepository implements IGameRepository {
@@ -32,7 +32,7 @@ export class MockGameRepository implements IGameRepository {
 
     async getGameById(userId: string, gameId: string): Promise<Game> {
         await simulateDelay(300);
-        // En mocks, la "biblioteca del usuario" es MOCK_ALL_GAMES (no hay separación por userId)
+        // In mocks, the "user library" is MOCK_ALL_GAMES (no per-userId separation)
         const game = MOCK_ALL_GAMES.find(g => g.getId() === gameId);
         if (!game) {
             throw new Error(`Juego con ID "${gameId}" no encontrado en los mocks`);
@@ -43,17 +43,17 @@ export class MockGameRepository implements IGameRepository {
     async getOrCreateGameById(userId: string, gameId: string, steamAppId?: number | null): Promise<Game> {
         await simulateDelay(300);
 
-        // 1. Buscar en la biblioteca por ID directo
+        // 1. Search the library by direct ID
         const gameById = MOCK_ALL_GAMES.find(g => g.getId() === gameId);
         if (gameById) return gameById;
 
-        // 2. Buscar en la biblioteca por steamAppId (el gameId podría ser un UUID de ITAD)
+        // 2. Search the library by steamAppId (gameId may be an ITAD UUID)
         if (steamAppId != null) {
             const gameBySteamId = MOCK_ALL_GAMES.find(g => g.getSteamAppId() === steamAppId);
             if (gameBySteamId) return gameBySteamId;
         }
 
-        // 3. Juego no en biblioteca: resolverlo desde ITAD con Platform.UNKNOWN
+        // 3. Game not in library: resolve from ITAD with Platform.UNKNOWN
         const searchResult = MOCK_SEARCH_RESULTS.find(r => r.getId() === gameId);
         if (searchResult) {
             return new Game(
@@ -73,12 +73,12 @@ export class MockGameRepository implements IGameRepository {
     }
 
     async syncLibrary(_userId: string, platform: Platform): Promise<Game[]> {
-        // Simula una operación lenta de sincronización con la API
+        // Simulate a slow API sync operation
         await simulateDelay(1500);
         if (platform === Platform.STEAM) {
             return [...MOCK_STEAM_GAMES];
         }
-        // Epic: la sync devuelve los juegos Epic ya almacenados
+        // Epic: sync returns the already-stored Epic games
         return MOCK_ALL_GAMES.filter(g => g.getPlatform() === Platform.EPIC_GAMES);
     }
 
@@ -102,7 +102,7 @@ export class MockGameRepository implements IGameRepository {
     }
 
     async storeEpicGames(_userId: string, _games: Game[]): Promise<void> {
-        // En mocks, no necesitamos hacer nada especial
+        // No-op in mocks
         await simulateDelay(100);
     }
 

@@ -1,23 +1,23 @@
 /**
- * Token de autenticación obtenido al intercambiar un NPSSO token de PlayStation Network.
+ * Authentication token obtained by exchanging a PlayStation Network NPSSO token.
  *
- * AVISO: PSN no tiene API pública para terceros. Este flujo usa endpoints internos
- * reverse-engineered (usados por la app oficial de PlayStation y la web).
- * Puede dejar de funcionar sin previo aviso si Sony cambia sus endpoints.
+ * WARNING: PSN has no public third-party API. This flow uses reverse-engineered
+ * internal endpoints (used by the official PlayStation app and website).
+ * It may stop working without notice if Sony changes its endpoints.
  */
 export class PsnAuthToken {
     constructor(
-        /** Bearer token para llamadas autenticadas a la API de PSN. Dura pocas horas. */
+        /** Bearer token for authenticated calls to the PSN API. Valid for a few hours. */
         public readonly accessToken: string,
-        /** Token de refresco. Permite obtener un nuevo access token. Dura ~2 meses. */
+        /** Refresh token. Allows obtaining a new access token. Valid for ~2 months. */
         public readonly refreshToken: string,
-        /** Fecha y hora de expiración del access token. */
+        /** Expiry date and time of the access token. */
         public readonly expiresAt: Date,
-        /** Account ID de la cuenta de PSN (normalmente "me" para el usuario autenticado). */
+        /** PSN account ID (typically "me" for the authenticated user). */
         public readonly accountId: string = 'me',
     ) {}
 
-    /** True si el token ha expirado o expirará en los próximos 60 segundos. */
+    /** Returns true if the token has expired or will expire within the next 60 seconds. */
     isExpired(): boolean {
         return this.expiresAt.getTime() - Date.now() < 60_000;
     }

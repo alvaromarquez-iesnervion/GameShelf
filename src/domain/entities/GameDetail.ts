@@ -48,14 +48,14 @@ export class GameDetail {
     getProtonDbTrendingRating(): ProtonTier | null { return this.protonDbTrendingRating; }
     /** Total community reports on ProtonDB. null if ProtonDB did not return data. */
     getProtonDbReportCount(): number | null { return this.protonDbReportCount; }
-    // Horas decimales (ej: 52.5). null si la API de HLTB falla o no hay datos.
+    /** Decimal hours (e.g. 52.5). null if the HLTB API fails or has no data. */
     getHowLongToBeatMain(): number | null { return this.howLongToBeatMain; }
     getHowLongToBeatMainExtra(): number | null { return this.howLongToBeatMainExtra; }
     getHowLongToBeatCompletionist(): number | null { return this.howLongToBeatCompletionist; }
     getDeals(): Deal[] { return this.deals; }
     /** Steam Store metadata (genres, devs, publishers, Metacritic, screenshots, recommendations). */
     getSteamMetadata(): SteamGameMetadata | null { return this.steamMetadata; }
-    /** DLCs poseídos por el usuario para este juego base. */
+    /** DLCs owned by the user for this base game. */
     getOwnedDlcs(): Game[] { return this.ownedDlcs; }
     getIsInLibrary(): boolean { return this.isInLibrary; }
 }

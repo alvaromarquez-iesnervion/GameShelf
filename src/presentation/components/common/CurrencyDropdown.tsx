@@ -19,8 +19,8 @@ export interface CurrencyDropdownProps {
 }
 
 /**
- * Dropdown inline para seleccionar una opción de una lista.
- * Se coloca debajo del SettingRow que lo activa.
+ * Inline dropdown for selecting an option from a list.
+ * Positioned below the SettingRow that triggers it.
  */
 export const CurrencyDropdown: React.FC<CurrencyDropdownProps> = ({
     visible,

@@ -6,13 +6,13 @@ import { NotificationPreferences } from '../../entities/NotificationPreferences'
 import { UserProfileDTO } from '../../dtos/UserProfileDTO';
 
 /**
- * Agrega los datos necesarios para la pantalla de ajustes.
+ * Aggregates the data needed for the settings screen.
  *
- * getProfile ejecuta las 3 lecturas en paralelo (User, plataformas, notificaciones)
- * y las empaqueta en un UserProfileDTO.
+ * getProfile runs the 3 reads in parallel (User, platforms, notifications)
+ * and packages them into a UserProfileDTO.
  *
- * deleteAccount: eliminación irreversible. Elimina subcolecciones Firestore,
- * el documento del usuario y la cuenta Firebase Auth.
+ * deleteAccount: irreversible deletion. Removes Firestore subcollections,
+ * the user document, and the Firebase Auth account.
  */
 export class SettingsUseCase implements ISettingsUseCase {
 

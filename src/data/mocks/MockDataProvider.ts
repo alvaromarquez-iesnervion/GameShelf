@@ -1,8 +1,8 @@
 /**
- * Datos semilla centralizados para todos los mocks.
- * Representan la estructura real que devolverían las APIs en producción.
+ * Centralised seed data for all mocks.
+ * Represents the real structure returned by production APIs.
  *
- * Importar desde aquí en lugar de duplicar datos en cada mock.
+ * Import from here instead of duplicating data in each mock.
  */
 
 import { Game } from '../../domain/entities/Game';
@@ -17,16 +17,16 @@ import { ProtonDbRating } from '../../domain/entities/ProtonDbRating';
 import { HltbResult } from '../../domain/entities/HltbResult';
 import { Platform } from '../../domain/enums/Platform';
 
-// ─── Utilidad ─────────────────────────────────────────────────────────────────
+// ─── Utility ──────────────────────────────────────────────────────────────────
 
-/** Simula latencia de red para que los mocks ejerciten los estados de carga de la UI. */
+/** Simulates network latency so mocks exercise UI loading states. */
 export const simulateDelay = (ms = 600): Promise<void> =>
     new Promise(resolve => setTimeout(resolve, ms));
 
 const steamCover = (appId: number): string =>
     `https://steamcdn-a.akamaihd.net/steam/apps/${appId}/header.jpg`;
 
-// ─── Usuario ─────────────────────────────────────────────────────────────────
+// ─── User ────────────────────────────────────────────────────────────────────
 
 export const MOCK_USER = new User(
     'mock-uid-dev-001',
@@ -35,7 +35,7 @@ export const MOCK_USER = new User(
     new Date('2024-01-15T10:00:00Z'),
 );
 
-// ─── Juegos de Steam ──────────────────────────────────────────────────────────
+// ─── Steam Games ──────────────────────────────────────────────────────────────
 
 export const MOCK_STEAM_GAMES: Game[] = [
     new Game(
@@ -106,7 +106,7 @@ export const MOCK_STEAM_GAMES: Game[] = [
     ),
 ];
 
-// ─── Juegos jugados recientemente (últimas 2 semanas) ──────────────────────────
+// ─── Recently Played (last 2 weeks) ───────────────────────────────────────────
 
 export const MOCK_RECENTLY_PLAYED: Game[] = [
     new Game(
@@ -144,7 +144,7 @@ export const MOCK_RECENTLY_PLAYED: Game[] = [
     ),
 ];
 
-// ─── Juegos más populares globalmente (Steam Charts) ───────────────────────────
+// ─── Most Popular Games Globally (Steam Charts) ────────────────────────────────
 
 export const MOCK_POPULAR_GAMES: Game[] = [
     new Game(
@@ -259,7 +259,7 @@ export const MOCK_POPULAR_GAMES: Game[] = [
     ),
 ];
 
-// ─── Juegos de Epic ───────────────────────────────────────────────────────────
+// ─── Epic Games ───────────────────────────────────────────────────────────────
 
 export const MOCK_EPIC_GAMES: Game[] = [
     new Game(
@@ -284,12 +284,12 @@ export const MOCK_EPIC_GAMES: Game[] = [
 
 export const MOCK_ALL_GAMES: Game[] = [...MOCK_STEAM_GAMES, ...MOCK_EPIC_GAMES];
 
-// ─── Plataformas vinculadas ───────────────────────────────────────────────────
+// ─── Linked Platforms ─────────────────────────────────────────────────────────
 
 export const MOCK_LINKED_PLATFORMS: LinkedPlatform[] = [
     new LinkedPlatform(
         Platform.STEAM,
-        '76561198000000001',   // SteamID 64-bit de ejemplo
+        '76561198000000001',   // Sample 64-bit SteamID
         new Date('2024-01-20T12:00:00Z'),
     ),
     new LinkedPlatform(
@@ -299,7 +299,7 @@ export const MOCK_LINKED_PLATFORMS: LinkedPlatform[] = [
     ),
 ];
 
-// ─── Ofertas (ITAD) ───────────────────────────────────────────────────────────
+// ─── Deals (ITAD) ─────────────────────────────────────────────────────────────
 
 export const MOCK_DEALS_ELDEN_RING: Deal[] = [
     new Deal(
@@ -366,7 +366,7 @@ export const MOCK_DEALS_HADES: Deal[] = [
     ),
 ];
 
-export const MOCK_DEALS_BG3: Deal[] = []; // Sin ofertas activas
+export const MOCK_DEALS_BG3: Deal[] = []; // No active deals
 
 export const MOCK_DEALS_HOLLOW_KNIGHT: Deal[] = [
     new Deal(
@@ -390,7 +390,7 @@ export const MOCK_DEALS_STARDEW: Deal[] = [
     ),
 ];
 
-/** Mapa: steamAppId (string) → ofertas */
+/** Map: steamAppId (string) → deals */
 export const MOCK_DEALS_BY_STEAM_APP_ID: Record<string, Deal[]> = {
     '1245620': MOCK_DEALS_ELDEN_RING,
     '1091500': MOCK_DEALS_CYBERPUNK,
@@ -400,7 +400,7 @@ export const MOCK_DEALS_BY_STEAM_APP_ID: Record<string, Deal[]> = {
     '413150': MOCK_DEALS_STARDEW,
 };
 
-/** Mapa: itadGameId → ofertas */
+/** Map: itadGameId → deals */
 export const MOCK_DEALS_BY_ITAD_ID: Record<string, Deal[]> = {
     'itad-elden-ring-uuid': MOCK_DEALS_ELDEN_RING,
     'itad-cyberpunk-uuid': MOCK_DEALS_CYBERPUNK,
@@ -410,9 +410,9 @@ export const MOCK_DEALS_BY_ITAD_ID: Record<string, Deal[]> = {
     'itad-stardew-uuid': MOCK_DEALS_STARDEW,
 };
 
-// ─── Ratings de ProtonDB ──────────────────────────────────────────────────────
+// ─── ProtonDB Ratings ─────────────────────────────────────────────────────────
 
-/** Mapa: steamAppId (string) → ProtonDbRating */
+/** Map: steamAppId (string) → ProtonDbRating */
 export const MOCK_PROTONDB_RATINGS: Record<string, ProtonDbRating> = {
     '1245620': new ProtonDbRating('platinum', 'platinum', 3241),
     '1091500': new ProtonDbRating('gold', 'gold', 8712),
@@ -422,10 +422,10 @@ export const MOCK_PROTONDB_RATINGS: Record<string, ProtonDbRating> = {
     '413150':  new ProtonDbRating('platinum', 'platinum', 4561),
 };
 
-// ─── Datos de HowLongToBeat ───────────────────────────────────────────────────
-// Horas decimales. Valores aproximados a los reales de HLTB.
+// ─── HowLongToBeat Data ───────────────────────────────────────────────────────
+// Decimal hours. Values approximate real HLTB data.
 
-/** Mapa: título del juego (normalizado a minúsculas) → HltbResult */
+/** Map: game title (normalised to lowercase) → HltbResult */
 export const MOCK_HLTB_DATA: Record<string, HltbResult> = {
     'elden ring':         new HltbResult(58.5, 91.5, 131.0),
     'cyberpunk 2077':     new HltbResult(25.0, 58.0, 99.0),
@@ -437,7 +437,7 @@ export const MOCK_HLTB_DATA: Record<string, HltbResult> = {
     'alan wake 2':        new HltbResult(14.5, 20.0, 27.0),
 };
 
-// ─── Wishlist inicial ─────────────────────────────────────────────────────────
+// ─── Initial Wishlist ─────────────────────────────────────────────────────────
 
 export const MOCK_INITIAL_WISHLIST: WishlistItem[] = [
     new WishlistItem(
@@ -446,7 +446,7 @@ export const MOCK_INITIAL_WISHLIST: WishlistItem[] = [
         'Cyberpunk 2077',
         steamCover(1091500),
         new Date('2024-03-10T15:00:00Z'),
-        60,   // 60% de descuento activo
+        60,   // 60% active discount
     ),
     new WishlistItem(
         'wish-002',
@@ -454,32 +454,32 @@ export const MOCK_INITIAL_WISHLIST: WishlistItem[] = [
         "Baldur's Gate 3",
         steamCover(1086940),
         new Date('2024-03-12T10:00:00Z'),
-        null, // Sin oferta activa
+        null, // No active deal
     ),
 ];
 
-// ─── Resultados de búsqueda (ITAD) ───────────────────────────────────────────
-// Incluye juegos no presentes en la biblioteca para simular catálogo externo.
+// ─── Search results (ITAD) ───────────────────────────────────────────────────
+// Includes games not in the library to simulate the external catalogue.
 
 export const MOCK_SEARCH_RESULTS: SearchResult[] = [
-    // Juegos que SÍ están en la biblioteca del usuario mock (steamAppId permite cruzar ownership)
+    // Games that ARE in the mock user's library (steamAppId enables ownership cross-check)
     new SearchResult('itad-elden-ring-uuid',    'Elden Ring',                steamCover(1245620), false, 1245620),
     new SearchResult('itad-cyberpunk-uuid',     'Cyberpunk 2077',            steamCover(1091500), false, 1091500),
     new SearchResult('itad-hades-uuid',         'Hades',                     steamCover(1145360), false, 1145360),
     new SearchResult('itad-bg3-uuid',           "Baldur's Gate 3",           steamCover(1086940), false, 1086940),
     new SearchResult('itad-hollow-knight-uuid', 'Hollow Knight',             steamCover(367520),  false, 367520),
     new SearchResult('itad-stardew-uuid',       'Stardew Valley',            steamCover(413150),  false, 413150),
-    // Juegos que NO están en la biblioteca del usuario mock
+    // Games that are NOT in the mock user's library
     new SearchResult('itad-sekiro-uuid',        'Sekiro: Shadows Die Twice', steamCover(814380),  false, 814380),
     new SearchResult('itad-ds3-uuid',           'Dark Souls III',            steamCover(374320),  false, 374320),
     new SearchResult('itad-witcher3-uuid',      'The Witcher 3: Wild Hunt',  steamCover(292030),  false, 292030),
 ];
 
-// ─── Preferencias de notificaciones ──────────────────────────────────────────
+// ─── Notification Preferences ────────────────────────────────────────────────
 
 export const MOCK_NOTIFICATION_PREFERENCES = new NotificationPreferences(true);
 
-// ─── GameDetail completos (usados en MockGameRepository) ─────────────────────
+// ─── Full GameDetail objects (used in MockGameRepository) ────────────────────
 
 export const MOCK_GAME_DETAIL_MAP: Record<string, GameDetail> = {
     '1245620': new GameDetail(
@@ -526,7 +526,7 @@ export const MOCK_GAME_DETAIL_MAP: Record<string, GameDetail> = {
     ),
     'epic-death-stranding': new GameDetail(
         MOCK_EPIC_GAMES[0],
-        null, null, null,  // ProtonDB no aplica a juegos de Epic
+        null, null, null,  // ProtonDB does not apply to Epic games
         40.0, 61.0, 79.0,
         [],
         null,

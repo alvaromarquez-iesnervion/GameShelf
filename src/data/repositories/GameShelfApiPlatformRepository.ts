@@ -10,11 +10,11 @@ import { PsnAuthToken } from '../../domain/dtos/PsnAuthToken';
 import { TYPES } from '../../di/types';
 
 /**
- * Implementación de IPlatformRepository que delega al backend GameShelfApi.
+ * IPlatformRepository implementation that delegates to the GameShelfApi backend.
  *
- * Los métodos de vinculación por plataforma (linkEpicPlatform, linkGogPlatform,
- * linkPsnPlatform) no se usan en modo API: PlatformLinkUseCase llama directamente
- * a IGameShelfApiClient tras la Fase 3. Se conservan para satisfacer la interfaz.
+ * Platform-linking methods (linkEpicPlatform, linkGogPlatform, linkPsnPlatform)
+ * are not used in API mode: PlatformLinkUseCase calls IGameShelfApiClient directly
+ * after Phase 3. They are kept only to satisfy the interface contract.
  */
 @injectable()
 export class GameShelfApiPlatformRepository implements IPlatformRepository {

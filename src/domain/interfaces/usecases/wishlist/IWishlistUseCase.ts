@@ -2,8 +2,8 @@ import { WishlistItem } from '../../../entities/WishlistItem';
 
 export interface IWishlistUseCase {
     /**
-     * Devuelve la wishlist enriquecida: cada item incluye bestDealPercentage
-     * actualizado consultando ITAD (lookupGameId + getPricesForGame).
+     * Returns the enriched wishlist: each item includes an updated bestDealPercentage
+     * fetched from ITAD (lookupGameId + getPricesForGame).
      */
     getWishlist(userId: string, country?: string): Promise<WishlistItem[]>;
     addToWishlist(userId: string, item: WishlistItem): Promise<void>;

@@ -19,6 +19,13 @@ import { IAuthRepository } from '../../domain/interfaces/repositories/IAuthRepos
 import { User } from '../../domain/entities/User';
 import { TYPES } from '../../di/types';
 
+/**
+ * IAuthRepository implementation backed by Firebase Auth + Firestore.
+ *
+ * Auth state (session persistence) is managed by the Firebase SDK; the app
+ * does not store tokens manually. getCurrentUser() always waits for
+ * authStateReady() so it is safe to call immediately on startup.
+ */
 @injectable()
 export class AuthRepositoryImpl implements IAuthRepository {
 
@@ -41,8 +48,8 @@ export class AuthRepositoryImpl implements IAuthRepository {
                 notificationsEnabled: false,
             });
         } catch (firestoreError) {
-            // Si falla la creación del documento, eliminar la cuenta de Auth para
-            // evitar que quede huérfana (email ocupado, sin documento Firestore).
+            // If Firestore document creation fails, delete the Auth account to
+            // avoid leaving it orphaned (email blocked, no Firestore document).
             await deleteUser(credential.user).catch(() => {});
             throw firestoreError;
         }
@@ -78,14 +85,14 @@ export class AuthRepositoryImpl implements IAuthRepository {
     }
 
     async getCurrentUser(): Promise<User | null> {
-        // Esperar a que Firebase restaure la sesión persistida antes de leer auth.currentUser.
-        // authStateReady() resuelve una sola vez al arranque; las llamadas posteriores son inmediatas.
+        // Wait for Firebase to restore the persisted session before reading auth.currentUser.
+        // authStateReady() resolves once at startup; subsequent calls are immediate.
         await this.auth.authStateReady();
 
         const firebaseUser = this.auth.currentUser;
         if (!firebaseUser) return null;
 
-        // Usuarios anónimos: no tienen documento en Firestore, se devuelven directamente.
+        // Anonymous users: no Firestore document exists, return directly.
         if (firebaseUser.isAnonymous) {
             return new User(firebaseUser.uid, '', 'Invitado', new Date(), true);
         }

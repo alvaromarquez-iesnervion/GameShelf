@@ -3,8 +3,8 @@ import { NotificationPreferences } from '../../../entities/NotificationPreferenc
 
 export interface ISettingsUseCase {
     /**
-     * Agrega User + LinkedPlatform[] + NotificationPreferences en un UserProfileDTO.
-     * Realiza las 3 lecturas en paralelo con Promise.all.
+     * Aggregates User + LinkedPlatform[] + NotificationPreferences into a UserProfileDTO.
+     * Performs the 3 reads in parallel using Promise.all.
      */
     getProfile(userId: string): Promise<UserProfileDTO>;
     updateNotificationPreferences(userId: string, preferences: NotificationPreferences): Promise<void>;

@@ -4,11 +4,11 @@ import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
 import { getFirestore, Firestore } from 'firebase/firestore';
 
 /**
- * Usa Firebase JS SDK (no @react-native-firebase) para compatibilidad con Expo Go.
- * Las variables de entorno usan el prefijo EXPO_PUBLIC_ para ser accesibles en cliente.
+ * Uses the Firebase JS SDK (not @react-native-firebase) for Expo Go compatibility.
+ * Environment variables use the EXPO_PUBLIC_ prefix to be accessible on the client.
  *
- * Llamar a initializeFirebase() desde App.tsx ANTES de montar el árbol de React.
- * getFirebaseAuth() y getFirebaseFirestore() devuelven las instancias singleton.
+ * Call initializeFirebase() from App.tsx BEFORE mounting the React tree.
+ * getFirebaseAuth() and getFirebaseFirestore() return singleton instances.
  */
 
 const firebaseConfig = {
@@ -38,12 +38,12 @@ export function initializeFirebase(): FirebaseApp {
 
     const alreadyInitialized = getApps().length > 0;
 
-    // Evita reinicializar si ya se llamó (útil en hot reload de desarrollo)
+    // Avoid re-initialising if already called (useful during hot reload in development)
     app = alreadyInitialized ? getApps()[0] : initializeApp(firebaseConfig);
 
-    // initializeAuth con getReactNativePersistence persiste la sesión entre reinicios via AsyncStorage.
-    // En hot reload la instancia ya existe,
-    // por lo que usamos getAuth() para recuperarla sin lanzar "already initialized".
+    // initializeAuth with getReactNativePersistence persists the session across restarts via AsyncStorage.
+    // On hot reload the instance already exists,
+    // so we use getAuth() to retrieve it without throwing "already initialized".
     authInstance = alreadyInitialized
         ? getAuth(app)
         : initializeAuth(app, { persistence: getReactNativePersistence(ReactNativeAsyncStorage) });

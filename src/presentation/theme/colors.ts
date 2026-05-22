@@ -1,7 +1,7 @@
 /**
- * Sistema de colores — Dark gaming, acento violeta + cian.
+ * Colour system — dark gaming palette, violet + cyan accent.
  *
- * Las claves se mantienen para no romper otros consumidores; sólo cambian valores.
+ * Keys are kept stable to avoid breaking existing consumers; only values change.
  */
 export const colors = {
     background: '#07080C',

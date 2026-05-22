@@ -1,24 +1,24 @@
 /**
- * Token de autenticación obtenido al intercambiar un authorization code de Epic Games.
+ * Authentication token obtained by exchanging an Epic Games authorization code.
  *
- * AVISO: este flujo usa la API interna (no documentada) de Epic Games.
- * Puede dejar de funcionar sin previo aviso si Epic cambia sus endpoints.
+ * WARNING: this flow uses the undocumented internal Epic Games API.
+ * It may stop working without notice if Epic changes its endpoints.
  */
 export class EpicAuthToken {
     constructor(
-        /** Bearer token para llamadas autenticadas a la API de Epic. */
+        /** Bearer token for authenticated calls to the Epic API. */
         public readonly accessToken: string,
-        /** Account ID de Epic (string con formato UUID). */
+        /** Epic account ID (UUID-formatted string). */
         public readonly accountId: string,
-        /** Display name de la cuenta de Epic (p.ej. "NombreJugador"). */
+        /** Display name of the Epic account (e.g. "PlayerName"). */
         public readonly displayName: string,
-        /** Fecha y hora de expiración del access token. */
+        /** Expiry date and time of the access token. */
         public readonly expiresAt: Date,
-        /** Token de refresco. Permite obtener un nuevo access token sin re-autenticar. */
+        /** Refresh token. Allows obtaining a new access token without re-authenticating. */
         public readonly refreshToken: string = '',
     ) {}
 
-    /** True si el token ha expirado o expirará en los próximos 60 segundos. */
+    /** Returns true if the token has expired or will expire within the next 60 seconds. */
     isExpired(): boolean {
         return this.expiresAt.getTime() - Date.now() < 60_000;
     }

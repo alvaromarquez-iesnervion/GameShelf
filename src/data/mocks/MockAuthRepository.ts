@@ -5,18 +5,18 @@ import { User } from '../../domain/entities/User';
 import { MOCK_USER, simulateDelay } from './MockDataProvider';
 
 /**
- * Mock de IAuthRepository.
+ * Mock implementation of IAuthRepository.
  *
- * Para testing: sesión ya iniciada con MOCK_USER y Steam vinculado.
+ * For testing: session is pre-started with MOCK_USER and Steam linked.
  *
- * Credenciales de prueba:
- *   Email:    dev@gameshelf.app  (o cualquier email con formato válido)
- *   Password: cualquiera de 6+ caracteres
+ * Test credentials:
+ *   Email:    dev@gameshelf.app  (or any valid email format)
+ *   Password: any string of 6+ characters
  */
 @injectable()
 export class MockAuthRepository implements IAuthRepository {
 
-    private currentUser: User | null = MOCK_USER; // sesión ya iniciada para testing
+    private currentUser: User | null = MOCK_USER; // pre-started session for testing
 
     async register(email: string, password: string): Promise<User> {
         await simulateDelay(800);
@@ -73,6 +73,6 @@ export class MockAuthRepository implements IAuthRepository {
         if (!email.includes('@')) {
             throw new Error('El formato del email no es válido');
         }
-        // En modo mock: simula éxito silenciosamente
+        // In mock mode: silently simulate success
     }
 }

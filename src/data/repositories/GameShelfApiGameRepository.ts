@@ -10,6 +10,13 @@ import { LibraryTab } from '../../domain/enums/LibraryTab';
 import { SortCriteria } from '../../domain/enums/SortCriteria';
 import { TYPES } from '../../di/types';
 
+/**
+ * IGameRepository implementation that delegates all reads/writes to the
+ * GameShelfApi backend via IGameShelfApiClient.
+ *
+ * _userId is accepted on every method to satisfy the interface contract but is
+ * not forwarded — the API derives the user from the session token.
+ */
 @injectable()
 export class GameShelfApiGameRepository implements IGameRepository {
 
@@ -18,6 +25,7 @@ export class GameShelfApiGameRepository implements IGameRepository {
     ) {}
 
     async getLibraryGames(_userId: string): Promise<Game[]> {
+        // Fetch a single large page; callers that need pagination use getLibraryGamesPage() directly.
         const page = await this.api.getLibraryGamesPage(500);
         return page.games.map(g => g.game);
     }

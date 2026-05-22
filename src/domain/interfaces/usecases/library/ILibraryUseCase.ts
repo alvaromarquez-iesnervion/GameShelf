@@ -7,11 +7,11 @@ import { LibraryTab } from '../../../enums/LibraryTab';
 import { SortCriteria } from '../../../enums/SortCriteria';
 
 export interface ILibraryUseCase {
-    /** Devuelve todos los juegos de la biblioteca desde caché Firestore. */
+    /** Returns all library games from the Firestore cache. */
     getLibrary(userId: string): Promise<Game[]>;
     /**
-     * Devuelve una página paginada y filtrada de la biblioteca.
-     * El filtrado (tab, búsqueda, plataformas) y ordenación se realizan server-side.
+     * Returns a paginated and filtered page of the library.
+     * Filtering (tab, search, platforms) and sorting are applied server-side.
      */
     getLibraryPage(
         userId: string,
@@ -23,17 +23,17 @@ export interface ILibraryUseCase {
         platforms?: Platform[],
     ): Promise<LibraryPage>;
     /**
-     * Lanza sincronización con la API de la plataforma indicada y actualiza Firestore.
-     * Itera todas las plataformas vinculadas si no se especifica platform.
+     * Triggers a sync with the given platform's API and updates Firestore.
+     * Iterates all linked platforms if no specific platform is provided.
      */
     syncLibrary(userId: string, platform: Platform): Promise<Game[]>;
     /**
-     * Sincroniza todas las plataformas vinculadas del usuario.
-     * Usado en autoSync al inicio de sesión. Retorna la biblioteca unificada.
+     * Syncs all linked platforms for the user.
+     * Used during autoSync at session start. Returns the unified library.
      */
     autoSyncLibrary(userId: string): Promise<Game[]>;
-    /** Devuelve las plataformas vinculadas del usuario. */
+    /** Returns the user's linked platforms. */
     getLinkedPlatforms(userId: string): Promise<LinkedPlatform[]>;
-    /** Devuelve estadísticas agregadas de la biblioteca desde la API. */
+    /** Returns aggregated library stats from the API. */
     getLibraryStats(userId: string): Promise<LibraryStats>;
 }

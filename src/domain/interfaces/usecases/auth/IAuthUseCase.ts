@@ -3,12 +3,12 @@ import { IGuestUseCase } from './IGuestUseCase';
 import { IAccountManagementUseCase } from './IAccountManagementUseCase';
 
 /**
- * Interfaz compuesta para funcionalidad de auth completa.
+ * Composite interface covering the full auth surface.
  *
- * Los consumidores que solo necesitan un subconjunto pueden depender
- * de las interfaces más pequeñas directamente (ISP):
- *   - IAuthSessionUseCase      — login, register, logout, getCurrentUser, checkAuthState
- *   - IGuestUseCase            — continueAsGuest
+ * Consumers that only need a subset can depend on the smaller interfaces
+ * directly (ISP):
+ *   - IAuthSessionUseCase       — login, register, logout, getCurrentUser, checkAuthState
+ *   - IGuestUseCase             — continueAsGuest
  *   - IAccountManagementUseCase — deleteAccount, resetPassword
  */
 export interface IAuthUseCase

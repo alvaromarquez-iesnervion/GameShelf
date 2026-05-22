@@ -5,11 +5,11 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { RootNavigator } from './navigation/RootNavigator';
 import { colors } from '../presentation/theme/colors';
 import { AppBackground } from '../presentation/components/common/AppBackground';
-// Importar container para que se ejecuten todos los bindings
+// Import container so all bindings are executed
 import '../di/container';
 import { initializeFirebase } from '../data/config/FirebaseConfig';
 
-// Inicializar Firebase antes del contenedor DI (solo si las variables están configuradas)
+// Initialize Firebase before the DI container (only if env vars are configured)
 if (process.env['EXPO_PUBLIC_FIREBASE_API_KEY']) {
     initializeFirebase();
 }

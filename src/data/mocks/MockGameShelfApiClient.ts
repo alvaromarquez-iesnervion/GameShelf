@@ -12,7 +12,7 @@ import { LibraryPage } from '../../domain/interfaces/repositories/IGameRepositor
 import { LibraryTab } from '../../domain/enums/LibraryTab';
 import { SortCriteria } from '../../domain/enums/SortCriteria';
 
-/** Stub sin estado — devuelve colecciones vacías. Solo para modo mock (sin Firebase). */
+/** Stateless stub — returns empty collections. Used only in mock mode (no Firebase). */
 @injectable()
 export class MockGameShelfApiClient implements IGameShelfApiClient {
     syncUser(): Promise<void> { return Promise.resolve(); }

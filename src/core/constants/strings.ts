@@ -1,9 +1,9 @@
 /**
- * Strings de UI en español.
- * Centralizar aquí facilita futuras traducciones o auditorías de texto.
+ * Spanish UI strings.
+ * Centralising here makes future translations or text audits straightforward.
  */
 export const strings = {
-    // ── Común ─────────────────────────────────────────────────────────────
+    // ── Common ────────────────────────────────────────────────────────────
     cancel:        'Cancelar',
     comingSoon:    'Próximamente disponible.',
 

@@ -6,21 +6,21 @@ import { Game } from '../../entities/Game';
 import { Platform } from '../../enums/Platform';
 
 /**
- * Búsqueda en el catálogo global de ITAD.
+ * Searches the global ITAD catalogue.
  *
- * Cruza los resultados con:
- *   - IWishlistRepository para marcar isInWishlist.
- *   - IGameRepository.getLibraryGames para marcar isOwned + ownedPlatforms.
+ * Cross-references results with:
+ *   - IWishlistRepository to mark isInWishlist.
+ *   - IGameRepository.getLibraryGames to mark isOwned + ownedPlatforms.
  *
- * La biblioteca se cachea en memoria con TTL para evitar una lectura
- * completa de Firestore en cada búsqueda debounceada (P-02).
+ * The library is cached in memory with a TTL to avoid a full Firestore
+ * read on every debounced search (P-02).
  *
- * La biblioteca y la wishlist se cargan en paralelo con la búsqueda para
- * minimizar la latencia total.
+ * Library and wishlist are fetched in parallel with the search to
+ * minimise total latency.
  */
 export class SearchUseCase implements ISearchUseCase {
 
-    private static readonly LIBRARY_CACHE_TTL_MS = 2 * 60 * 1000; // 2 minutos
+    private static readonly LIBRARY_CACHE_TTL_MS = 2 * 60 * 1000; // 2 minutes
 
     private _libraryCache: Game[] | null = null;
     private _libraryCacheUserId: string | null = null;
@@ -47,7 +47,7 @@ export class SearchUseCase implements ISearchUseCase {
         return games;
     }
 
-    /** Invalida el cache de biblioteca. Llamar tras sync o cambios en la biblioteca. */
+    /** Invalidates the library cache. Call after sync or library changes. */
     invalidateLibraryCache(): void {
         this._libraryCache = null;
         this._libraryCacheExpiry = 0;
@@ -64,7 +64,7 @@ export class SearchUseCase implements ISearchUseCase {
 
         if (results.length === 0) return results;
 
-        // Índices de biblioteca para cruzar por steamAppId y por título normalizado
+        // Library indices for cross-referencing by steamAppId and normalised title
         const steamAppIdToPlatforms = new Map<number, Platform[]>();
         const titleToPlatforms = new Map<string, Platform[]>();
         for (const game of libraryGames) {
@@ -89,7 +89,7 @@ export class SearchUseCase implements ISearchUseCase {
                 r = r.withIsInWishlist(true);
             }
 
-            // Combinar plataformas encontradas por steamAppId y por título
+            // Merge platforms found by steamAppId and by title
             const platformsSet = new Set<Platform>();
             const appId = r.getSteamAppId();
             if (appId !== null) {

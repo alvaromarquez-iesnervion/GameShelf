@@ -5,6 +5,12 @@ import { IGameShelfApiClient } from '../../domain/interfaces/services/IGameShelf
 import { NotificationPreferences } from '../../domain/entities/NotificationPreferences';
 import { TYPES } from '../../di/types';
 
+/**
+ * INotificationRepository implementation that delegates to the GameShelfApi backend.
+ *
+ * _userId is accepted on every method to satisfy the interface contract but is
+ * not forwarded — the API derives the user from the session token.
+ */
 @injectable()
 export class NotificationRepositoryImpl implements INotificationRepository {
 

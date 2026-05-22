@@ -1,7 +1,7 @@
 import { Container } from 'inversify';
 import { TYPES } from './types';
 
-// ─── Interfaces (repositorios) ────────────────────────────────────────────────
+// ─── Interfaces (repositories) ───────────────────────────────────────────────
 import { IAuthRepository } from '../domain/interfaces/repositories/IAuthRepository';
 import { IGameRepository } from '../domain/interfaces/repositories/IGameRepository';
 import { IWishlistRepository } from '../domain/interfaces/repositories/IWishlistRepository';
@@ -9,10 +9,10 @@ import { IPlatformRepository } from '../domain/interfaces/repositories/IPlatform
 import { INotificationRepository } from '../domain/interfaces/repositories/INotificationRepository';
 import { ISettingsRepository } from '../domain/interfaces/repositories/ISettingsRepository';
 
-// ─── Interfaces (servicios) ───────────────────────────────────────────────────
+// ─── Interfaces (services) ────────────────────────────────────────────────────
 import { IGameShelfApiClient } from '../domain/interfaces/services/IGameShelfApiClient';
 
-// ─── Interfaces (use cases) ───────────────────────────────────────────────────
+// ─── Interfaces (use cases) ──────────────────────────────────────────────────
 import { IAuthUseCase } from '../domain/interfaces/usecases/auth/IAuthUseCase';
 import { ILibraryUseCase } from '../domain/interfaces/usecases/library/ILibraryUseCase';
 import { IWishlistUseCase } from '../domain/interfaces/usecases/wishlist/IWishlistUseCase';
@@ -22,7 +22,7 @@ import { IPlatformLinkUseCase } from '../domain/interfaces/usecases/platforms/IP
 import { ISettingsUseCase } from '../domain/interfaces/usecases/settings/ISettingsUseCase';
 import { IHomeUseCase } from '../domain/interfaces/usecases/home/IHomeUseCase';
 
-// ─── Mocks (fallback cuando no hay keys configuradas) ────────────────────────
+// ─── Mocks (fallback when no keys are configured) ────────────────────────────
 import { MockAuthRepository } from '../data/mocks/MockAuthRepository';
 import { MockGameRepository } from '../data/mocks/MockGameRepository';
 import { MockWishlistRepository } from '../data/mocks/MockWishlistRepository';
@@ -30,10 +30,10 @@ import { MockPlatformRepository } from '../data/mocks/MockPlatformRepository';
 import { MockNotificationRepository } from '../data/mocks/MockNotificationRepository';
 import { MockGameShelfApiClient } from '../data/mocks/MockGameShelfApiClient';
 
-// ─── Implementaciones reales (servicios externos) ─────────────────────────────
+// ─── Real implementations (external services) ────────────────────────────────
 import { GameShelfApiClientImpl } from '../data/services/GameShelfApiClientImpl';
 
-// ─── Implementaciones reales (repositorios) ───────────────────────────────────
+// ─── Real implementations (repositories) ─────────────────────────────────────
 import { GameShelfApiGameRepository } from '../data/repositories/GameShelfApiGameRepository';
 import { GameShelfApiWishlistRepository } from '../data/repositories/GameShelfApiWishlistRepository';
 import { GameShelfApiPlatformRepository } from '../data/repositories/GameShelfApiPlatformRepository';
@@ -73,26 +73,26 @@ import { HomeUseCase } from '../domain/usecases/home/HomeUseCase';
 const container = new Container({ defaultScope: 'Singleton' });
 
 /**
- * Modos de operación:
+ * Operation modes:
  *
- *  MODO PRODUCCIÓN (EXPO_PUBLIC_FIREBASE_API_KEY configurada)
- *    → Auth via Firebase (incluye anónima para invitados). Todos los datos via GameShelf API.
+ *  PRODUCTION MODE (EXPO_PUBLIC_FIREBASE_API_KEY configured)
+ *    → Auth via Firebase (includes anonymous sign-in for guests). All data via GameShelf API.
  *
- *  MODO MOCK COMPLETO (sin keys)
- *    → Todos los datos son ficticios. Útil para desarrollo de UI sin servicios externos.
+ *  FULL MOCK MODE (no keys)
+ *    → All data is fictional. Useful for UI development without external services.
  */
 const firebaseApiKey = process.env['EXPO_PUBLIC_FIREBASE_API_KEY'] ?? '';
 const useFirebase = firebaseApiKey.length > 0;
 
-// ─── Firebase Auth + Firestore — instancias constantes ───────────────────────
+// ─── Firebase Auth + Firestore — constant instances ──────────────────────────
 if (useFirebase) {
     container.bind<Auth>(TYPES.FirebaseAuth).toDynamicValue(() => getFirebaseAuth());
     container.bind<Firestore>(TYPES.Firestore).toDynamicValue(() => getFirebaseFirestore());
 }
 
-// ─── Repositorios principales y cliente API ───────────────────────────────────
+// ─── Main repositories and API client ────────────────────────────────────────
 if (useFirebase) {
-    // MODO PRODUCCIÓN: Auth via Firebase (email + anónima); datos via GameShelf API.
+    // PRODUCTION MODE: Auth via Firebase (email + anonymous); data via GameShelf API.
     container.bind<IAuthRepository>(TYPES.IAuthRepository).to(AuthRepositoryImpl);
     container.bind<INotificationRepository>(TYPES.INotificationRepository).to(NotificationRepositoryImpl);
     container.bind<IGameShelfApiClient>(TYPES.IGameShelfApiClient).to(GameShelfApiClientImpl).inSingletonScope();
@@ -101,7 +101,7 @@ if (useFirebase) {
     container.bind<IPlatformRepository>(TYPES.IPlatformRepository).to(GameShelfApiPlatformRepository);
     container.bind<ISettingsRepository>(TYPES.ISettingsRepository).to(SettingsRepositoryImpl);
 } else {
-    // MODO MOCK COMPLETO
+    // FULL MOCK MODE
     container.bind<IGameShelfApiClient>(TYPES.IGameShelfApiClient).to(MockGameShelfApiClient).inSingletonScope();
     container.bind<IAuthRepository>(TYPES.IAuthRepository).to(MockAuthRepository);
     container.bind<IWishlistRepository>(TYPES.IWishlistRepository).to(MockWishlistRepository);
@@ -110,10 +110,10 @@ if (useFirebase) {
     container.bind<IGameRepository>(TYPES.IGameRepository).to(MockGameRepository);
 }
 
-// ─── Casos de uso (singleton) ─────────────────────────────────────────────────
-// Los use cases son TypeScript puro (sin decoradores Inversify). Se construyen
-// manualmente con toDynamicValue para respetar la regla de que domain/ no
-// debe conocer ningún detalle de infraestructura (di/, inversify, reflect-metadata).
+// ─── Use cases (singleton) ────────────────────────────────────────────────────
+// Use cases are plain TypeScript (no Inversify decorators). They are wired manually
+// with toDynamicValue to enforce the rule that domain/ must not know anything
+// about infrastructure (di/, inversify, reflect-metadata).
 container.bind<IAuthUseCase>(TYPES.IAuthUseCase).toDynamicValue(ctx => new AuthUseCase(
     ctx.get<IAuthRepository>(TYPES.IAuthRepository),
     ctx.get<IGameShelfApiClient>(TYPES.IGameShelfApiClient),
@@ -148,13 +148,13 @@ container.bind<IHomeUseCase>(TYPES.IHomeUseCase).toDynamicValue(ctx => new HomeU
 
 // ─── ViewModels ───────────────────────────────────────────────────────────────
 
-// Singleton ViewModels (estado global compartido)
+// Singleton ViewModels (shared global state)
 container.bind<AuthViewModel>(TYPES.AuthViewModel).to(AuthViewModel).inSingletonScope();
 container.bind<LibraryViewModel>(TYPES.LibraryViewModel).to(LibraryViewModel).inSingletonScope();
 container.bind<WishlistViewModel>(TYPES.WishlistViewModel).to(WishlistViewModel).inSingletonScope();
 container.bind<HomeViewModel>(TYPES.HomeViewModel).to(HomeViewModel).inSingletonScope();
 
-// Transient ViewModels (instancia nueva por pantalla)
+// Transient ViewModels (new instance per screen)
 container.bind<GameDetailViewModel>(TYPES.GameDetailViewModel).to(GameDetailViewModel).inTransientScope();
 container.bind<SearchViewModel>(TYPES.SearchViewModel).to(SearchViewModel).inTransientScope();
 container.bind<PlatformLinkViewModel>(TYPES.PlatformLinkViewModel).to(PlatformLinkViewModel).inTransientScope();

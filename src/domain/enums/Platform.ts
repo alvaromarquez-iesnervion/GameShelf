@@ -3,7 +3,7 @@ export enum Platform {
     EPIC_GAMES = 'EPIC_GAMES',
     GOG = 'GOG',
     PSN = 'PSN',
-    /** Juego resuelto vía ITAD que no pertenece a la biblioteca del usuario.
-     *  No se muestra badge de plataforma en la UI. */
+    /** Game resolved via ITAD that does not belong to the user's library.
+     *  No platform badge is shown in the UI. */
     UNKNOWN = 'UNKNOWN',
 }

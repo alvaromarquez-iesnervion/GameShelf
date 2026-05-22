@@ -4,6 +4,10 @@ import { ISettingsRepository } from '../../domain/interfaces/repositories/ISetti
 import { IGameShelfApiClient } from '../../domain/interfaces/services/IGameShelfApiClient';
 import { TYPES } from '../../di/types';
 
+/**
+ * ISettingsRepository implementation that persists user settings through
+ * the GameShelfApi backend via IGameShelfApiClient.
+ */
 @injectable()
 export class SettingsRepositoryImpl implements ISettingsRepository {
 

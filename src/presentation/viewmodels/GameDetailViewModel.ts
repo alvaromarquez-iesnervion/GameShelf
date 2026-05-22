@@ -9,16 +9,16 @@ import { Platform } from '../../domain/enums/Platform';
 import { ICountryPreferenceService } from '../../domain/interfaces/usecases/settings/ICountryPreferenceService';
 
 /**
- * ViewModel para el detalle de un juego.
+ * ViewModel for the game detail screen.
  *
- * Transient: cada pantalla de detalle crea su propia instancia.
+ * Transient: each detail screen creates its own instance.
  */
 @injectable()
 export class GameDetailViewModel {
     private _gameDetail: GameDetailDTO | null = null;
     private _isLoading: boolean = false;
     private _errorMessage: string | null = null;
-    // Contador para descartar resultados de cargas obsoletas (mismo patrón que HomeViewModel).
+    // Counter to discard results from stale loads (same pattern as HomeViewModel).
     private _loadId: number = 0;
     // Track current gameId/userId for reactive reload when country changes.
     private _currentGameId: string = '';
@@ -59,14 +59,14 @@ export class GameDetailViewModel {
         });
     }
 
-    /** Recarga el detalle usando el gameId/userId actuales con la moneda del país efectivo. */
+    /** Reloads the detail using the current gameId/userId with the effective country currency. */
     async reloadWithCountry(): Promise<void> {
         if (!this._currentGameId || !this._currentUserId) return;
         await this.loadGameDetail(this._currentGameId, this._currentUserId);
     }
 
     clear(): void {
-        this._loadId++; // Invalida cualquier carga en vuelo
+        this._loadId++; // Invalidates any in-flight load
         this._gameDetail = null;
         this._errorMessage = null;
     }

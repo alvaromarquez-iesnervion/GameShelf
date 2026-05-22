@@ -2,78 +2,78 @@ import { LinkedPlatform } from '../../../entities/LinkedPlatform';
 import { Platform } from '../../../enums/Platform';
 
 export interface IPlatformLinkUseCase {
-    /** Construye la URL OpenID 2.0 de Steam para abrir en WebView. */
+    /** Builds the Steam OpenID 2.0 URL to open in WebView. */
     getSteamLoginUrl(returnUrl: string): string;
-    /** Devuelve la URL de login de Epic que termina en la pantalla del auth code. */
+    /** Returns the Epic login URL that ends at the auth code screen. */
     getEpicLoginUrl(): string;
     /**
-     * Devuelve la URL que el usuario debe abrir en el navegador para iniciar sesión
-     * en Epic Games y obtener el authorization code.
+     * Returns the URL the user must open in a browser to sign in to Epic Games
+     * and obtain the authorization code.
      */
     getEpicAuthUrl(): string;
     /**
-     * Completa el flujo OpenID 2.0 de Steam:
+     * Completes the Steam OpenID 2.0 flow:
      *  1. verifyOpenIdResponse
      *  2. extractSteamIdFromCallback
      *  3. checkProfileVisibility
      *  4. linkSteamPlatform
-     *  5. syncLibrary de Steam
+     *  5. Steam syncLibrary
      */
     linkSteam(userId: string, callbackUrl: string, params: Record<string, string>): Promise<LinkedPlatform>;
     /**
-     * Vinculación directa con SteamID o URL de perfil.
-     * Alternativa a linkSteam que no requiere el flujo OpenID WebBrowser
-     * (Steam rechaza custom URL schemes como return_to).
+     * Direct link via SteamID or profile URL.
+     * Alternative to linkSteam that does not require the OpenID WebBrowser flow
+     * (Steam rejects custom URL schemes as return_to).
      *  1. resolveSteamId → SteamID 64-bit
-     *  2. checkProfileVisibility → debe ser público
+     *  2. checkProfileVisibility → must be public
      *  3. linkSteamPlatform
-     *  4. syncLibrary de Steam
+     *  4. Steam syncLibrary
      */
     linkSteamById(userId: string, profileUrlOrId: string): Promise<LinkedPlatform>;
     /**
-     * Vinculación automática de Epic Games via authorization code (API interna no oficial).
-     * Flujo preferido — el usuario solo copia un código corto del navegador:
+     * Automatic Epic Games link via authorization code (unofficial internal API).
+     * Preferred flow — the user only copies a short code from the browser:
      *  1. exchangeAuthCode → EpicAuthToken
      *  2. fetchLibrary → Game[]
      *  3. storeEpicGames
-     *  4. linkEpicPlatform (con accountId real)
-     *  5. syncLibrary de Epic (no bloqueante)
+     *  4. linkEpicPlatform (with real accountId)
+     *  5. Epic syncLibrary (non-blocking)
      *
-     * AVISO: usa API interna de Epic. Puede dejar de funcionar sin previo aviso.
+     * WARNING: uses Epic's internal API. May stop working without notice.
      */
     linkEpicByAuthCode(userId: string, authCode: string): Promise<LinkedPlatform>;
     /**
-     * Vinculación manual de Epic via export GDPR (método de reserva).
-     * Requiere que el usuario solicite y descargue sus datos en epicgames.com/account/privacy.
-     *  1. parseExportedLibrary (JSON GDPR)
+     * Manual Epic link via GDPR export (fallback method).
+     * Requires the user to request and download their data at epicgames.com/account/privacy.
+     *  1. parseExportedLibrary (GDPR JSON)
      *  2. storeEpicGames
      *  3. linkEpicPlatform
-     *  4. syncLibrary de Epic (no bloqueante)
+     *  4. Epic syncLibrary (non-blocking)
      */
     linkEpic(userId: string, fileContent: string): Promise<LinkedPlatform>;
-    /** Devuelve la URL OAuth2 de GOG para abrir en el navegador. */
+    /** Returns the GOG OAuth2 URL to open in the browser. */
     getGogAuthUrl(): string;
     /**
-     * Vincula GOG usando el authorization code capturado de la redirect URL.
+     * Links GOG using the authorization code captured from the redirect URL.
      *  1. exchangeAuthCode → GogAuthToken
-     *  2. linkGogPlatform (almacena tokens en Firestore)
-     *  3. syncLibrary de GOG (no bloqueante)
+     *  2. linkGogPlatform (stores tokens in Firestore)
+     *  3. GOG syncLibrary (non-blocking)
      */
     linkGogByCode(userId: string, code: string): Promise<LinkedPlatform>;
-    /** Devuelve la URL OAuth de PlayStation. */
+    /** Returns the PlayStation OAuth URL. */
     getPsnLoginUrl(): string;
-    /** Abre el navegador del sistema para login en PSN y devuelve el access code. */
+    /** Opens the system browser for PSN login and returns the access code. */
     authenticatePsn(): Promise<string>;
     /**
-     * Vincula PlayStation Network usando el access code obtenido del browser.
+     * Links PlayStation Network using the access code obtained from the browser.
      *  1. exchangeNpssoForTokens (access code → auth tokens)
-     *  2. fetchPlayedGames → Game[] (valida el token)
-     *  3. storePsnGames (guarda en Firestore)
-     *  4. linkPsnPlatform (almacena tokens en SecureStore + doc en Firestore)
-     *  5. syncLibrary de PSN (no bloqueante)
+     *  2. fetchPlayedGames → Game[] (validates the token)
+     *  3. storePsnGames (saves to Firestore)
+     *  4. linkPsnPlatform (stores tokens in SecureStore + doc in Firestore)
+     *  5. PSN syncLibrary (non-blocking)
      */
     linkPsn(userId: string, accessCode: string): Promise<LinkedPlatform>;
-    /** Elimina la vinculación y los juegos de esa plataforma. */
+    /** Removes the platform link and all games for that platform. */
     unlinkPlatform(userId: string, platform: Platform): Promise<void>;
     getLinkedPlatforms(userId: string): Promise<LinkedPlatform[]>;
 }

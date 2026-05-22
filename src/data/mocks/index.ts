@@ -1,21 +1,21 @@
 /**
- * Punto de entrada único para todos los mocks de la capa data.
+ * Single entry point for all data-layer mocks.
  *
- * Para activar mocks en el contenedor DI, basta con cambiar el binding:
+ * To activate mocks in the DI container, change the binding:
  *   container.bind<IAuthRepository>(TYPES.IAuthRepository).to(MockAuthRepository)
  *
- * O usar la variable de entorno EXPO_PUBLIC_USE_MOCKS=true en container.ts.
+ * Or set EXPO_PUBLIC_USE_MOCKS=true in container.ts.
  */
 
-// Datos semilla
+// Seed data
 export * from './MockDataProvider';
 
-// Repositorios mock
+// Mock repositories
 export { MockAuthRepository } from './MockAuthRepository';
 export { MockGameRepository } from './MockGameRepository';
 export { MockWishlistRepository } from './MockWishlistRepository';
 export { MockPlatformRepository } from './MockPlatformRepository';
 export { MockNotificationRepository } from './MockNotificationRepository';
 
-// Cliente API mock
+// Mock API client
 export { MockGameShelfApiClient } from './MockGameShelfApiClient';

@@ -4,6 +4,13 @@ import { IWishlistRepository } from '../../interfaces/repositories/IWishlistRepo
 import { GameDetailDTO } from '../../dtos/GameDetailDTO';
 import { Platform } from '../../enums/Platform';
 
+/**
+ * Fetches the full detail for a single game and enriches it with the user's wishlist state.
+ *
+ * Both calls (API detail + wishlist check) run in parallel via Promise.allSettled so that
+ * a wishlist failure never blocks the detail view. If the API call itself fails, the error
+ * is re-thrown; a missing wishlist result silently defaults to false.
+ */
 export class GameDetailUseCase implements IGameDetailUseCase {
 
     constructor(

@@ -11,22 +11,22 @@ import { SortCriteria } from '../../enums/SortCriteria';
 
 export interface IGameShelfApiClient {
     // ── Auth ──────────────────────────────────────────────────────────────
-    /** Registra / actualiza el perfil del usuario en el backend tras login. */
+    /** Registers / updates the user profile in the backend after login. */
     syncUser(): Promise<void>;
-    /** Elimina la cuenta del usuario (datos Firestore + Firebase Auth). Irreversible. */
+    /** Deletes the user account (Firestore data + Firebase Auth). Irreversible. */
     deleteAccount(): Promise<void>;
 
     // ── Library ───────────────────────────────────────────────────────────
-    /** Devuelve estadísticas agregadas de la biblioteca (únicos por plataforma, playtime). */
+    /** Returns aggregated library stats (unique games per platform, playtime). */
     getLibraryStats(): Promise<LibraryStats>;
     /**
-     * Devuelve una página paginada y filtrada de la biblioteca.
-     * @param pageSize     Número máximo de juegos por página.
-     * @param page         Número de página (1-indexed).
-     * @param tab          Filtro por pestaña PC/Consola.
-     * @param sortCriteria Criterio de ordenación.
-     * @param searchQuery  Término de búsqueda.
-     * @param platforms    Lista de plataformas a filtrar.
+     * Returns a paginated and filtered page of the library.
+     * @param pageSize     Maximum number of games per page.
+     * @param page         Page number (1-indexed).
+     * @param tab          Filter by PC/Console tab.
+     * @param sortCriteria Sort criterion.
+     * @param searchQuery  Search term.
+     * @param platforms    List of platforms to filter by.
      */
     getLibraryGamesPage(
         pageSize: number,
@@ -36,32 +36,32 @@ export interface IGameShelfApiClient {
         searchQuery?: string,
         platforms?: Platform[],
     ): Promise<LibraryPage>;
-    /** Sincroniza la biblioteca de la plataforma indicada y devuelve los juegos actualizados. */
+    /** Syncs the library for the given platform and returns the updated games. */
     syncLibrary(platform: Platform): Promise<Game[]>;
 
     // ── Settings / Preferences ────────────────────────────────────────────
-    /** Obtiene el código de país guardado en el backend, o null si no hay preferencia. */
+    /** Returns the country code stored in the backend, or null if no preference is set. */
     getSavedCountry(): Promise<string | null>;
-    /** Guarda la preferencia de país del usuario (ej: "ES", "MX"). */
+    /** Saves the user's country preference (e.g. "ES", "MX"). */
     setSavedCountry(country: string): Promise<void>;
 
     // ── Games ─────────────────────────────────────────────────────────────
-    /** Detalle enriquecido: ProtonDB + HLTB + ITAD + metadata Steam. */
+    /** Enriched game detail: ProtonDB + HLTB + ITAD + Steam metadata. */
     getGameDetail(gameId: string, steamAppId?: number | null, platform?: Platform | null, country?: string): Promise<GameDetail>;
     /**
-     * Busca el juego en la biblioteca del usuario.
-     * Si no existe, lo resuelve desde el catálogo (ITAD/Steam).
+     * Looks up the game in the user's library.
+     * If not found, resolves it from the catalogue (ITAD/Steam).
      */
     getOrCreateGame(gameId: string, steamAppId?: number | null): Promise<Game>;
-    /** DLCs del usuario para el juego base indicado. */
+    /** DLCs owned by the user for the given base game. */
     getOwnedDlcs(parentGameId: string): Promise<Game[]>;
 
     // ── Search ────────────────────────────────────────────────────────────
-    /** Búsqueda full-text en el catálogo con estado de propiedad y wishlist. */
+    /** Full-text search across the catalogue with ownership and wishlist status. */
     searchGames(query: string): Promise<SearchResult[]>;
 
     // ── Wishlist ──────────────────────────────────────────────────────────
-    /** Obtiene la wishlist del usuario, opcionalmente con precios en una moneda específica. */
+    /** Returns the user's wishlist, optionally with prices in a specific currency. */
     getWishlist(country?: string): Promise<WishlistItem[]>;
     addToWishlist(gameId: string, title: string, coverUrl: string, platform?: Platform | null): Promise<WishlistItem>;
     removeFromWishlist(itemId: string): Promise<void>;
@@ -69,17 +69,17 @@ export interface IGameShelfApiClient {
 
     // ── Platforms ─────────────────────────────────────────────────────────
     getLinkedPlatforms(): Promise<LinkedPlatform[]>;
-    /** URL OAuth que el cliente debe abrir en un WebView. */
+    /** OAuth URL that the client must open in a WebView. */
     getPlatformAuthUrl(platform: Platform): Promise<string>;
-    /** Vincula Steam via OpenID: envía la URL completa del callback (incluyendo params de OpenID). */
+    /** Links Steam via OpenID: sends the full callback URL (including OpenID params). */
     linkSteamOpenId(callbackUrl: string): Promise<LinkedPlatform>;
-    /** Vincula Steam manualmente via SteamID o URL de perfil. */
+    /** Links Steam manually via SteamID or profile URL. */
     linkSteamManual(profileUrlOrId: string): Promise<LinkedPlatform>;
-    /** Vincula Epic (auth code) o GOG (authorization code) con el backend. */
+    /** Links Epic (auth code) or GOG (authorization code) with the backend. */
     linkWithCode(platform: Platform, code: string): Promise<LinkedPlatform>;
-    /** Vincula PSN usando el token NPSSO provisto por el usuario. */
+    /** Links PSN using the NPSSO token provided by the user. */
     linkWithNpsso(npsso: string): Promise<LinkedPlatform>;
-    /** Vincula Epic usando la exportación GDPR (array de juegos parseados). */
+    /** Links Epic using the GDPR export (array of parsed games). */
     linkWithGdpr(games: object[]): Promise<LinkedPlatform>;
     unlinkPlatform(platform: Platform): Promise<void>;
 
@@ -92,16 +92,16 @@ export interface IGameShelfApiClient {
     clearCache(): void;
 
     // ── Notification Preferences ──────────────────────────────────────────
-    /** Obtiene las preferencias de notificación del usuario. */
+    /** Returns the user's notification preferences. */
     getNotificationPreferences(): Promise<{ dealsEnabled: boolean }>;
-    /** Actualiza las preferencias de notificación del usuario. */
+    /** Updates the user's notification preferences. */
     updateNotificationPreferences(dealsEnabled: boolean): Promise<void>;
 
     // ── Push Notifications ────────────────────────────────────────────────
-    /** Registra un token push Expo en el backend. */
+    /** Registers an Expo push token in the backend. */
     registerPushToken(expoToken: string, platform: 'ios' | 'android' | 'web'): Promise<{ tokenId: string }>;
-    /** Elimina un token push registrado por su ID. */
+    /** Removes a registered push token by its ID. */
     removePushToken(tokenId: string): Promise<void>;
-    /** Elimina todos los tokens push registrados del backend. */
+    /** Removes all registered push tokens from the backend. */
     unregisterAllPushTokens(): Promise<void>;
 }

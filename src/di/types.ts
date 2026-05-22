@@ -1,13 +1,13 @@
 /**
- * Símbolos únicos que Inversify usa como identificadores de servicio.
- * Importado por todas las capas que necesiten resolver dependencias del contenedor.
+ * Unique symbols used by Inversify as service identifiers.
+ * Imported by every layer that needs to resolve dependencies from the container.
  */
 export const TYPES = {
-    // Firebase instances (valores constantes registrados en container.ts)
+    // Firebase instances (constant values registered in container.ts)
     FirebaseAuth: Symbol.for('FirebaseAuth'),
     Firestore: Symbol.for('Firestore'),
 
-    // Repositorios
+    // Repositories
     IAuthRepository: Symbol.for('IAuthRepository'),
     IGameRepository: Symbol.for('IGameRepository'),
     IWishlistRepository: Symbol.for('IWishlistRepository'),
@@ -15,10 +15,10 @@ export const TYPES = {
     INotificationRepository: Symbol.for('INotificationRepository'),
     ISettingsRepository: Symbol.for('ISettingsRepository'),
 
-    // Cliente GameShelfApi
+    // GameShelfApi client
     IGameShelfApiClient: Symbol.for('IGameShelfApiClient'),
 
-    // Casos de uso
+    // Use cases
     IAuthUseCase: Symbol.for('IAuthUseCase'),
     ILibraryUseCase: Symbol.for('ILibraryUseCase'),
     IWishlistUseCase: Symbol.for('IWishlistUseCase'),
@@ -28,7 +28,7 @@ export const TYPES = {
     ISettingsUseCase: Symbol.for('ISettingsUseCase'),
     IHomeUseCase: Symbol.for('IHomeUseCase'),
 
-    // ViewModels
+    // View models
     AuthViewModel: Symbol.for('AuthViewModel'),
     LibraryViewModel: Symbol.for('LibraryViewModel'),
     WishlistViewModel: Symbol.for('WishlistViewModel'),
@@ -39,9 +39,9 @@ export const TYPES = {
     HomeViewModel: Symbol.for('HomeViewModel'),
     ProfileViewModel: Symbol.for('ProfileViewModel'),
 
-    // Country Preference Service
+    // Country preference service
     ICountryPreferenceService: Symbol.for('ICountryPreferenceService'),
 
-    // Push Notification Service
+    // Push notification service
     PushNotificationService: Symbol.for('PushNotificationService'),
 };
