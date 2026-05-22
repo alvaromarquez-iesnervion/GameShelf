@@ -48,3 +48,8 @@ app-example
 .agents/
 
 # Documentation — keep all .md files local only
+CLAUDE.md
+AGENTS.md
+MEMORY.md
+ESTADO.md
+KNOWN_ISSUES.md
