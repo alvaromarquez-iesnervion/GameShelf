@@ -3,6 +3,7 @@ import { observer } from 'mobx-react-lite';
 import { useInjection } from '../../di/hooks/useInjection';
 import { AuthViewModel } from '../../presentation/viewmodels/AuthViewModel';
 import { LibraryViewModel } from '../../presentation/viewmodels/LibraryViewModel';
+import { PushNotificationService } from '../../data/services/PushNotificationService';
 import { TYPES } from '../../di/types';
 import { AuthStack } from './AuthStack';
 import { MainTabNavigator } from './MainTabNavigator';
@@ -11,26 +12,33 @@ import { LoadingSpinner } from '../../presentation/components/common/LoadingSpin
 export const RootNavigator: React.FC = observer(() => {
     const authVm = useInjection<AuthViewModel>(TYPES.AuthViewModel);
     const libraryVm = useInjection<LibraryViewModel>(TYPES.LibraryViewModel);
+    const pushService = useInjection<PushNotificationService>(TYPES.PushNotificationService);
     const syncStartedRef = useRef(false);
 
     useEffect(() => {
         authVm.checkAuthState().catch(e => console.warn('[RootNavigator] checkAuthState failed:', e));
     }, [authVm]);
 
-    // Disparar carga de biblioteca una sola vez cuando el usuario pasa a autenticado
+    // Inicializar push notifications una sola vez cuando el usuario pasa a autenticado
     useEffect(() => {
         if (authVm.isAuthenticated && authVm.currentUser && !syncStartedRef.current) {
             syncStartedRef.current = true;
-            if (authVm.isGuest) {
-                // Invitado: carga desde AsyncStorage local, sin sincronización con Firestore
-                libraryVm.loadLibrary(authVm.currentUser.getId());
-            } else {
-                libraryVm.autoSyncIfNeeded(authVm.currentUser.getId());
+            if (!authVm.isGuest) {
+                pushService.initialize(authVm.currentUser.getId()).catch(e =>
+                    console.warn('[RootNavigator] push init failed:', e),
+                );
             }
         }
         if (!authVm.isAuthenticated) {
             syncStartedRef.current = false;
             libraryVm.resetSyncState();
+        }
+    }, [authVm.isAuthenticated, authVm.currentUser, authVm.isGuest, libraryVm, pushService]);
+
+    // Carga de biblioteca — todos los usuarios (incluidos invitados) pasan por la API.
+    useEffect(() => {
+        if (authVm.isAuthenticated && authVm.currentUser && syncStartedRef.current) {
+            libraryVm.autoSyncIfNeeded(authVm.currentUser.getId());
         }
     }, [authVm.isAuthenticated, authVm.currentUser, authVm.isGuest, libraryVm]);
 

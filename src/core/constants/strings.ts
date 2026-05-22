@@ -31,6 +31,12 @@ export const strings = {
     logoutConfirmMessage:      '¿Estás seguro?',
     exit:                      'Salir',
 
+    // ── Delete Account ────────────────────────────────────────────────────
+    deleteAccountTitle:     'Eliminar cuenta',
+    deleteAccountMessage:   'Esta acción es irreversible. Se eliminarán tu cuenta, biblioteca, lista de deseos y plataformas vinculadas.',
+    deleteAccountConfirm:   'Eliminar cuenta',
+    deleteAccountError:     'No se pudo eliminar la cuenta. Inténtalo de nuevo.',
+
     // ── DealCard ──────────────────────────────────────────────────────────
     viewDeal:    'Ver oferta',
     bestDeals:   'Mejores Ofertas',

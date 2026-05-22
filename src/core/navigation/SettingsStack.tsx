@@ -5,6 +5,7 @@ import { SettingsScreen } from '../../presentation/screens/settings/SettingsScre
 import { PlatformLinkScreen } from '../../presentation/screens/settings/PlatformLinkScreen';
 import { NotificationSettingsScreen } from '../../presentation/screens/settings/NotificationSettingsScreen';
 import { ProfileScreen } from '../../presentation/screens/profile/ProfileScreen';
+import { PrivacyScreen } from '../../presentation/screens/settings/PrivacyScreen';
 import { colors } from '../../presentation/theme/colors';
 import { makeBlurHeader } from './sharedScreenOptions';
 
@@ -13,7 +14,7 @@ const Stack = createNativeStackNavigator<SettingsStackParamList>();
 export const SettingsStack: React.FC = () => {
     return (
         <Stack.Navigator
-            screenOptions={makeBlurHeader(colors)}
+            screenOptions={{ ...makeBlurHeader(colors), animation: 'fade' }}
         >
             <Stack.Screen
                 name="Settings"
@@ -34,6 +35,11 @@ export const SettingsStack: React.FC = () => {
                 name="Profile"
                 component={ProfileScreen}
                 options={{ title: 'Perfil' }}
+            />
+            <Stack.Screen
+                name="Privacy"
+                component={PrivacyScreen}
+                options={{ title: 'Privacidad' }}
             />
         </Stack.Navigator>
     );

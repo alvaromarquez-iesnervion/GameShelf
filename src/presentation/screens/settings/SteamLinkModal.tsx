@@ -269,6 +269,15 @@ const WebViewForm: React.FC<WebViewFormProps> = ({
     onOpenWebView,
 }) => (
     <>
+        {Platform.OS === 'android' && (
+            <View style={styles.androidNotice}>
+                <Feather name="info" size={14} color={colors.warning} />
+                <Text style={styles.androidNoticeText}>
+                    En Android el inicio de sesión integrado puede no funcionar correctamente. Usa la pestaña <Text style={styles.androidNoticeStrong}>Manual</Text> e introduce tu SteamID directamente.
+                </Text>
+            </View>
+        )}
+
         <Text style={styles.modalInstruction}>
             Inicia sesión con tu cuenta de Steam directamente desde la app:
         </Text>
@@ -576,5 +585,26 @@ const styles = StyleSheet.create({
         color: colors.textTertiary,
         textAlign: 'center',
         lineHeight: 18,
+    },
+    androidNotice: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        backgroundColor: 'rgba(251, 191, 36, 0.12)',
+        borderWidth: 1,
+        borderColor: colors.warning,
+        borderRadius: radius.md,
+        paddingHorizontal: spacing.md,
+        paddingVertical: spacing.sm,
+        marginBottom: spacing.md,
+        gap: spacing.xs,
+    },
+    androidNoticeText: {
+        ...typography.small,
+        color: colors.warning,
+        flex: 1,
+        lineHeight: 18,
+    },
+    androidNoticeStrong: {
+        fontWeight: '700',
     },
 });

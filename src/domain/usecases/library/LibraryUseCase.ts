@@ -2,8 +2,11 @@ import { ILibraryUseCase } from '../../interfaces/usecases/library/ILibraryUseCa
 import { IGameRepository, LibraryPage } from '../../interfaces/repositories/IGameRepository';
 import { IPlatformRepository } from '../../interfaces/repositories/IPlatformRepository';
 import { Game } from '../../entities/Game';
+import { LibraryStats } from '../../entities/LibraryStats';
 import { LinkedPlatform } from '../../entities/LinkedPlatform';
 import { Platform } from '../../enums/Platform';
+import { LibraryTab } from '../../enums/LibraryTab';
+import { SortCriteria } from '../../enums/SortCriteria';
 
 /**
  * Orquesta el acceso a la biblioteca del usuario.
@@ -12,8 +15,8 @@ import { Platform } from '../../enums/Platform';
  * - syncLibrary: llama a la API de la plataforma y actualiza Firestore (lento).
  * - getLinkedPlatforms: devuelve las plataformas vinculadas del usuario.
  *
- * Nota: el filtrado/búsqueda por título se realiza en LibraryViewModel (computed MobX),
- * evitando llamadas a red innecesarias y aprovechando la reactividad del estado en memoria.
+ * Nota: el filtrado/búsqueda por título, tab y plataformas se realiza server-side
+ * para evitar transferencias innecesarias y aprovechar la paginación del backend.
  */
 export class LibraryUseCase implements ILibraryUseCase {
 
@@ -26,8 +29,18 @@ export class LibraryUseCase implements ILibraryUseCase {
         return this.gameRepository.getLibraryGames(userId);
     }
 
-    async getLibraryPage(userId: string, pageSize: number, cursor?: string): Promise<LibraryPage> {
-        return this.gameRepository.getLibraryGamesPage(userId, pageSize, cursor);
+    async getLibraryPage(
+        userId: string,
+        pageSize: number,
+        page?: number,
+        tab?: LibraryTab,
+        sortCriteria?: SortCriteria,
+        searchQuery?: string,
+        platforms?: Platform[],
+    ): Promise<LibraryPage> {
+        return this.gameRepository.getLibraryGamesPage(
+            userId, pageSize, page, tab, sortCriteria, searchQuery, platforms,
+        );
     }
 
     async syncLibrary(userId: string, platform: Platform): Promise<Game[]> {
@@ -39,7 +52,6 @@ export class LibraryUseCase implements ILibraryUseCase {
         const platforms = await this.platformRepository.getLinkedPlatforms(userId);
         
         if (platforms.length === 0) {
-            // Sin plataformas, retornar biblioteca vacía o caché existente
             return this.gameRepository.getLibraryGames(userId);
         }
 
@@ -63,5 +75,9 @@ export class LibraryUseCase implements ILibraryUseCase {
 
     async getLinkedPlatforms(userId: string): Promise<LinkedPlatform[]> {
         return this.platformRepository.getLinkedPlatforms(userId);
+    }
+
+    async getLibraryStats(userId: string): Promise<LibraryStats> {
+        return this.gameRepository.getLibraryStats(userId);
     }
 }

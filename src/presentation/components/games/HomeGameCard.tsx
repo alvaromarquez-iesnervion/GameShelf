@@ -10,6 +10,7 @@ import { spacing, radius, shadows, textShadows, springPresets } from '../../them
 
 interface HomeGameCardProps {
     coverUrl: string;
+    portraitCoverUrl?: string;
     title: string;
     subtitle?: string;
     onPress: () => void;
@@ -19,7 +20,8 @@ interface HomeGameCardProps {
 
 const SPRING_CONFIG = springPresets.cardPress;
 
-export const HomeGameCard = React.memo(({ coverUrl, title, subtitle, onPress, size = 'medium', rank }: HomeGameCardProps) => {
+export const HomeGameCard = React.memo(({ coverUrl, portraitCoverUrl, title, subtitle, onPress, size = 'medium', rank }: HomeGameCardProps) => {
+    const imageSource = portraitCoverUrl || coverUrl;
     const scale = useSharedValue(1);
 
     const animatedStyle = useAnimatedStyle(() => ({
@@ -54,7 +56,7 @@ export const HomeGameCard = React.memo(({ coverUrl, title, subtitle, onPress, si
             >
                 <View style={[styles.coverWrap, { width: dimensions.coverWidth, height: dimensions.coverHeight }]}>
                     <Image
-                        source={{ uri: coverUrl }}
+                        source={{ uri: imageSource }}
                         style={styles.cover}
                         contentFit="cover"
                         transition={300}

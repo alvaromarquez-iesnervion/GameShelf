@@ -26,6 +26,7 @@ export type SettingsStackParamList = {
     PlatformLink: undefined;
     NotificationSettings: undefined;
     Profile: undefined;
+    Privacy: undefined;
 };
 
 export type MainTabParamList = {

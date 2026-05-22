@@ -58,3 +58,22 @@ Most recent first. Never rewrite history — only append.
 - `MockAuthRepository`: `deleteAuthUser()` + `deleteUserFirestoreData()`
 - `MockEpicGamesApiService`: `refreshToken()`
 - `MockGameRepository`: `getLibraryGamesPage()` + import `LibraryPage`
+
+## Session 36 · Apr 2026 — Currency/Country reactivity complete
+
+**C-01** `GameDetailViewModel`: inyecta `UserPreferencesStore`, expone `_currentGameId`/`_currentUserId` para tracking, añade método `reloadWithCountry()` que recarga detalle con moneda del país efectivo.
+
+**C-02** `WishlistViewModel`: mismo patrón — `_currentUserId` + `reloadWithCountry()`. Singleton reacciona a cambios de país compartidos entre Search/GameDetail/Wishlistscreens.
+
+**C-03** `GameDetailScreen.tsx`: inyecta `UserPreferencesStore`, lo incluye en deps del useEffect → al cambiar país desde Settings la pantalla recarga automáticamente los deals con nueva moneda.
+
+**C-04** `WishlistScreen.tsx`: mismo patrón — inyección de store + dep en useEffect para recargar wishlist con precios actualizados al cambiar país.
+
+**C-05** `MockGameShelfApiClient`: añadidos stubs `getSavedCountry()` y `setSavedCountry()` para cumplir interfaz actualizada.
+
+**API-01** `GameShelfApiClientImpl`: endpoints `/api/settings/country` corregidos a `/api/v1/settings/country` (GET + PUT) para coincidir con el prefix usado por todos los demás endpoints (`/api/v1/auth/sync`, `/api/v1/wishlist/...`, etc.).
+
+**API-02** `GameShelfApiClientImpl`: formato de request/response del endpoint settings ajustado al schema del backend — PUT body usa `{ country_code: "US" }` en vez de `{ country: "ES" }`; GET response lee `.country_code` en vez de `.country`.
+
+---
+*Plan completo `.agents/plans/currency-country-migration.md` — todas las tareas marcadas como verificables.*

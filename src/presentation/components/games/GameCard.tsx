@@ -44,7 +44,9 @@ export const GameCard = React.memo(({ gameId, coverUrl, portraitCoverUrl, title,
         onPress(gameId);
     }, [onPress, gameId]);
 
-    const visiblePlatforms = platforms?.filter(p => p !== GamePlatform.UNKNOWN) ?? [];
+    const uniqueVisiblePlatforms = [...new Set(
+        platforms?.filter(p => p !== GamePlatform.UNKNOWN) ?? [],
+    )];
 
     const width = cardWidth ?? DEFAULT_CARD_WIDTH;
 
@@ -73,10 +75,10 @@ export const GameCard = React.memo(({ gameId, coverUrl, portraitCoverUrl, title,
                         colors={['rgba(0,0,0,0.4)', 'transparent']}
                         style={styles.topVignette}
                     />
-                    {visiblePlatforms.length > 0 && (
+                    {uniqueVisiblePlatforms.length > 0 && (
                         <View style={styles.badgeContainer}>
-                            {visiblePlatforms.map(p => (
-                                <View key={p} style={styles.platformPill}>
+                            {uniqueVisiblePlatforms.map((p, i) => (
+                                <View key={`${p}-${i}`} style={styles.platformPill}>
                                     <PlatformIcon platform={p} size={12} />
                                 </View>
                             ))}

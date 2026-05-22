@@ -28,7 +28,10 @@ export class ProfileViewModel {
     }
 
     get libraryCount(): number {
-        return this.libraryVm.games.length;
+        if (this.libraryVm.isLoading) {
+            return 0;
+        }
+        return this.libraryVm.totalUniqueCount;
     }
 
     get platformCount(): number {

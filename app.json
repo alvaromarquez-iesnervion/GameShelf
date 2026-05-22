@@ -40,6 +40,12 @@
       ],
       "expo-font",
       "expo-secure-store"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "63b0f2ed-12e6-4f47-86f4-2c970a464554"
+      }
+    },
+    "owner": "marquezz20"
   }
 }

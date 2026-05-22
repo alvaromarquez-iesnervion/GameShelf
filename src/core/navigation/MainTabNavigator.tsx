@@ -42,22 +42,22 @@ const TabNavigator: React.FC = () => {
             }}
         >
             <Tab.Screen
+                name="SearchTab"
+                component={SearchStack}
+                options={{
+                    title: 'Descubre',
+                    tabBarIcon: ({ color }) => (
+                        <Feather name="compass" size={22} color={color} />
+                    ),
+                }}
+            />
+            <Tab.Screen
                 name="LibraryTab"
                 component={LibraryStack}
                 options={{
                     title: 'Biblioteca',
                     tabBarIcon: ({ color }) => (
                         <Feather name="grid" size={22} color={color} />
-                    ),
-                }}
-            />
-            <Tab.Screen
-                name="SearchTab"
-                component={SearchStack}
-                options={{
-                    title: 'Buscar',
-                    tabBarIcon: ({ color }) => (
-                        <Feather name="search" size={22} color={color} />
                     ),
                 }}
             />

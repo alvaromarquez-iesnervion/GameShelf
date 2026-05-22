@@ -1,91 +1,85 @@
 /**
- * Sistema de Colores iOS Premium (OLED Dark Mode)
+ * Sistema de colores — Dark gaming, acento violeta + cian.
+ *
+ * Las claves se mantienen para no romper otros consumidores; sólo cambian valores.
  */
 export const colors = {
-    // Fondo base negro puro para pantallas OLED (se mantiene por compatibilidad)
-    background: '#000000',
+    background: '#07080C',
 
-    /**
-     * Fondo semántico (nuevo):
-     * - backgroundBase: color final del fondo
-     * - backgroundGradientStops: gradiente global sutil para evitar "negro plano"
-     */
-    backgroundBase: '#000000',
+    backgroundBase: '#07080C',
     backgroundGradientStops: [
-        'rgba(10, 132, 255, 0.12)',  // iOS Blue haze
-        'rgba(94, 92, 230, 0.08)',   // Indigo haze
-        'rgba(255, 159, 10, 0.04)',  // Warm hint
-        '#000000',
+        'rgba(124, 92, 255, 0.10)',  // violet haze
+        'rgba(34, 211, 238, 0.06)',  // cyan haze
+        'rgba(124, 92, 255, 0.03)',
+        '#07080C',
     ] as const,
-    /** Aura de marca para headers/secciones (menos "azul plano", mas firma) */
+    /** Aura de marca para headers/secciones */
     brandAuraStops: [
-        'rgba(10, 132, 255, 0.16)',
-        'rgba(94, 92, 230, 0.12)',
+        'rgba(124, 92, 255, 0.18)',
+        'rgba(34, 211, 238, 0.10)',
         'transparent',
     ] as const,
 
-    // Superficies estilo "System Grouped Background" de iOS — refined depth
-    surface: '#1C1C1E',
-    surfaceElevated: '#2C2C2E',
-    surfaceVariant: '#3A3A3C',
-    surfacePressed: '#252528',
+    // Superficies
+    surface: '#12141B',
+    surfaceElevated: '#181B24',
+    surfaceVariant: '#222633',
+    surfacePressed: '#0E1017',
 
-    // Colores de acento Apple
-    primary: '#0A84FF', // iOS Blue
-    primaryLight: '#409CFF',
-    primaryDim: 'rgba(10, 132, 255, 0.12)',
-    primaryMedium: 'rgba(10, 132, 255, 0.15)',
-    primaryBorder: 'rgba(10, 132, 255, 0.4)',
-    primarySubtle: 'rgba(10, 132, 255, 0.06)',
-    primaryGlow: 'rgba(10, 132, 255, 0.08)',
-    primaryHeroGlow: 'rgba(10, 132, 255, 0.18)',
-    primaryRing: 'rgba(10, 132, 255, 0.3)',
+    // Acentos
+    primary: '#7C5CFF',
+    primaryLight: '#9D85FF',
+    primaryDim: 'rgba(124, 92, 255, 0.14)',
+    primaryMedium: 'rgba(124, 92, 255, 0.18)',
+    primaryBorder: 'rgba(124, 92, 255, 0.45)',
+    primarySubtle: 'rgba(124, 92, 255, 0.08)',
+    primaryGlow: 'rgba(124, 92, 255, 0.10)',
+    primaryHeroGlow: 'rgba(124, 92, 255, 0.22)',
+    primaryRing: 'rgba(124, 92, 255, 0.35)',
     onPrimary: '#FFFFFF',
 
-    secondary: '#5E5CE6', // iOS Indigo
-    secondaryDim: 'rgba(94, 92, 230, 0.12)',
-    accent: '#FF9F0A',    // iOS Orange
-    accentDim: 'rgba(255, 159, 10, 0.12)',
-    accentWarm: '#FF6B35', // Naranja cálido para secciones "populares"
+    secondary: '#22D3EE',
+    secondaryDim: 'rgba(34, 211, 238, 0.14)',
+    accent: '#22D3EE',
+    accentDim: 'rgba(34, 211, 238, 0.14)',
+    accentWarm: '#F472B6',
 
-    // Texto con jerarquía iOS
-    textPrimary: '#FFFFFF',
-    textSecondary: '#EBEBF599', // 60% white
-    textTertiary: '#EBEBF54D',  // 30% white
-    textDisabled: '#EBEBF52D',
+    // Texto
+    textPrimary: '#F5F6FA',
+    textSecondary: 'rgba(245, 246, 250, 0.66)',
+    textTertiary: 'rgba(245, 246, 250, 0.42)',
+    textDisabled: 'rgba(245, 246, 250, 0.22)',
 
     // Estados
-    error: '#FF453A',
-    errorBackground: 'rgba(255, 69, 58, 0.1)',
-    errorBorder: 'rgba(255, 69, 58, 0.3)',
-    success: '#32D74B',
-    successBackground: 'rgba(50, 215, 75, 0.1)',
-    warning: '#FFD60A',
-    warningBackground: 'rgba(255, 214, 10, 0.1)',
+    error: '#FF5C7A',
+    errorBackground: 'rgba(255, 92, 122, 0.12)',
+    errorBorder: 'rgba(255, 92, 122, 0.35)',
+    success: '#34D399',
+    successBackground: 'rgba(52, 211, 153, 0.12)',
+    warning: '#FBBF24',
+    warningBackground: 'rgba(251, 191, 36, 0.12)',
 
-    // Elementos UI
-    border: '#38383A',
-    borderLight: '#48484A',
-    borderSubtle: 'rgba(255, 255, 255, 0.06)',
+    // UI
+    border: '#262A36',
+    borderLight: '#333949',
+    borderSubtle: 'rgba(255, 255, 255, 0.05)',
     borderSubtleLight: 'rgba(255, 255, 255, 0.08)',
-    borderWhiteThin: 'rgba(255, 255, 255, 0.1)',
-    divider: '#38383A',
+    borderWhiteThin: 'rgba(255, 255, 255, 0.10)',
+    divider: '#262A36',
 
-    // Overlays para cards
     overlayDark: 'rgba(0, 0, 0, 0.65)',
-    overlayWhiteThin: 'rgba(255,255,255,0.2)',
+    overlayWhiteThin: 'rgba(255,255,255,0.18)',
 
-    // Glassmorphism
-    blurBackground: 'rgba(28, 28, 30, 0.8)',
-    
-    // Marcas con tonos premium
+    blurBackground: 'rgba(18, 20, 27, 0.82)',
+
+    // Marcas
     steam: '#171A21',
     steamAccent: '#66C0F4',
     epic: '#0078F2',
     gog: '#86328A',
     psn: '#003791',
     psnAccent: '#0070D1',
-    
+
     // ProtonDB
     protonPlatinum: '#B4D455',
     protonGold: '#FFD700',
@@ -94,23 +88,23 @@ export const colors = {
     protonBorked: '#FF4444',
     protonPending: '#808080',
 
-    discount: '#32D74B',
-    discountBackground: 'rgba(50, 215, 75, 0.15)',
+    discount: '#34D399',
+    discountBackground: 'rgba(52, 211, 153, 0.16)',
 
-    // Input styles
-    inputBackground: '#1C1C1E',
-    inputBorder: '#38383A',
-    inputFocusBorder: '#0A84FF',
+    // Inputs
+    inputBackground: '#12141B',
+    inputBorder: '#262A36',
+    inputFocusBorder: '#7C5CFF',
 
     overlay: 'rgba(0, 0, 0, 0.6)',
     overlayLight: 'rgba(0, 0, 0, 0.4)',
     overlayGradient: ['rgba(0,0,0,0)', 'rgba(0,0,0,0.8)', 'rgba(0,0,0,1)'],
 
-    shadow: 'rgba(0, 0, 0, 0.5)',
-    shadowLight: 'rgba(0, 0, 0, 0.2)',
+    shadow: 'rgba(0, 0, 0, 0.55)',
+    shadowLight: 'rgba(0, 0, 0, 0.25)',
 
-    // Colores del sistema iOS usados en iconos de settings
-    iosRed: '#FF3B30',      // Notificaciones, acciones destructivas secundarias
-    iosPurple: '#5856D6',   // Ayuda, soporte
-    iosGreen: '#34C759',    // Privacidad, estados positivos
+    // iOS-style accents (mantenidos por compat con iconos de settings)
+    iosRed: '#FF5C7A',
+    iosPurple: '#7C5CFF',
+    iosGreen: '#34D399',
 };

@@ -1,22 +1,46 @@
 import { Game } from '../../entities/Game';
+import { LibraryStats } from '../../entities/LibraryStats';
 import { SearchResult } from '../../entities/SearchResult';
 import { Platform } from '../../enums/Platform';
+import { LibraryTab } from '../../enums/LibraryTab';
+import { SortCriteria } from '../../enums/SortCriteria';
 
-/** Resultado de una página de biblioteca. nextCursor es null en la última página. */
+/** Juego de biblioteca con plataformas merged del backend. */
+export interface MergedLibraryGame {
+    game: Game;
+    platforms: Platform[];
+}
+
+/** Resultado paginado de la biblioteca con soporte para filtros server-side. */
 export interface LibraryPage {
-    games: Game[];
-    nextCursor: string | null;
+    games: MergedLibraryGame[];
+    total: number;
+    hasMore: boolean;
+    currentPage: number;
 }
 
 export interface IGameRepository {
     /** Lee la biblioteca desde caché Firestore. Rápido. */
     getLibraryGames(userId: string): Promise<Game[]>;
     /**
-     * Lee la biblioteca en páginas ordenadas por ID de documento.
-     * @param pageSize Número máximo de juegos por página (recomendado: 200).
-     * @param cursor   ID del último documento de la página anterior (undefined = primera página).
+     * Lee la biblioteca en páginas con filtros server-side.
+     * @param userId       ID del usuario.
+     * @param pageSize     Número máximo de juegos por página.
+     * @param page         Número de página (1-indexed).
+     * @param tab          Filtro por pestaña PC/Consola.
+     * @param sortCriteria Criterio de ordenación.
+     * @param searchQuery  Término de búsqueda.
+     * @param platforms    Lista de plataformas a filtrar.
      */
-    getLibraryGamesPage(userId: string, pageSize: number, cursor?: string): Promise<LibraryPage>;
+    getLibraryGamesPage(
+        userId: string,
+        pageSize: number,
+        page?: number,
+        tab?: LibraryTab,
+        sortCriteria?: SortCriteria,
+        searchQuery?: string,
+        platforms?: Platform[],
+    ): Promise<LibraryPage>;
     /** Obtiene un juego concreto de la biblioteca del usuario en Firestore. */
     getGameById(userId: string, gameId: string): Promise<Game>;
     /**
@@ -42,4 +66,6 @@ export interface IGameRepository {
     updateSteamAppId(userId: string, gameId: string, steamAppId: number): Promise<void>;
     /** Devuelve los DLCs poseídos cuyo parentGameId coincida con el juego indicado. */
     getOwnedDlcsForGame(userId: string, parentGameId: string): Promise<Game[]>;
+    /** Devuelve estadísticas agregadas de la biblioteca (únicos por plataforma, playtime). */
+    getLibraryStats(userId: string): Promise<LibraryStats>;
 }

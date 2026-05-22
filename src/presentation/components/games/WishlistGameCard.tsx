@@ -9,14 +9,19 @@ import { spacing, radius } from '../../theme/spacing';
 
 interface WishlistGameCardProps {
     coverUrl: string;
+    portraitCoverUrl?: string;
     title: string;
     discountPercentage?: number | null;
-    onPress: () => void;
+    gameId?: string;
+    platform?: string | null;
+    steamAppId?: number | null;
+    onPress: (gameId?: string, platform?: string | null, steamAppId?: number | null) => void;
     onRemove: () => void;
 }
 
-export const WishlistGameCard = React.memo(({ coverUrl, title, discountPercentage, onPress, onRemove }: WishlistGameCardProps) => {
+export const WishlistGameCard = React.memo(({ coverUrl, portraitCoverUrl, title, discountPercentage, gameId, platform, steamAppId, onPress, onRemove }: WishlistGameCardProps) => {
     const hasDiscount = discountPercentage && discountPercentage > 0;
+    const imageSource = portraitCoverUrl || coverUrl;
 
     const handleRemove = () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -25,13 +30,13 @@ export const WishlistGameCard = React.memo(({ coverUrl, title, discountPercentag
 
     const handlePress = () => {
         Haptics.selectionAsync();
-        onPress();
+        onPress(gameId, platform, steamAppId);
     };
 
     return (
         <TouchableOpacity style={styles.card} onPress={handlePress} activeOpacity={0.75}>
             <View style={styles.coverWrap}>
-                <Image source={{ uri: coverUrl }} style={styles.cover} contentFit="cover" transition={200} />
+                <Image source={{ uri: imageSource }} style={styles.cover} contentFit="cover" transition={200} />
                 {hasDiscount && (
                     <View style={styles.discountOverlay}>
                         <Text style={styles.discountOverlayText}>-{discountPercentage}%</Text>

@@ -1,60 +1,16 @@
 import { IWishlistUseCase } from '../../interfaces/usecases/wishlist/IWishlistUseCase';
 import { IWishlistRepository } from '../../interfaces/repositories/IWishlistRepository';
-import { IIsThereAnyDealService } from '../../interfaces/services/IIsThereAnyDealService';
 import { WishlistItem } from '../../entities/WishlistItem';
 
-/**
- * Gestiona la wishlist del usuario.
- *
- * getWishlist enriquece cada item con el porcentaje de descuento más alto
- * activo consultando ITAD. El enriquecimiento se hace en paralelo; si ITAD
- * falla para un item concreto, su bestDealPercentage queda como null.
- */
 export class WishlistUseCase implements IWishlistUseCase {
 
     constructor(
         private readonly wishlistRepository: IWishlistRepository,
-        private readonly itadService: IIsThereAnyDealService,
     ) {}
 
-    async getWishlist(userId: string): Promise<WishlistItem[]> {
+    async getWishlist(userId: string, country?: string): Promise<WishlistItem[]> {
         if (!userId?.trim()) throw new Error('userId requerido');
-        const items = await this.wishlistRepository.getWishlist(userId);
-
-        if (items.length === 0) return items;
-
-        try {
-            // 1. Batch lookup de todos los títulos
-            const titles = items.map(item => item.getTitle());
-            const titleToItadId = await this.itadService.lookupGameIdsBatch(titles);
-
-            // 2. Recolectar IDs válidos
-            const validItadIds = Array.from(titleToItadId.values()).filter(id => id !== null) as string[];
-            
-            if (validItadIds.length === 0) return items;
-
-            // 3. Batch prices para todos los IDs
-            const itadIdToPrices = await this.itadService.getPricesForGamesBatch(validItadIds);
-
-            // 4. Asignar mejores deals a cada item
-            for (let i = 0; i < items.length; i++) {
-                const item = items[i];
-                const itadId = titleToItadId.get(item.getTitle());
-                if (!itadId) continue;
-
-                const deals = itadIdToPrices.get(itadId) ?? [];
-                if (deals.length === 0) continue;
-
-                const best = deals.reduce((max, d) =>
-                    d.getDiscountPercentage() > max.getDiscountPercentage() ? d : max,
-                );
-                items[i] = item.withBestDealPercentage(best.getDiscountPercentage());
-            }
-        } catch {
-            // Si falla el batch completo, los items quedan con bestDealPercentage original
-        }
-
-        return items;
+        return this.wishlistRepository.getWishlist(userId, country);
     }
 
     async addToWishlist(userId: string, item: WishlistItem): Promise<void> {

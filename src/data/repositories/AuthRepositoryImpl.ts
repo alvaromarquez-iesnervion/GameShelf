@@ -7,16 +7,13 @@ import {
     signOut,
     deleteUser,
     sendPasswordResetEmail,
+    signInAnonymously as firebaseSignInAnonymously,
 } from 'firebase/auth';
 import {
     Firestore,
     doc,
     setDoc,
     getDoc,
-    deleteDoc,
-    collection,
-    getDocs,
-    writeBatch,
 } from 'firebase/firestore';
 import { IAuthRepository } from '../../domain/interfaces/repositories/IAuthRepository';
 import { User } from '../../domain/entities/User';
@@ -75,6 +72,11 @@ export class AuthRepositoryImpl implements IAuthRepository {
         await signOut(this.auth);
     }
 
+    async signInAnonymously(): Promise<User> {
+        const credential = await firebaseSignInAnonymously(this.auth);
+        return new User(credential.user.uid, '', 'Invitado', new Date(), true);
+    }
+
     async getCurrentUser(): Promise<User | null> {
         // Esperar a que Firebase restaure la sesión persistida antes de leer auth.currentUser.
         // authStateReady() resuelve una sola vez al arranque; las llamadas posteriores son inmediatas.
@@ -82,6 +84,11 @@ export class AuthRepositoryImpl implements IAuthRepository {
 
         const firebaseUser = this.auth.currentUser;
         if (!firebaseUser) return null;
+
+        // Usuarios anónimos: no tienen documento en Firestore, se devuelven directamente.
+        if (firebaseUser.isAnonymous) {
+            return new User(firebaseUser.uid, '', 'Invitado', new Date(), true);
+        }
 
         const snap = await getDoc(doc(this.firestore, 'users', firebaseUser.uid));
         if (!snap.exists()) return null;
@@ -93,44 +100,6 @@ export class AuthRepositoryImpl implements IAuthRepository {
             data.displayName ?? '',
             data.createdAt ? new Date(data.createdAt) : new Date(),
         );
-    }
-
-    async deleteAuthUser(): Promise<void> {
-        const firebaseUser = this.auth.currentUser;
-        if (!firebaseUser) throw new Error('No hay sesión activa');
-        // Si falla (p.ej. auth/requires-recent-login), no se toca ningún dato de Firestore.
-        await deleteUser(firebaseUser);
-    }
-
-    async deleteUserFirestoreData(uid: string): Promise<void> {
-        // 1. Borrar subcolecciones con writeBatch (límite 500 ops por batch)
-        const subCollections = ['library', 'wishlist', 'platforms'];
-        for (const col of subCollections) {
-            const snap = await getDocs(collection(this.firestore, 'users', uid, col));
-            const batches: Promise<void>[] = [];
-            let currentBatch = writeBatch(this.firestore);
-            let opsInBatch = 0;
-
-            for (const docSnap of snap.docs) {
-                currentBatch.delete(docSnap.ref);
-                opsInBatch++;
-                if (opsInBatch === 500) {
-                    batches.push(currentBatch.commit());
-                    currentBatch = writeBatch(this.firestore);
-                    opsInBatch = 0;
-                }
-            }
-
-            if (opsInBatch > 0) batches.push(currentBatch.commit());
-            await Promise.all(batches);
-        }
-
-        // 2. Borrar settings/notifications (puede no existir)
-        await deleteDoc(doc(this.firestore, 'users', uid, 'settings', 'notifications'))
-            .catch(() => {});
-
-        // 3. Borrar documento raíz del usuario
-        await deleteDoc(doc(this.firestore, 'users', uid));
     }
 
     async resetPassword(email: string): Promise<void> {

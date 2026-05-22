@@ -1,46 +1,62 @@
-import React, { useEffect, useCallback, useRef, useState } from 'react';
-import { View, FlatList, TextInput, TouchableOpacity, Text, RefreshControl, Platform, useWindowDimensions } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Feather } from '@expo/vector-icons';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import {
+    FlatList,
+    Platform,
+    Pressable,
+    RefreshControl,
+    StyleSheet,
+    Text,
+    TextInput,
+    useWindowDimensions,
+    View,
+} from 'react-native';
 import { observer } from 'mobx-react-lite';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+
 import { useInjection } from '../../../di/hooks/useInjection';
-import { AuthViewModel } from '../../viewmodels/AuthViewModel';
-import { LibraryViewModel, MergedLibraryGame } from '../../viewmodels/LibraryViewModel';
 import { TYPES } from '../../../di/types';
+import { AuthViewModel } from '../../viewmodels/AuthViewModel';
+import { LibraryViewModel } from '../../viewmodels/LibraryViewModel';
 import { LibraryStackParamList } from '../../../core/navigation/navigationTypes';
 import { GameCard } from '../../components/games/GameCard';
 import { ErrorMessage } from '../../components/common/ErrorMessage';
 import { EmptyState } from '../../components/common/EmptyState';
 import { LibrarySkeleton } from '../../components/common/LibrarySkeleton';
 import { BrandAura } from '../../components/common/BrandAura';
+import { ScreenHeader } from '../../components/common/ScreenHeader';
+import { LibraryTabBar } from '../../components/library/LibraryTabBar';
+import { PlatformFilterChips } from '../../components/library/PlatformFilterChips';
 import { SortCriteria } from '../../../domain/enums/SortCriteria';
 import { LibraryTab } from '../../../domain/enums/LibraryTab';
-import { LibraryTabBar } from '../../components/library/LibraryTabBar';
+import { Platform as GamePlatform } from '../../../domain/enums/Platform';
+import { MergedLibraryGame } from '../../../domain/interfaces/repositories/IGameRepository';
 import { colors } from '../../theme/colors';
-import { spacing } from '../../theme/spacing';
-import { styles } from './LibraryScreen.styles';
+import { typography } from '../../theme/typography';
+import { spacing, radius } from '../../theme/spacing';
 
 type Nav = NativeStackNavigationProp<LibraryStackParamList, 'Library'>;
 
-const SORT_OPTIONS: { label: string; criteria: SortCriteria; icon: keyof typeof Feather.glyphMap }[] = [
-    { label: 'A-Z', criteria: SortCriteria.ALPHABETICAL, icon: 'type' },
+const SORTS: { label: string; criteria: SortCriteria; icon: keyof typeof Feather.glyphMap }[] = [
+    { label: 'A–Z', criteria: SortCriteria.ALPHABETICAL, icon: 'type' },
     { label: 'Recientes', criteria: SortCriteria.LAST_PLAYED, icon: 'clock' },
     { label: 'Tiempo', criteria: SortCriteria.PLAYTIME, icon: 'bar-chart-2' },
 ];
 
 export const LibraryScreen: React.FC = observer(() => {
-    const insets = useSafeAreaInsets();
-    const { width: windowWidth } = useWindowDimensions();
+    const { width } = useWindowDimensions();
     const authVm = useInjection<AuthViewModel>(TYPES.AuthViewModel);
     const vm = useInjection<LibraryViewModel>(TYPES.LibraryViewModel);
     const navigation = useNavigation<Nav>();
     const userId = authVm.currentUser?.getId() ?? '';
+    const listRef = useRef<FlatList>(null);
 
-    // 3-column grid with perfect gutters (aligned with screen padding)
-    const cardWidth = Math.floor((windowWidth - (spacing.lg * 2) - (spacing.sm * 2)) / 3);
+    const cardWidth = Math.floor((width - spacing.lg * 2 - spacing.sm * 2) / 3);
+
+    const [searchInput, setSearchInput] = useState(vm.searchQuery);
+    const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     useEffect(() => {
         if (userId && vm.games.length === 0 && !vm.isLoading && !vm.isSyncing) {
@@ -48,48 +64,30 @@ export const LibraryScreen: React.FC = observer(() => {
         }
     }, [userId, vm]);
 
-    const [searchInput, setSearchInput] = useState(vm.searchQuery);
-    const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-    const handleSearchChange = useCallback((query: string) => {
-        setSearchInput(query);
-        if (debounceTimer.current) clearTimeout(debounceTimer.current);
-        debounceTimer.current = setTimeout(() => {
-            vm.setSearchQuery(query);
-        }, 200);
-    }, [vm]);
+    useEffect(() => () => { if (debounce.current) clearTimeout(debounce.current); }, []);
 
     useEffect(() => {
-        return () => {
-            if (debounceTimer.current) clearTimeout(debounceTimer.current);
-        };
-    }, []);
+        if (vm.currentPage > 1) listRef.current?.scrollToOffset({ offset: 0, animated: false });
+    }, [vm.currentPage]);
+
+    const handleSearch = useCallback((q: string) => {
+        setSearchInput(q);
+        if (debounce.current) clearTimeout(debounce.current);
+        debounce.current = setTimeout(() => vm.setSearchQuery(q), 220);
+    }, [vm]);
 
     const handleRefresh = useCallback(() => {
         if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        vm.loadLibrary(userId);
+        vm.loadLibrary(userId, 1);
     }, [vm, userId]);
 
-    const handleNavigateWishlist = useCallback(() => {
-        (navigation as any).navigate('WishlistStack');
-    }, [navigation]);
+    const handleGamePress = useCallback(
+        (gameId: string, platforms: GamePlatform[], steamAppId?: number) =>
+            navigation.navigate('GameDetail', { gameId, platforms, steamAppId }),
+        [navigation],
+    );
 
-    const handleGamePress = useCallback((gameId: string, platforms: MergedLibraryGame['platforms']) => {
-        navigation.navigate('GameDetail', { gameId, platforms });
-    }, [navigation]);
-
-    const handleSortChange = useCallback((criteria: SortCriteria) => {
-        if (Platform.OS !== 'web') Haptics.selectionAsync();
-        vm.setSortCriteria(criteria);
-    }, [vm]);
-
-    const handleTabChange = useCallback((tab: LibraryTab) => {
-        if (Platform.OS !== 'web') Haptics.selectionAsync();
-        vm.setActiveTab(tab);
-        setSearchInput('');
-    }, [vm]);
-
-    const renderGameCard = useCallback(({ item }: { item: MergedLibraryGame }) => (
+    const renderItem = useCallback(({ item }: { item: MergedLibraryGame }) => (
         <GameCard
             gameId={item.game.getId()}
             coverUrl={item.game.getCoverUrl()}
@@ -97,94 +95,97 @@ export const LibraryScreen: React.FC = observer(() => {
             title={item.game.getTitle()}
             platforms={item.platforms}
             cardWidth={cardWidth}
-            onPress={(id) => handleGamePress(id, item.platforms)}
+            onPress={(id) => handleGamePress(id, item.platforms, item.game.getSteamAppId() ?? undefined)}
         />
     ), [handleGamePress, cardWidth]);
 
     if (vm.isLoading && vm.games.length === 0) return <LibrarySkeleton />;
     if (vm.errorMessage) return <ErrorMessage message={vm.errorMessage} onRetry={handleRefresh} />;
 
-    const gameCount = vm.mergedFilteredGames.length;
-
     return (
         <View style={styles.container}>
-            {/* Header aura (signature) */}
-            <BrandAura style={styles.headerGlow} />
-            <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
-                <View style={styles.titleRow}>
-                    <View style={styles.titleLeft}>
-                        <Text style={styles.largeTitle}>Biblioteca</Text>
-                        {gameCount > 0 && (
-                            <View style={styles.countBadge}>
-                                <Text style={styles.countText}>{gameCount}</Text>
-                            </View>
-                        )}
-                    </View>
-                    <View style={styles.headerActions}>
-                        <TouchableOpacity
-                            style={styles.actionCircle}
-                            onPress={handleRefresh}
-                            activeOpacity={0.8}
-                            accessibilityRole="button"
-                            accessibilityLabel="Resincronizar biblioteca"
-                        >
-                            <Feather name="rotate-cw" size={18} color={colors.primary} />
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={styles.actionCircle}
-                            onPress={handleNavigateWishlist}
-                            activeOpacity={0.8}
-                            accessibilityRole="button"
-                            accessibilityLabel="Abrir wishlist"
-                        >
-                            <Feather name="heart" size={18} color={colors.error} />
-                        </TouchableOpacity>
-                    </View>
-                </View>
-                <View style={styles.searchContainer}>
+            <BrandAura style={styles.aura} />
+
+            <ScreenHeader
+                eyebrow="Tu colección"
+                title="Biblioteca"
+                rightSlot={
+                        <>
+                            <Pressable
+                                style={({ pressed }) => [styles.iconBtn, pressed && styles.iconBtnPressed]}
+                                onPress={handleRefresh}
+                                accessibilityLabel="Resincronizar"
+                            >
+                                <Feather name="rotate-cw" size={18} color={colors.primary} />
+                            </Pressable>
+                            <Pressable
+                                style={({ pressed }) => [styles.iconBtn, pressed && styles.iconBtnPressed]}
+                                onPress={() => (navigation as any).navigate('WishlistStack')}
+                                accessibilityLabel="Wishlist"
+                            >
+                                <Feather name="heart" size={18} color={colors.accentWarm} />
+                            </Pressable>
+                        </>
+                    }
+                />
+
+            <View style={styles.controls}>
+                <View style={styles.searchBox}>
                     <Feather name="search" size={16} color={colors.textTertiary} />
                     <TextInput
                         style={styles.searchInput}
-                        placeholder="Buscar en la coleccion"
+                        placeholder="Buscar en la colección"
                         placeholderTextColor={colors.textTertiary}
                         value={searchInput}
-                        onChangeText={handleSearchChange}
+                        onChangeText={handleSearch}
                         clearButtonMode="while-editing"
                         selectionColor={colors.primary}
                         keyboardAppearance="dark"
                     />
                 </View>
-                <View style={styles.sortBar}>
-                    {SORT_OPTIONS.map(({ label, criteria, icon }) => {
-                        const isActive = vm.sortCriteria === criteria;
+
+                <View style={styles.sortRow}>
+                    {SORTS.map(({ label, criteria, icon }) => {
+                        const active = vm.sortCriteria === criteria;
                         return (
-                            <TouchableOpacity
+                            <Pressable
                                 key={criteria}
-                                style={[styles.sortChip, isActive && styles.sortChipActive]}
-                                onPress={() => handleSortChange(criteria)}
-                                activeOpacity={0.7}
+                                onPress={() => {
+                                    if (Platform.OS !== 'web') Haptics.selectionAsync();
+                                    vm.setSortCriteria(criteria);
+                                }}
+                                style={[styles.chip, active && styles.chipActive]}
                             >
-                                <Feather
-                                    name={icon}
-                                    size={12}
-                                    color={isActive ? colors.primary : colors.textTertiary}
-                                />
-                                <Text style={[styles.sortChipText, isActive && styles.sortChipTextActive]}>
-                                    {label}
-                                </Text>
-                            </TouchableOpacity>
+                                <Feather name={icon} size={12} color={active ? colors.primary : colors.textTertiary} />
+                                <Text style={[styles.chipText, active && styles.chipTextActive]}>{label}</Text>
+                            </Pressable>
                         );
                     })}
                 </View>
             </View>
+
             <LibraryTabBar
                 activeTab={vm.activeTab}
                 pcCount={vm.pcGameCount}
                 consoleCount={vm.consoleGameCount}
-                onTabChange={handleTabChange}
+                onTabChange={(tab: LibraryTab) => {
+                    if (Platform.OS !== 'web') Haptics.selectionAsync();
+                    vm.setActiveTab(tab);
+                    setSearchInput('');
+                }}
             />
+            <PlatformFilterChips
+                activeTab={vm.activeTab}
+                selectedPlatforms={vm.selectedPlatforms}
+                onTogglePlatform={(p: GamePlatform) => {
+                    if (Platform.OS !== 'web') Haptics.selectionAsync();
+                    vm.togglePlatform(p);
+                }}
+            />
+
             <FlatList
-                data={vm.mergedFilteredGames}
+                ref={listRef}
+                data={vm.games}
                 keyExtractor={(item) => item.game.getId()}
                 numColumns={3}
                 columnWrapperStyle={styles.row}
@@ -192,7 +193,7 @@ export const LibraryScreen: React.FC = observer(() => {
                 initialNumToRender={12}
                 maxToRenderPerBatch={6}
                 windowSize={5}
-                removeClippedSubviews={true}
+                removeClippedSubviews
                 refreshControl={
                     <RefreshControl
                         refreshing={vm.isLoading}
@@ -200,14 +201,41 @@ export const LibraryScreen: React.FC = observer(() => {
                         tintColor={colors.primary}
                     />
                 }
-                renderItem={renderGameCard}
+                renderItem={renderItem}
+                ListFooterComponent={
+                    vm.totalPages > 1 ? (
+                        <View style={styles.pagination}>
+                            <PageBtn
+                                icon="chevrons-left"
+                                disabled={vm.currentPage === 1}
+                                onPress={() => vm.goToFirstPage()}
+                            />
+                            <PageBtn
+                                icon="chevron-left"
+                                disabled={vm.currentPage === 1}
+                                onPress={() => vm.goToPage(vm.currentPage - 1)}
+                            />
+                            <Text style={styles.pageText}>{vm.currentPage} / {vm.totalPages}</Text>
+                            <PageBtn
+                                icon="chevron-right"
+                                disabled={vm.currentPage === vm.totalPages}
+                                onPress={() => vm.goToPage(vm.currentPage + 1)}
+                            />
+                            <PageBtn
+                                icon="chevrons-right"
+                                disabled={vm.currentPage === vm.totalPages}
+                                onPress={() => vm.goToLastPage()}
+                            />
+                        </View>
+                    ) : null
+                }
                 ListEmptyComponent={
-                    <View style={styles.emptyContainer}>
+                    <View style={styles.empty}>
                         <EmptyState
                             message={
                                 vm.activeTab === LibraryTab.PC
-                                    ? 'Tu coleccion PC esta esperando. Vincula Steam, Epic o GOG para importar tus juegos.'
-                                    : 'Tu coleccion de consola esta esperando. Vincula PlayStation para importar tus juegos.'
+                                    ? 'Vincula Steam, Epic o GOG para importar tu colección PC.'
+                                    : 'Vincula PlayStation para importar tu colección de consola.'
                             }
                             icon="plus-circle"
                         />
@@ -216,4 +244,84 @@ export const LibraryScreen: React.FC = observer(() => {
             />
         </View>
     );
+});
+
+const PageBtn: React.FC<{ icon: keyof typeof Feather.glyphMap; disabled: boolean; onPress: () => void }> = ({ icon, disabled, onPress }) => (
+    <Pressable
+        onPress={onPress}
+        disabled={disabled}
+        style={({ pressed }) => [
+            styles.pageBtn,
+            disabled && styles.pageBtnDisabled,
+            pressed && !disabled && { opacity: 0.7 },
+        ]}
+    >
+        <Feather name={icon} size={16} color={disabled ? colors.textTertiary : colors.primary} />
+    </Pressable>
+);
+
+const styles = StyleSheet.create({
+    container: { flex: 1 },
+    aura: { position: 'absolute', top: 0, left: 0, right: 0, height: 220 },
+    controls: {
+        paddingHorizontal: spacing.lg,
+        paddingBottom: spacing.sm,
+    },
+    iconBtn: {
+        width: 40, height: 40,
+        borderRadius: radius.full,
+        backgroundColor: colors.surface,
+        borderWidth: 1, borderColor: colors.borderSubtle,
+        alignItems: 'center', justifyContent: 'center',
+    },
+    iconBtnPressed: { backgroundColor: colors.surfaceElevated },
+    searchBox: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm,
+        backgroundColor: colors.inputBackground,
+        borderColor: colors.inputBorder,
+        borderWidth: 1,
+        borderRadius: radius.lg,
+        height: 42,
+        paddingHorizontal: spacing.md,
+    },
+    searchInput: { ...typography.input, flex: 1, paddingVertical: 0 },
+    sortRow: { flexDirection: 'row', gap: spacing.xs, marginTop: spacing.md },
+    chip: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        paddingHorizontal: spacing.md,
+        paddingVertical: 6,
+        borderRadius: radius.full,
+        backgroundColor: colors.surface,
+        borderWidth: 1,
+        borderColor: colors.borderSubtle,
+    },
+    chipActive: {
+        backgroundColor: colors.primaryDim,
+        borderColor: colors.primaryBorder,
+    },
+    chipText: { ...typography.caption, fontWeight: '600' },
+    chipTextActive: { color: colors.primary },
+    list: { paddingHorizontal: spacing.lg, paddingBottom: 100 },
+    row: { gap: spacing.sm, marginBottom: spacing.sm },
+    empty: { paddingTop: spacing.xxxl, paddingHorizontal: spacing.xl },
+    pagination: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: spacing.sm,
+        paddingVertical: spacing.lg,
+    },
+    pageBtn: {
+        width: 36, height: 36,
+        borderRadius: radius.md,
+        backgroundColor: colors.surface,
+        borderWidth: 1, borderColor: colors.borderSubtle,
+        alignItems: 'center', justifyContent: 'center',
+    },
+    pageBtnDisabled: { opacity: 0.4 },
+    pageText: { ...typography.bodySecondary, fontWeight: '600', marginHorizontal: spacing.md },
 });

@@ -5,17 +5,20 @@ export class User {
     private displayName: string;
     private createdAt: Date;
     private notificationsEnabled: boolean = false;
+    readonly isGuest: boolean;
 
     constructor(
         id: string,
         email: string,
         displayName: string,
         createdAt: Date,
+        isGuest: boolean = false,
     ) {
         this.id = id;
         this.email = email;
         this.displayName = displayName;
         this.createdAt = createdAt;
+        this.isGuest = isGuest;
     }
 
     getId(): string {

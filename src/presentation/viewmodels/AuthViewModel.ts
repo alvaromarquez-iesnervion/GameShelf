@@ -2,14 +2,15 @@ import 'reflect-metadata';
 import { injectable, inject } from 'inversify';
 import { makeAutoObservable, runInAction } from 'mobx';
 import { IAuthUseCase } from '../../domain/interfaces/usecases/auth/IAuthUseCase';
+import { IGameShelfApiClient } from '../../domain/interfaces/services/IGameShelfApiClient';
 import { User } from '../../domain/entities/User';
 import { TYPES } from '../../di/types';
 import { withLoading } from './BaseViewModel';
-import { isGuestUser } from '../../core/utils/guestUtils';
 import { mapFirebaseError } from '../../core/utils/firebaseErrors';
 import { HomeViewModel } from './HomeViewModel';
 import { LibraryViewModel } from './LibraryViewModel';
 import { WishlistViewModel } from './WishlistViewModel';
+import { ICountryPreferenceService } from '../../domain/interfaces/usecases/settings/ICountryPreferenceService';
 
 /**
  * ViewModel para autenticación.
@@ -32,6 +33,10 @@ export class AuthViewModel {
         private readonly libraryVm: LibraryViewModel,
         @inject(TYPES.WishlistViewModel)
         private readonly wishlistVm: WishlistViewModel,
+        @inject(TYPES.IGameShelfApiClient)
+        private readonly apiClient: IGameShelfApiClient,
+        @inject(TYPES.ICountryPreferenceService)
+        private readonly countryPrefs: ICountryPreferenceService,
     ) {
         makeAutoObservable(this);
     }
@@ -53,7 +58,7 @@ export class AuthViewModel {
     }
 
     get isGuest(): boolean {
-        return this._currentUser != null && isGuestUser(this._currentUser.getId());
+        return this._currentUser?.isGuest === true;
     }
 
     async login(email: string, password: string): Promise<boolean> {
@@ -97,6 +102,8 @@ export class AuthViewModel {
             this.homeVm.reset();
             this.libraryVm.reset();
             this.wishlistVm.reset();
+            this.apiClient.clearCache();
+            this.countryPrefs.reset();
         });
     }
 
