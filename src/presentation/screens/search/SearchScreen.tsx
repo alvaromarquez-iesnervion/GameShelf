@@ -225,7 +225,11 @@ export const SearchScreen: React.FC = observer(() => {
                         loading={homeVm.isLoadingHome && homeVm.recentlyPlayed.length === 0}
                         onGamePress={onGamePress}
                         cardSize="medium"
-                        emptyHint={homeVm.isSteamLinked ? 'Aún no has jugado nada.' : 'Sin Steam vinculado.'}
+                        emptyHint={homeVm.isSteamLinked
+                            ? 'Llevas un tiempo sin jugar nada por Steam.'
+                            : 'Conecta tu cuenta de Steam para ver tus partidas recientes.'}
+                        emptyActionLabel={homeVm.isSteamLinked ? undefined : 'Vincular Steam'}
+                        onEmptyAction={homeVm.isSteamLinked ? undefined : () => navigation.getParent()?.navigate('Settings' as never)}
                     />
 
                     <Carousel
@@ -258,10 +262,13 @@ interface CarouselProps {
     cardSize: 'featured' | 'medium' | 'small';
     showRank?: boolean;
     emptyHint: string;
+    emptyActionLabel?: string;
+    onEmptyAction?: () => void;
 }
 
 const Carousel: React.FC<CarouselProps> = ({
     title, subtitle, icon, accent, games, loading, onGamePress, cardSize, showRank, emptyHint,
+    emptyActionLabel, onEmptyAction,
 }) => (
     <View style={styles.section}>
         <View style={styles.sectionHeader}>
@@ -281,6 +288,12 @@ const Carousel: React.FC<CarouselProps> = ({
         ) : games.length === 0 ? (
             <View style={styles.carouselEmpty}>
                 <Text style={styles.carouselEmptyText}>{emptyHint}</Text>
+                {emptyActionLabel && onEmptyAction && (
+                    <Pressable style={styles.carouselEmptyAction} onPress={onEmptyAction}>
+                        <Feather name="link" size={13} color={colors.primary} />
+                        <Text style={styles.carouselEmptyActionText}>{emptyActionLabel}</Text>
+                    </Pressable>
+                )}
             </View>
         ) : (
             <FlatList
@@ -372,4 +385,18 @@ const styles = StyleSheet.create({
         borderWidth: 1, borderColor: colors.borderSubtle,
     },
     carouselEmptyText: { ...typography.bodySecondary, textAlign: 'center' },
+    carouselEmptyAction: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: spacing.xs,
+        marginTop: spacing.md,
+        paddingVertical: spacing.sm,
+        paddingHorizontal: spacing.md,
+        borderRadius: radius.md,
+        borderWidth: 1,
+        borderColor: colors.primary + '55',
+        backgroundColor: colors.primary + '11',
+    },
+    carouselEmptyActionText: { ...typography.caption, color: colors.primary, fontWeight: '600' },
 });
